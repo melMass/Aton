@@ -18,13 +18,6 @@ find_package( Boost 1.40.0 COMPONENTS system REQUIRED )
 find_package( Nuke REQUIRED )
 find_package( Doxygen )
 
-# try to find a rman lib (set by the RMAN envvar)
-set( RMAN "3Delight" )
-if ( $ENV{RMAN} MATCHES "" )
-  set( RMAN $ENV{RMAN} )
-endif ( $ENV{RMAN} MATCHES "" )
-find_package( ${RMAN} )
-
 include_directories(
   ${CMAKE_SOURCE_DIR}/src
   ${Boost_INCLUDE_DIRS}
@@ -44,7 +37,7 @@ add_library( nuke_plugin
 set_target_properties( nuke_plugin
   PROPERTIES
   PREFIX ""
-  OUTPUT_NAME "nk_renderConnect"
+  OUTPUT_NAME "RenderConnect"
   COMPILE_FLAGS "-DUSE_GLEW ${Nuke_COMPILE_FLAGS}"
   LINK_FLAGS "${Nuke_LINK_FLAGS}"
   )
@@ -56,7 +49,14 @@ target_link_libraries( nuke_plugin
 
 #=====
 # Build the Rman plugin
-if( PRMan_FOUND )
+# try to find a rman lib (set by the RMAN envvar)
+set( RMAN "3Delight" )
+if ( $ENV{RMAN} MATCHES "" )
+  set( RMAN $ENV{RMAN} )
+endif ( $ENV{RMAN} MATCHES "" )
+find_package( ${RMAN} )
+
+if( PRMAN_FOUND )
     include_directories( ${${RMAN}_INCLUDE_DIR} )
     add_library( rman_plugin
       SHARED
@@ -84,7 +84,33 @@ if( PRMan_FOUND )
       ${Boost_LIBRARIES}
       ${${RMAN}_LIBRARIES}
       )
-endif( PRMan_FOUND )
+endif( PRMAN_FOUND )
+
+#=====
+# Build the Arnold plugin
+find_package( Arnold )
+
+if( ARNOLD_FOUND )
+    include_directories( ${Arnold_INCLUDE_DIR} )
+    add_library( arnold_plugin
+      SHARED
+      ${CMAKE_SOURCE_DIR}/src/d_arnoldConnect.cpp
+      ${CMAKE_SOURCE_DIR}/src/Client.cpp
+      ${CMAKE_SOURCE_DIR}/src/Data.cpp
+      )
+
+    set_target_properties( arnold_plugin
+      PROPERTIES
+      PREFIX ""
+      OUTPUT_NAME "d_arnoldConnect"
+      COMPILE_FLAGS "${Arnold_COMPILE_FLAGS}"
+    )
+
+    target_link_libraries( arnold_plugin
+      ${Boost_LIBRARIES}
+      ${Arnold_ai_LIBRARY}
+      )
+endif( ARNOLD_FOUND )
 
 #=====
 # Build docs (after the nuke plugin is built)

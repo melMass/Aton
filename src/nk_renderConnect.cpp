@@ -48,8 +48,8 @@ using namespace DD::Image;
 static const char* const CLASS = "RenderConnect";
 
 // help
-static const char* const HELP = 
-    "Listens for renders coming from the RenderConnect RenderMan display driver.";
+static const char* const HELP =
+    "Listens for renders coming from the RenderConnect display driver.";
 
 // our default port
 const int renderconnect_default_port = 9201;
@@ -144,7 +144,7 @@ class RenderConnect: public Iop
             disconnect();
         }
 
-        // It seems additional instances of a node get copied/constructed upon 
+        // It seems additional instances of a node get copied/constructed upon
         // very frequent calls to asapUpdate() and this causes us a few
         // problems - we don't want new sockets getting opened etc.
         // Fortunately attach() only gets called for nodes in the dag so we can
