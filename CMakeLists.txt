@@ -9,7 +9,7 @@
 #==========
 
 cmake_minimum_required( VERSION 2.6 )
-project( rmanconnect )
+project( renderconnect )
 
 #=====
 # General
@@ -23,20 +23,19 @@ set( RMAN "3Delight" )
 if ( $ENV{RMAN} MATCHES "" )
   set( RMAN $ENV{RMAN} )
 endif ( $ENV{RMAN} MATCHES "" )
-find_package( ${RMAN} REQUIRED )
+find_package( ${RMAN} )
 
 include_directories(
   ${CMAKE_SOURCE_DIR}/src
   ${Boost_INCLUDE_DIRS}
   ${Nuke_INCLUDE_DIR}
-  ${${RMAN}_INCLUDE_DIR}
   )
 
 #=====
 # Build the Nuke plugin
 add_library( nuke_plugin 
   SHARED
-  ${CMAKE_SOURCE_DIR}/src/nk_rmanConnect.cpp 
+  ${CMAKE_SOURCE_DIR}/src/nk_renderConnect.cpp 
   ${CMAKE_SOURCE_DIR}/src/Server.cpp
   ${CMAKE_SOURCE_DIR}/src/Client.cpp
   ${CMAKE_SOURCE_DIR}/src/Data.cpp
@@ -45,7 +44,7 @@ add_library( nuke_plugin
 set_target_properties( nuke_plugin
   PROPERTIES
   PREFIX ""
-  OUTPUT_NAME "nk_rmanConnect"
+  OUTPUT_NAME "nk_renderConnect"
   COMPILE_FLAGS "-DUSE_GLEW ${Nuke_COMPILE_FLAGS}"
   LINK_FLAGS "${Nuke_LINK_FLAGS}"
   )
@@ -57,32 +56,35 @@ target_link_libraries( nuke_plugin
 
 #=====
 # Build the Rman plugin
-add_library( rman_plugin
-  SHARED
-  ${CMAKE_SOURCE_DIR}/src/d_rmanConnect.cpp
-  ${CMAKE_SOURCE_DIR}/src/Client.cpp
-  ${CMAKE_SOURCE_DIR}/src/Data.cpp
-  )
+if( PRMan_FOUND )
+    include_directories( ${${RMAN}_INCLUDE_DIR} )
+    add_library( rman_plugin
+      SHARED
+      ${CMAKE_SOURCE_DIR}/src/d_rmanConnect.cpp
+      ${CMAKE_SOURCE_DIR}/src/Client.cpp
+      ${CMAKE_SOURCE_DIR}/src/Data.cpp
+      )
 
-set_target_properties( rman_plugin
-  PROPERTIES
-  PREFIX ""
-  OUTPUT_NAME "d_rmanConnect"
-  COMPILE_FLAGS "${${RMAN}_COMPILE_FLAGS}"
-)
-
-# PRMan requires .so even on MacOSX
-if( RMAN MATCHES "PRMan" )
     set_target_properties( rman_plugin
-                           PROPERTIES
-                           SUFFIX ".so"
-                           )
-endif( RMAN MATCHES "PRMan" )
+      PROPERTIES
+      PREFIX ""
+      OUTPUT_NAME "d_rmanConnect"
+      COMPILE_FLAGS "${${RMAN}_COMPILE_FLAGS}"
+    )
 
-target_link_libraries( rman_plugin
-  ${Boost_LIBRARIES}
-  ${${RMAN}_LIBRARIES}
-  )
+    # PRMan requires .so even on MacOSX
+    if( RMAN MATCHES "PRMan" )
+        set_target_properties( rman_plugin
+                               PROPERTIES
+                               SUFFIX ".so"
+                               )
+    endif( RMAN MATCHES "PRMan" )
+
+    target_link_libraries( rman_plugin
+      ${Boost_LIBRARIES}
+      ${${RMAN}_LIBRARIES}
+      )
+endif( PRMan_FOUND )
 
 #=====
 # Build docs (after the nuke plugin is built)

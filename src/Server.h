@@ -12,7 +12,7 @@ are permitted provided that the following conditions are met:
     this list of conditions and the following disclaimer in the documentation
     and/or other materials provided with the distribution.
 
-    * Neither the name of RmanConnect nor the names of its contributors may be
+    * Neither the name of RenderConnect nor the names of its contributors may be
     used to endorse or promote products derived from this software without
     specific prior written permission.
 
@@ -28,14 +28,14 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef RMAN_CONNECT_SERVER_H_
-#define RMAN_CONNECT_SERVER_H_
+#ifndef RENDER_CONNECT_SERVER_H_
+#define RENDER_CONNECT_SERVER_H_
 
 #include "Data.h"
 #include <boost/asio.hpp>
 
-//! \namespace rmanconnect
-namespace rmanconnect
+//! \namespace renderconnect
+namespace renderconnect
 {
     /*! \class Server
      * \brief Represents a listening Server, ready to accept incoming images.
@@ -113,9 +113,9 @@ namespace rmanconnect
     };
 }
 
-/*! \mainpage RmanConnect
+/*! \mainpage RenderConnect
  * \section Overview
- * The RmanConnect project is a RenderMan Interface-compatible display driver
+ * The RenderConnect project is a RenderMan Interface-compatible display driver
  * and Nuke plugin for direct rendering into the Nuke interface.
  *
  * <b>RenderMan® is a registered trademark of Pixar.<br>
@@ -123,11 +123,11 @@ namespace rmanconnect
  *
  * \image html nuke_examplebuild_small.jpg
  *
- * The code is freely available from http://github.com/danbethell/rmanconnect
+ * The code is freely available from http://github.com/danbethell/renderconnect
  * and is released under the New BSD license. See \link COPYING \endlink
  * for more details.
  *
- * RmanConnect is based on a simple Client/Server model, suitable for rendering
+ * RenderConnect is based on a simple Client/Server model, suitable for rendering
  * to/from a variety of applications. The classes are described
  * <a href="annotated.html">here</a>. The TCP/IP interface code is handled using
  * the <a href="http://www.boost.org/doc/libs/1_40_0/doc/html/boost_asio.html">
@@ -135,23 +135,23 @@ namespace rmanconnect
  * using any RenderMan-compatible renderer
  * but the included <a href="http://cmake.com"> CMake</a> build script assumes
  * you have <a href="http://3delight.com">3Delight</a> or 
- * <a href="http://renderman.pixar.com">PRMan</a> installed.
+ * <a href="http://renderender.pixar.com">PRMan</a> installed.
  *
  * \section building Building
  * Ensure you have <a href="http://www.thefoundry.co.uk">Nuke</a> (5.2),
  * either <a href="http://www.3delight.com">3Delight</a> (9.0) or 
- * <a href="http://renderman.pixar.com">PRMan</a> (15.0),
+ * <a href="http://renderender.pixar.com">PRMan</a> (15.0),
  * <a href="http://www.boost.org/">Boost</a> (1.40) and
  * <a href="http://cmake.org/">CMake</a> (2.8) installed. You should set the
  * following environment variables before running <i>cmake</i>.
  * <ul>
- *  <li><b>RMAN</b> - set to either <b>3Delight</b> or <b>PRMan</b>
+ *  <li><b>RENDER</b> - set to either <b>3Delight</b> or <b>PRMan</b>
  *  <li><b>DELIGHT</b> - (3Delight only) the path to your 3Delight installation.
- *  <li><b>RMANTREE</b> - (PRMan only) the path to your RPS installation.
+ *  <li><b>RENDERTREE</b> - (PRMan only) the path to your RPS installation.
  *  <li><b>NDK_PATH</b> - The path to your Nuke libraries.
  * </ul>
  *
- * \section rman_plugin Display Driver
+ * \section render_plugin Display Driver
  *
  * The display driver works just like any other, but has two additional
  * parameters: <b>hostname</b> and <b>port</b>. Using these you can control
@@ -162,7 +162,7 @@ namespace rmanconnect
  * following in your <i>rendermn.ini</i> configuration.
  *
  * \code
- * /display/dso/RmanConnect /full/path/to/d_rmanConnect
+ * /display/dso/RenderConnect /full/path/to/d_renderConnect
  * \endcode
  *
  * It's important that you always render images as 32-bit floating-point
@@ -173,7 +173,7 @@ namespace rmanconnect
  *
  * \code
  * # Render beauty to port 9201
- * Display "rgba" "RmanConnect" "rgba"
+ * Display "rgba" "RenderConnect" "rgba"
  *   "int[4] quantize" [ 0 0 0 0 ]
  *   "string filter" [ "gaussian" ]
  *   "float[2] filterwidth" [ 2 2 ]
@@ -185,7 +185,7 @@ namespace rmanconnect
  *
  * \code
  * # Render the __Pworld AOV to port 9202
- * Display "+Pworld" "RmanConnect" "point __Pworld"
+ * Display "+Pworld" "RenderConnect" "point __Pworld"
  *   "int[4] quantize" [ 0 0 0 0 ]
  *   "string filter" [ "gaussian" ]
  *   "float[2] filterwidth" [ 2 2 ]
@@ -193,7 +193,7 @@ namespace rmanconnect
  *   "integer port" [ 9202 ]
  *
  * # Render the __Nworld AOV to port 9203
- * Display "+Nworld" "RmanConnect" "point __Nworld"
+ * Display "+Nworld" "RenderConnect" "point __Nworld"
  *   "int[4] quantize" [ 0 0 0 0 ]
  *   "string filter" [ "gaussian" ]
  *   "float[2] filterwidth" [ 2 2 ]
@@ -205,12 +205,12 @@ namespace rmanconnect
  *
  * \image html nuke_examplebuild_rendering.jpg
  *
- * The nuke plugin defines a node called <b>RmanConnect</b>. Once it's built you
+ * The nuke plugin defines a node called <b>RenderConnect</b>. Once it's built you
  * just need to ensure it's somewhere on your <i>NUKE_PATH</i>.
  *
  * \code
- * nuke.load("nk_rmanConnect")
- * nuke.createNode("RmanConnect")
+ * nuke.load("nk_renderConnect")
+ * nuke.createNode("RenderConnect")
  * \endcode
  *
  * The node has two knobs: a format knob, and a port knob.
@@ -225,7 +225,7 @@ namespace rmanconnect
  * By default <b>port</b> is set to <i>9201</i> and if a node cannot connect
  * then it will report an error. Change the port value will disconnect the
  * server and reconnect it to the new port. All instances of the
- * <b>RmanConnect</b> node will need unique port addresses.
+ * <b>RenderConnect</b> node will need unique port addresses.
  *
  * \image html nukeplugin_portclash.jpg
  *
@@ -248,7 +248,7 @@ are permitted provided that the following conditions are met:
     this list of conditions and the following disclaimer in the documentation
     and/or other materials provided with the distribution.</li>
 
-    <li>Neither the name of RmanConnect nor the names of its contributors may be
+    <li>Neither the name of RenderConnect nor the names of its contributors may be
     used to endorse or promote products derived from this software without
     specific prior written permission.</li>
 </ul>
@@ -264,4 +264,4 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#endif // RMAN_CONNECT_SERVER_H_
+#endif // RENDER_CONNECT_SERVER_H_

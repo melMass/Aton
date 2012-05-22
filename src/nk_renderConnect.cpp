@@ -12,7 +12,7 @@ are permitted provided that the following conditions are met:
     this list of conditions and the following disclaimer in the documentation
     and/or other materials provided with the distribution.
 
-    * Neither the name of RmanConnect nor the names of its contributors may be
+    * Neither the name of RenderConnect nor the names of its contributors may be
     used to endorse or promote products derived from this software without
     specific prior written permission.
 
@@ -45,23 +45,23 @@ using namespace DD::Image;
 #include "Server.h"
 
 // class name
-static const char* const CLASS = "RmanConnect";
+static const char* const CLASS = "RenderConnect";
 
 // help
 static const char* const HELP = 
-    "Listens for renders coming from the RmanConnect RenderMan display driver.";
+    "Listens for renders coming from the RenderConnect RenderMan display driver.";
 
 // our default port
-const int rmanconnect_default_port = 9201;
+const int renderconnect_default_port = 9201;
 
 // our listener method
-static void rmanConnectListen(unsigned index, unsigned nthreads, void* data);
+static void renderConnectListen(unsigned index, unsigned nthreads, void* data);
 
 // lightweight pixel class
-class RmanColour
+class RenderColour
 {
     public:
-        RmanColour()
+        RenderColour()
         {
             _val[0] = _val[1] = _val[2] = 0.f;
             _val[3] = 1.f;
@@ -75,10 +75,10 @@ class RmanColour
 };
 
 // our image buffer class
-class RmanBuffer
+class RenderBuffer
 {
     public:
-        RmanBuffer() :
+        RenderBuffer() :
             _width(0),
             _height(0)
         {
@@ -91,13 +91,13 @@ class RmanBuffer
             _data.resize(_width * _height);
         }
 
-        RmanColour& get(unsigned int x, unsigned int y)
+        RenderColour& get(unsigned int x, unsigned int y)
         {
             unsigned int index = (_width * y) + x;
             return _data[index];
         }
 
-        const RmanColour& get(unsigned int x, unsigned int y) const
+        const RenderColour& get(unsigned int x, unsigned int y) const
         {
             unsigned int index = (_width * y) + x;
             return _data[index];
@@ -109,29 +109,29 @@ class RmanBuffer
         }
 
         // data
-        std::vector<RmanColour> _data;
+        std::vector<RenderColour> _data;
         unsigned int _width;
         unsigned int _height;
 };
 
 // our nuke node
-class RmanConnect: public Iop
+class RenderConnect: public Iop
 {
     public:
         FormatPair m_fmt; // our buffer format (knob)
         int m_port; // the port we're listening on (knob)
 
-        RmanBuffer m_buffer; // our pixel buffer
+        RenderBuffer m_buffer; // our pixel buffer
         Lock m_mutex; // mutex for locking the pixel buffer
         unsigned int hash_counter; // our refresh hash counter
-        rmanconnect::Server m_server; // our rmanconnect::Server
+        renderconnect::Server m_server; // our renderconnect::Server
         bool m_inError; // some error handling
         std::string m_connectionError;
         bool m_legit;
 
-        RmanConnect(Node* node) :
+        RenderConnect(Node* node) :
             Iop(node),
-            m_port(rmanconnect_default_port),
+            m_port(renderconnect_default_port),
             m_inError(false),
             m_connectionError(""),
             m_legit(false)
@@ -139,7 +139,7 @@ class RmanConnect: public Iop
             inputs(0);
         }
 
-        ~RmanConnect()
+        ~RenderConnect()
         {
             disconnect();
         }
@@ -198,7 +198,7 @@ class RmanConnect: public Iop
             // success
             if ( m_server.isConnected() )
             {
-                Thread::spawn(::rmanConnectListen, 1, this);
+                Thread::spawn(::renderConnectListen, 1, this);
                 print_name( std::cout );
                 std::cout << ": Connected to port " << m_server.getPort() << std::endl;
             }
@@ -312,18 +312,18 @@ class RmanConnect: public Iop
 
 //=====
 // @brief our listening thread method
-static void rmanConnectListen(unsigned index, unsigned nthreads, void* data)
+static void renderConnectListen(unsigned index, unsigned nthreads, void* data)
 {
     bool killThread = false;
 
-    RmanConnect * node = reinterpret_cast<RmanConnect*> (data);
+    RenderConnect * node = reinterpret_cast<RenderConnect*> (data);
     while (!killThread)
     {
         // accept incoming connections!
         node->m_server.accept();
 
         // our incoming data object
-        rmanconnect::Data d;
+        renderconnect::Data d;
 
         // loop over incoming data
         while ((d.type()==2||d.type()==9)==false)
@@ -370,7 +370,7 @@ static void rmanConnectListen(unsigned index, unsigned nthreads, void* data)
                     for (_x = 0; _x < _width; ++_x)
                         for (_y = 0; _y < _height; ++_y)
                         {
-                            RmanColour &pix = node->m_buffer.get(_x
+                            RenderColour &pix = node->m_buffer.get(_x
                                     + _xorigin, _h - (_y + _yorigin + 1));
                             offset = (_width * _y * _spp) + (_x * _spp);
                             for (_s = 0; _s < _spp; ++_s)
@@ -403,5 +403,5 @@ static void rmanConnectListen(unsigned index, unsigned nthreads, void* data)
 
 //=====
 // nuke builder stuff
-static Iop* constructor(Node* node){ return new RmanConnect(node); }
-const Iop::Description RmanConnect::desc(CLASS, 0, constructor);
+static Iop* constructor(Node* node){ return new RenderConnect(node); }
+const Iop::Description RenderConnect::desc(CLASS, 0, constructor);
