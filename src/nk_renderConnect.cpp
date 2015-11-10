@@ -295,7 +295,7 @@ class RenderConnect: public Iop
 
         int knob_changed(Knob* knob)
         {
-            if (knob->name() && strcmp(knob->name(), "port_number") == 0)
+            if (knob->is("port_number"))
             {
                 changePort(m_port);
                 return 1;

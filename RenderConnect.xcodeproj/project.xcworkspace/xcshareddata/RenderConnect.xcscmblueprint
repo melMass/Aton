@@ -1,0 +1,69 @@
+{
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "651E9A1697DD816C55015703AB0E38C1C1DDD6ED" : 0,
+    "2C3659417D892F3416D9FC2BF89E16B77B08D8A9" : 0,
+    "B807D9FD8D00717F8D1A65E5D6D1FA2E09F972E3" : 0,
+    "5977669CD91949D611075034D4F646829BCEC983" : 0,
+    "016803F2158C182190528311A90A93F5980F56F5" : 0,
+    "40F402B29A3242F05A09C26E0E24F52BFC5429BD" : 0,
+    "100DD29AA842DD88B456287D5CA2EC2F33D1901C" : 0
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "75CA357B-6AB0-4018-BDF4-2B5DC1D925B4",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "651E9A1697DD816C55015703AB0E38C1C1DDD6ED" : "Development\/trMayaTools\/",
+    "2C3659417D892F3416D9FC2BF89E16B77B08D8A9" : "Development\/trNukeTools\/",
+    "B807D9FD8D00717F8D1A65E5D6D1FA2E09F972E3" : "Development\/bnMariTools\/",
+    "5977669CD91949D611075034D4F646829BCEC983" : "Development\/Arnold%20Shaders\/jf-nested-dielectric\/",
+    "016803F2158C182190528311A90A93F5980F56F5" : "Development\/trMayaTools_v2\/",
+    "40F402B29A3242F05A09C26E0E24F52BFC5429BD" : "Development\/deadlineRepository\/",
+    "100DD29AA842DD88B456287D5CA2EC2F33D1901C" : "Development\/deadline7Repository\/"
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "RenderConnect",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 204,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "renderConnect\/RenderConnect.xcodeproj",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/bitbucket.org\/sosoyan\/trmayatools_v2.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "016803F2158C182190528311A90A93F5980F56F5"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/bitbucket.org\/sosoyan\/deadline7repository.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "100DD29AA842DD88B456287D5CA2EC2F33D1901C"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/bitbucket.org\/sosoyan\/trnuketools.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "2C3659417D892F3416D9FC2BF89E16B77B08D8A9"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/bitbucket.org\/sosoyan\/deadline-repository.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "40F402B29A3242F05A09C26E0E24F52BFC5429BD"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/bitbucket.org\/jonahfriedman\/jf_nested_dielectric.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "5977669CD91949D611075034D4F646829BCEC983"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/Psyop\/jf-nested-dielectric",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "5977669CD91949D611075034D4F646829BCEC983"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/bitbucket.org\/sosoyan\/trmayatools.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "651E9A1697DD816C55015703AB0E38C1C1DDD6ED"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/Sosoyan\/bnMariTools.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "B807D9FD8D00717F8D1A65E5D6D1FA2E09F972E3"
+    }
+  ]
+}
