@@ -141,11 +141,19 @@ driver_open
 
 }
 
+driver_needs_bucket
+{
+   return true;
+}
+
 driver_prepare_bucket
 {
    AiMsgDebug("[renderConnect] prepare bucket (%d, %d)", bucket_xo, bucket_yo);
+}
 
-   //
+driver_process_bucket
+{
+
 }
 
 driver_write_bucket
