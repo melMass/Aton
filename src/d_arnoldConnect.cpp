@@ -113,7 +113,9 @@ driver_open
    }
    catch (const std::exception &e)
    {
-       AiMsgError("RenderConnect display driver", "%s", e.what());
+		const char *err = e.what();
+		AiMsgError("RenderConnect display driver", "%s", err);
+
    }
 
 
@@ -183,7 +185,14 @@ driver_close
    AiMsgInfo("[renderConnect] driver close");
 
    ShaderData *data = (ShaderData*)AiDriverGetLocalData(node);
-   data->client->closeImage();
+   try
+   {
+		data->client->closeImage();
+   }
+   catch (const std::exception &e)
+   {
+	   AiMsgError("Error occured when trying to close connection");
+   }
 }
 
 node_finish

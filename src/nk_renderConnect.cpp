@@ -118,9 +118,9 @@ class RenderBuffer
 class RenderConnect: public Iop
 {
     public:
-        FormatPair m_fmt; // our buffer format (knob)
+        FormatPair m_fmtp; // our buffer format (knob)
+		Format m_fmt; // The nuke display format
         int m_port; // the port we're listening on (knob)
-
         RenderBuffer m_buffer; // our pixel buffer
         Lock m_mutex; // mutex for locking the pixel buffer
         unsigned int hash_counter; // our refresh hash counter
@@ -132,11 +132,13 @@ class RenderConnect: public Iop
         RenderConnect(Node* node) :
             Iop(node),
             m_port(renderconnect_default_port),
+			m_fmt(Format(0, 0, 1.0)),
             m_inError(false),
             m_connectionError(""),
             m_legit(false)
         {
             inputs(0);
+			//m_fmt.add("RenderConnect");
         }
 
         ~RenderConnect()
@@ -150,9 +152,22 @@ class RenderConnect: public Iop
         // Fortunately attach() only gets called for nodes in the dag so we can
         // use this to mark the DAG node as 'legit' and open the port accordingly.
         void attach()
-        {
-            m_legit = true;
-        }
+		{
+			m_legit = true;
+			knob("m_formats_knob")->hide(); // We don't need to see the format knob
+        
+			// Running python code to check if we've already our format in the script
+			this->script_command("bool([i.name() for i in nuke.formats() if i.name()=='Render_Connect'])");
+			const char * result = this->script_result();
+        
+			if (strcmp(result, "True"))
+			{
+				m_fmt.add("Render_Connect");
+			}
+        
+			knob("m_formats_knob")->set_text("Render_Connect"); // Automatically set the knob to the right format
+        
+		}
 
         void detach()
         {
@@ -211,6 +226,7 @@ class RenderConnect: public Iop
             {
                 m_server.quit();
                 Thread::wait(this);
+
                 print_name( std::cout );
                 std::cout << ": Disconnected from port " << m_server.getPort() << std::endl;
             }
@@ -232,8 +248,8 @@ class RenderConnect: public Iop
                 error(m_connectionError.c_str());
 
             // setup format etc
-            info_.format(*m_fmt.fullSizeFormat());
-            info_.full_size_format(*m_fmt.format());
+            info_.format(*m_fmtp.fullSizeFormat());
+            info_.full_size_format(*m_fmtp.format());
             info_.channels(Mask_RGBA);
             info_.set(info().format());
         }
@@ -289,13 +305,13 @@ class RenderConnect: public Iop
 
         void knobs(Knob_Callback f)
         {
-            Format_knob(f, &m_fmt, "m_formats_knob", "format");
+            Format_knob(f, &m_fmtp, "m_formats_knob", "format");
             Int_knob(f, &m_port, "port_number", "port");
         }
 
         int knob_changed(Knob* knob)
         {
-            if (knob->is("port_number"))
+			if (knob->is("port_number"))
             {
                 changePort(m_port);
                 return 1;
@@ -346,6 +362,11 @@ static void renderConnectListen(unsigned index, unsigned nthreads, void* data)
                     node->m_mutex.lock();
                     node->m_buffer.init(d.width(), d.height());
                     node->m_mutex.unlock();
+					
+					// Set the nuke display format
+					node->m_fmt.set(0, 0, d.width(), d.height());
+					node->m_fmt.width(d.width());
+					node->m_fmt.height(d.height());
                     break;
                 }
                 case 1: // image data
@@ -388,12 +409,16 @@ static void renderConnectListen(unsigned index, unsigned nthreads, void* data)
                 {
                     // update the image
                     node->flagForUpdate();
+
+					// Debug image finished
+					//std::cout << "Finish image" << std::endl;
                     break;
                 }
                 case 9: // this is sent when the parent process want to kill
                         // the listening thread
                 {
                     killThread = true;
+					std::cout << "Kill listen thread" << std::endl;
                     break;
                 }
             }
