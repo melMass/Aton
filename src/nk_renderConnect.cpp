@@ -138,7 +138,6 @@ class RenderConnect: public Iop
             m_legit(false)
         {
             inputs(0);
-			//m_fmt.add("RenderConnect");
         }
 
         ~RenderConnect()
