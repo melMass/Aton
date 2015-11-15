@@ -176,7 +176,14 @@ Data Server::listen()
             case 9: // quit
             {
                 d.mType = 9;
+
+                //debug Closing socket
+                std::cout << "Socket closed" << std::endl;
+
                 mSocket.close();
+
+                // This fixes all nuke destructor issues on windows
+                mAcceptor.close();
                 break;
             }
         }
