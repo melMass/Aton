@@ -159,8 +159,9 @@ class RenderConnect: public Iop
 			// Running python code to check if we've already our format in the script
 			this->script_command("bool([i.name() for i in nuke.formats() if i.name()=='Render_Connect'])");
 			const char * result = this->script_result();
-        
-			if (strcmp(result, "True"))
+            this->script_unlock();
+			
+            if (strcmp(result, "True"))
 			{
 				m_fmt.add("Render_Connect");
 			}
