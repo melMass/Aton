@@ -164,9 +164,7 @@ class RenderConnect: public Iop
 			{
 				m_fmt.add("Render_Connect");
 			}
-        
-			knob("m_formats_knob")->set_text("Render_Connect"); // Automatically set the knob to the right format
-        
+            
 		}
 
         void detach()
@@ -367,6 +365,8 @@ static void renderConnectListen(unsigned index, unsigned nthreads, void* data)
 					node->m_fmt.set(0, 0, d.width(), d.height());
 					node->m_fmt.width(d.width());
 					node->m_fmt.height(d.height());
+                    // Automatically set the knob to the right format
+                    node->knob("m_formats_knob")->set_text("Render_Connect");
                     break;
                 }
                 case 1: // image data
