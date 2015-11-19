@@ -67,10 +67,12 @@ struct ShaderData
 
 node_parameters
 {
-   AiParameterSTR("host", "127.0.0.1");
-   AiParameterINT("port", 9201);
-   AiMetaDataSetStr(mds, NULL, "maya.translator", "nuke");
-   AiMetaDataSetStr(mds, NULL, "maya.attr_prefix", "");
+    AiParameterSTR("host", "127.0.0.1");
+    AiParameterINT("port", 9201);
+    AiMetaDataSetStr(mds, NULL, "maya.translator", "nuke");
+    AiMetaDataSetStr(mds, NULL, "maya.attr_prefix", "");
+    AiMetaDataSetBool(mds, NULL, "display_driver", true);
+    AiMetaDataSetBool(mds, NULL, "single_layer_driver", false);
 }
 
 node_initialize
