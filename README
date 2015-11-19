@@ -1,18 +1,15 @@
-RmanConnect
+RenderConnect
 ===========
-The RmanConnect project is a RenderMan Interface-compatible display driver
+The RenderConnect project is a Arnold Interface-compatible display driver
 and Nuke plugin for direct rendering into the Nuke interface.
 
-* RenderMan® is a registered trademark of Pixar.
+* Arnold® is a registered trademark of SolidAngle.
 * Nuke® is a registered trademark of The Foundry.
 
-The code is freely available from http://github.com/danbethell/rmanconnect
-and is released under the New BSD license. See the COPYING file
-for more details.
-
-For more information about the plugins and usage examples please refer to the
-documentation here: http://danbethell.github.com/rmanconnect
+It's based on the code the code from Dan Bethelli's Rmanconnect which is 
+freely available from http://github.com/danbethell/rmanconnect
+and is released under the New BSD license. 
 
 --
-Dan Bethell (danbethell at gmail dot com)
-Johannes Saam (johannes dot saam at googlemail dot com)
+Brian Scherbinski
+Vahan Sosoyan
