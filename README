@@ -6,7 +6,7 @@ and Nuke plugin for direct rendering into the Nuke interface.
 * Arnold® is a registered trademark of SolidAngle.
 * Nuke® is a registered trademark of The Foundry.
 
-It's based on the code the code from Dan Bethelli's Rmanconnect which is 
+It's based on code from Dan Bethelli's Rmanconnect which is 
 freely available from http://github.com/danbethell/rmanconnect
 and is released under the New BSD license. 
 
