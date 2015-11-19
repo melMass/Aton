@@ -48,45 +48,6 @@ target_link_libraries( nuke_plugin
   )
 
 #=====
-# Build the Rman plugin
-# try to find a rman lib (set by the RMAN envvar)
-set( RMAN "3Delight" )
-if ( $ENV{RMAN} MATCHES "" )
-  set( RMAN $ENV{RMAN} )
-endif ( $ENV{RMAN} MATCHES "" )
-find_package( ${RMAN} )
-
-if( PRMAN_FOUND )
-    include_directories( ${${RMAN}_INCLUDE_DIR} )
-    add_library( rman_plugin
-      SHARED
-      ${CMAKE_SOURCE_DIR}/src/d_rmanConnect.cpp
-      ${CMAKE_SOURCE_DIR}/src/Client.cpp
-      ${CMAKE_SOURCE_DIR}/src/Data.cpp
-      )
-
-    set_target_properties( rman_plugin
-      PROPERTIES
-      PREFIX ""
-      OUTPUT_NAME "d_rmanConnect"
-      COMPILE_FLAGS "${${RMAN}_COMPILE_FLAGS}"
-    )
-
-    # PRMan requires .so even on MacOSX
-    if( RMAN MATCHES "PRMan" )
-        set_target_properties( rman_plugin
-                               PROPERTIES
-                               SUFFIX ".so"
-                               )
-    endif( RMAN MATCHES "PRMan" )
-
-    target_link_libraries( rman_plugin
-      ${Boost_LIBRARIES}
-      ${${RMAN}_LIBRARIES}
-      )
-endif( PRMAN_FOUND )
-
-#=====
 # Build the Arnold plugin
 find_package( Arnold )
 
