@@ -10,9 +10,11 @@ It's based on:
 
 Dan Bethelli's Rmanconnect which is freely available at 
 http://github.com/danbethell/rmanconnect
+
 Chad Dombrova's driver for arnold, freely available at 
 https://github.com/chadrik/renderconnect.
 
---
+---
 Brian Scherbinski
+
 Vahan Sosoyan
