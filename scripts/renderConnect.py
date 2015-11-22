@@ -1,4 +1,5 @@
 import mtoa.core as core
+import maya.mel as mel
 
 from arnold import *
 from maya import cmds, OpenMayaUI
@@ -13,27 +14,37 @@ def maya_main_window():
 class RenderConnect(QtGui.QDialog):
 
 	def __init__(self, parent = maya_main_window()):
+		super(RenderConnect, self).__init__(parent)
 
+		self.windowName = "RenderConnect"
 
-		if cmds.getAttr("defaultRenderGlobals.ren") == "arnold":
-			super(RenderConnect, self).__init__(parent)
-			self.windowName = "RenderConnect"
+		if cmds.window(self.windowName, exists = True):
+			cmds.deleteUI(self.windowName, wnd = True)
 
-			if cmds.window(self.windowName, exists = True):
-				cmds.deleteUI(self.windowName, wnd = True)
-
-			self.setupUi()
-		else:
-			cmds.warning("Current renderer is not set to Arnold.")
+		self.setupUi()
 
 	def getSceneOptions(self):
 		sceneOptions = {}
-		sceneOptions["camera"] = core.ACTIVE_CAMERA
-		sceneOptions["width"]  = int(cmds.getAttr("defaultResolution.width"))
-		sceneOptions["height"] = int(cmds.getAttr("defaultResolution.height"))
-		sceneOptions["AASamples"] = int(cmds.getAttr("defaultArnoldRenderOptions.AASamples"))
-		sceneOptions["motionBlur"] = bool(cmds.getAttr("defaultArnoldRenderOptions.motion_blur_enable")
-										  and not cmds.getAttr("defaultArnoldRenderOptions.ignoreMotionBlur"))
+		if cmds.getAttr("defaultRenderGlobals.ren") == "arnold":
+			sceneOptions["camera"] = core.ACTIVE_CAMERA
+			sceneOptions["width"]  = int(cmds.getAttr("defaultResolution.width"))
+			sceneOptions["height"] = int(cmds.getAttr("defaultResolution.height"))
+			try:
+				sceneOptions["AASamples"] = int(cmds.getAttr("defaultArnoldRenderOptions.AASamples"))
+			except ValueError:
+				mel.eval("unifiedRenderGlobalsWindow;")
+				sceneOptions["AASamples"] = int(cmds.getAttr("defaultArnoldRenderOptions.AASamples"))
+			sceneOptions["motionBlur"] = bool(cmds.getAttr("defaultArnoldRenderOptions.motion_blur_enable")
+											  and not cmds.getAttr("defaultArnoldRenderOptions.ignoreMotionBlur"))
+
+		else:
+			sceneOptions["camera"] = "None"
+			sceneOptions["width"]  = 0
+			sceneOptions["height"] = 0
+			sceneOptions["AASamples"] = 0
+			sceneOptions["motionBlur"] = 0
+			cmds.warning("Current renderer is not set to Arnold.")
+
 		return sceneOptions
 
 	def setupUi(self):
@@ -135,7 +146,7 @@ class RenderConnect(QtGui.QDialog):
 
 		self.setLayout(mainLayout)
 
-	def render(self, **kwargs):
+	def render(self):
 		try:
 			cmds.arnoldIpr(mode='stop')
 		except RuntimeError:
@@ -180,7 +191,4 @@ class RenderConnect(QtGui.QDialog):
 
 if __name__ == "__main__":
 	rc = RenderConnect()
-	try:
-		rc.show()
-	except RuntimeError:
-		pass
+	rc.show()
