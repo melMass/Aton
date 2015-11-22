@@ -168,7 +168,7 @@ class RenderConnect(QtGui.QDialog):
 		width = self.getSceneOptions()["width"] * self.resolutionSpinBox.value() / 100
 		height = self.getSceneOptions()["height"] * self.resolutionSpinBox.value() / 100
 		AASamples = self.cameraAaSpinBox.value()
-		motionBlur = self.motionBlurComboBox.currentIndex()
+		motionBlur = not self.motionBlurComboBox.currentIndex()
 
 		core.createOptions()
 		cmds.arnoldIpr(cam=camera, width=width, height=height, mode='start')
@@ -177,7 +177,7 @@ class RenderConnect(QtGui.QDialog):
 		while not AiNodeIteratorFinished(nodeIter):
 			node = AiNodeIteratorGetNext(nodeIter)
 			AiNodeSetInt(node, "AA_samples", AASamples)
-			AiNodeSetInt(node, "ignore_motion_blur", motionBlur)
+			AiNodeSetBool(node, "ignore_motion_blur", motionBlur)
 
 		# Temp trigger in order to start IPR immediately
 		cmds.setAttr("%s.bestFitClippingPlanes"%camera, True)
