@@ -93,7 +93,7 @@ class RenderConnect(QtGui.QDialog):
 
 		self.resolutionSpinBox = QtGui.QSpinBox()
 		self.resolutionSpinBox.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
-		self.resolutionSpinBox.setMaximum(100)
+		self.resolutionSpinBox.setMaximum(900)
 		self.resolutionSpinBox.setValue(100)
 		resolutionSlider = QtGui.QSlider()
 		resolutionSlider.setOrientation(QtCore.Qt.Horizontal)
@@ -112,7 +112,7 @@ class RenderConnect(QtGui.QDialog):
 
 		self.cameraAaSpinBox = QtGui.QSpinBox()
 		self.cameraAaSpinBox.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
-		self.cameraAaSpinBox.setMaximum(16)
+		self.cameraAaSpinBox.setMaximum(64)
 		self.cameraAaSpinBox.setValue(self.getSceneOptions()["AASamples"])
 		cameraAaSlider = QtGui.QSlider()
 		cameraAaSlider.setOrientation(QtCore.Qt.Horizontal)
