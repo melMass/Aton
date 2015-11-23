@@ -93,13 +93,18 @@ class RenderConnect(QtGui.QDialog):
 
 		self.resolutionSpinBox = QtGui.QSpinBox()
 		self.resolutionSpinBox.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
+		self.resolutionSpinBox.setMinimum(1)
 		self.resolutionSpinBox.setMaximum(900)
 		self.resolutionSpinBox.setValue(100)
 		resolutionSlider = QtGui.QSlider()
 		resolutionSlider.setOrientation(QtCore.Qt.Horizontal)
-		resolutionSlider.setValue(100)
-		resolutionSlider.setMaximum(100)
-		resolutionSlider.sliderMoved.connect(self.resolutionSpinBox.setValue)
+		resolutionSlider.setValue(20)
+		resolutionSlider.setMaximum(20)
+
+		def updateUi():
+			self.resolutionSpinBox.setValue(resolutionSlider.value()*5)
+			self.cameraAaSpinBox.setValue(cameraAaSlider.value())
+
 
 		resolutionLayout.addWidget(resolutionLabel)
 		resolutionLayout.addWidget(self.resolutionSpinBox)
@@ -126,7 +131,7 @@ class RenderConnect(QtGui.QDialog):
 
 
 		mainButtonslayout = QtGui.QHBoxLayout()
-		startButton = QtGui.QPushButton("Start/Refresh")
+		startButton = QtGui.QPushButton("Start / Refresh")
 		stopButton = QtGui.QPushButton("Stop")
 
 		startButton.clicked.connect(self.render)
@@ -143,6 +148,9 @@ class RenderConnect(QtGui.QDialog):
 		mainLayout.addWidget(overridesGroupBox)
 
 		mainLayout.addLayout(mainButtonslayout)
+
+		self.connect(resolutionSlider, QtCore.SIGNAL("valueChanged(int)"), updateUi)
+		self.connect(cameraAaSlider, QtCore.SIGNAL("valueChanged(int)"), updateUi)
 
 		self.setLayout(mainLayout)
 
