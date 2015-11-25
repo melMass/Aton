@@ -156,7 +156,7 @@ class RenderConnect: public Iop
 			knob("m_formats_knob")->hide(); // We don't need to see the format knob
         
 			// Running python code to check if we've already our format in the script
-			this->script_command("bool([i.name() for i in nuke.formats() if i.name()=='Render_Connect'])");
+			this->script_command("bool([i.name() for i in nuke.formats() if i.name()=='Render_Connect'])", true, false);
 			const char * result = this->script_result();
             this->script_unlock();
 			
