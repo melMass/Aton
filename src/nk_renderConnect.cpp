@@ -119,13 +119,14 @@ class RenderConnect: public Iop
 {
     public:
         FormatPair m_fmtp; // our buffer format (knob)
-		Format m_fmt; // The nuke display format
+        Format m_fmt; // The nuke display format
         int m_port; // the port we're listening on (knob)
         RenderBuffer m_buffer; // our pixel buffer
         Lock m_mutex; // mutex for locking the pixel buffer
         unsigned int hash_counter; // our refresh hash counter
         renderconnect::Server m_server; // our renderconnect::Server
         bool m_inError; // some error handling
+        bool m_formatExists;
         std::string m_connectionError;
         bool m_legit;
 
@@ -134,6 +135,7 @@ class RenderConnect: public Iop
             m_port(renderconnect_default_port),
 			m_fmt(Format(0, 0, 1.0)),
             m_inError(false),
+            m_formatExists(false),
             m_connectionError(""),
             m_legit(false)
         {
@@ -156,14 +158,13 @@ class RenderConnect: public Iop
 			knob("m_formats_knob")->hide(); // We don't need to see the format knob
         
 			// Running python code to check if we've already our format in the script
-			this->script_command("bool([i.name() for i in nuke.formats() if i.name()=='Render_Connect'])", true, false);
-			const char * result = this->script_result();
-            this->script_unlock();
+			script_command("bool([i.name() for i in nuke.formats() if i.name()=='Render_Connect'])");
+            std::string result = script_result();
+            script_unlock();
 			
-            if (strcmp(result, "True"))
-			{
+            if (result.compare("True") != 0)
 				m_fmt.add("Render_Connect");
-			}
+            else m_formatExists = true;
             
 		}
 
@@ -362,9 +363,26 @@ static void renderConnectListen(unsigned index, unsigned nthreads, void* data)
                     node->m_mutex.unlock();
 					
 					// Set the nuke display format
-					node->m_fmt.set(0, 0, d.width(), d.height());
-					node->m_fmt.width(d.width());
-					node->m_fmt.height(d.height());
+                    if (node->m_formatExists == false)
+                    {
+                        node->m_fmt.set(0, 0, d.width(), d.height());
+                        node->m_fmt.width(d.width());
+                        node->m_fmt.height(d.height());
+                    }
+                    else
+                    {
+                        Format *m_fmt_exist = nullptr;
+                        for (int i=0; i < Format::size(); i++)
+                        {
+                            m_fmt_exist = Format::index(i);
+                            if (std::string(m_fmt_exist->name()).compare("Render_Connect") == 0)
+                                break;
+                        }
+                        m_fmt_exist->set(0, 0, d.width(), d.height());
+                        m_fmt_exist->width(d.width());
+                        m_fmt_exist->height(d.height());
+
+                    }
                     // Automatically set the knob to the right format
                     node->knob("m_formats_knob")->set_text("Render_Connect");
                     break;
