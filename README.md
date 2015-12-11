@@ -1,6 +1,6 @@
-###RenderConnect
+###Aton
 ===
-The RenderConnect project is a Arnold Interface-compatible display driver
+The Aton project is a Arnold Interface-compatible display driver
 and Nuke plugin for direct rendering into the Nuke interface.
 
 * Arnold® is a registered trademark of Solid Angle.
