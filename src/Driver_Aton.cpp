@@ -1,31 +1,7 @@
 /*
-Copyright (c) 2010, Dan Bethell, Johannes Saam.
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without modification,
-are permitted provided that the following conditions are met:
-
-    * Redistributions of source code must retain the above copyright notice,
-    this list of conditions and the following disclaimer.
-
-    * Redistributions in binary form must reproduce the above copyright notice,
-    this list of conditions and the following disclaimer in the documentation
-    and/or other materials provided with the distribution.
-
-    * Neither the name of RenderConnect nor the names of its contributors may be
-    used to endorse or promote products derived from this software without
-    specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
-ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ Copyright (c) 2015,
+ Dan Bethell, Johannes Saam, Brian Scherbinski, Vahan Sosoyan.
+ All rights reserved. See Copyright.txt for more details.
  */
 
 #include <iostream>
@@ -56,20 +32,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using namespace std;
 using boost::asio::ip::tcp;
 
-AI_DRIVER_NODE_EXPORT_METHODS(NukeDriverMtd);
+AI_DRIVER_NODE_EXPORT_METHODS(AtonDriverMtd);
 
 struct ShaderData
 {
    //boost::thread  thread;
    //void* thread;
-   renderconnect::Client *client;
+   aton::Client *client;
 };
 
 node_parameters
 {
     AiParameterSTR("host", "127.0.0.1");
     AiParameterINT("port", 9201);
-    AiMetaDataSetStr(mds, NULL, "maya.translator", "nuke");
+    AiMetaDataSetStr(mds, NULL, "maya.translator", "aton");
     AiMetaDataSetStr(mds, NULL, "maya.attr_prefix", "");
     AiMetaDataSetBool(mds, NULL, "display_driver", true);
     AiMetaDataSetBool(mds, NULL, "single_layer_driver", false);
@@ -106,17 +82,17 @@ driver_open
    // now we can connect to the server and start rendering
    try
    {
-       // create a new renderConnect object
-       data->client = new renderconnect::Client( host, port );
+       // create a new aton object
+       data->client = new aton::Client( host, port );
 
        // make image header & send to server
-       renderconnect::Data header( 0, 0, width, height, 4 );
+       aton::Data header( 0, 0, width, height, 4 );
        data->client->openImage( header );
    }
    catch (const std::exception &e)
    {
 		const char *err = e.what();
-		AiMsgError("RenderConnect display driver", "%s", err);
+		AiMsgError("Aton display driver", "%s", err);
 
    }
 
@@ -152,7 +128,7 @@ driver_needs_bucket
 
 driver_prepare_bucket
 {
-   AiMsgDebug("[renderConnect] prepare bucket (%d, %d)", bucket_xo, bucket_yo);
+   AiMsgDebug("[Aton] prepare bucket (%d, %d)", bucket_xo, bucket_yo);
 }
 
 driver_process_bucket
@@ -173,7 +149,7 @@ driver_write_bucket
        const float *ptr = reinterpret_cast<const float*> (bucket_data);
 
        // create our data object
-       renderconnect::Data packet(bucket_xo, bucket_yo,
+       aton::Data packet(bucket_xo, bucket_yo,
                                   bucket_size_x, bucket_size_y,
                                   4, ptr);
 
@@ -184,7 +160,7 @@ driver_write_bucket
 
 driver_close
 {
-   AiMsgInfo("[renderConnect] driver close");
+   AiMsgInfo("[Aton] driver close");
 
    ShaderData *data = (ShaderData*)AiDriverGetLocalData(node);
    try
@@ -199,7 +175,7 @@ driver_close
 
 node_finish
 {
-   AiMsgInfo("[renderConnect] driver finish");
+   AiMsgInfo("[Aton] driver finish");
    // release the driver
 
    ShaderData *data = (ShaderData*)AiDriverGetLocalData(node);
@@ -216,9 +192,9 @@ node_loader
    switch (i)
    {
       case 0:
-         node->methods      = (AtNodeMethods*) NukeDriverMtd;
+         node->methods      = (AtNodeMethods*) AtonDriverMtd;
          node->output_type  = AI_TYPE_RGBA;
-         node->name         = "driver_nuke";
+         node->name         = "driver_aton";
          node->node_type    = AI_NODE_DRIVER;
          break;
       default:
