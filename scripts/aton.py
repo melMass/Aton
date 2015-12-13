@@ -56,12 +56,31 @@ class Aton(QtGui.QDialog):
 		return sceneOptions
 
 	def setupUi(self):
+
+		def updateUi():
+			self.resolutionSpinBox.setValue(resolutionSlider.value()*5)
+			self.cameraAaSpinBox.setValue(cameraAaSlider.value())
+
+		def resetUi(*args):
+			self.cameraComboBox.setCurrentIndex(0)
+			self.resolutionSpinBox.setValue(100)
+			self.cameraAaSpinBox.setValue(self.getSceneOptions()["AASamples"])
+			self.renderRegionXSpinBox.setValue(0)
+			self.renderRegionYSpinBox.setValue(0)
+			self.renderRegionRSpinBox.setValue(self.getSceneOptions()["width"]-1)
+			self.renderRegionTSpinBox.setValue(int(self.getSceneOptions()["height"])-1)
+			self.motionBlurCheckBox.setChecked(not self.getSceneOptions()["motionBlur"])
+			self.subdivsCheckBox.setChecked(not self.getSceneOptions()["subdivs"])
+			self.displaceCheckBox.setChecked(not self.getSceneOptions()["displace"])
+			self.bumpCheckBox.setChecked(not self.getSceneOptions()["bump"])
+			self.sssCheckBox.setChecked(not self.getSceneOptions()["sss"])
+
 		self.setObjectName(self.windowName)
 		self.setWindowTitle("Aton")
 		self.setWindowFlags(QtCore.Qt.Tool)
 		self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-		self.setMinimumSize(375, 200)
-		self.setMaximumSize(375, 200)
+		self.setMinimumSize(400, 200)
+		self.setMaximumSize(400, 200)
 
 		mainLayout = QtGui.QVBoxLayout()
 		mainLayout.setContentsMargins(5,5,5,5)
@@ -103,10 +122,6 @@ class Aton(QtGui.QDialog):
 		resolutionLayout.addWidget(self.resolutionSpinBox)
 		resolutionLayout.addWidget(resolutionSlider)
 
-		def updateUi():
-			self.resolutionSpinBox.setValue(resolutionSlider.value()*5)
-			self.cameraAaSpinBox.setValue(cameraAaSlider.value())
-
 
 		cameraAaLayout = QtGui.QHBoxLayout()
 		cameraAaLabel = QtGui.QLabel("Camera (AA):")
@@ -124,6 +139,48 @@ class Aton(QtGui.QDialog):
 		cameraAaLayout.addWidget(cameraAaLabel)
 		cameraAaLayout.addWidget(self.cameraAaSpinBox)
 		cameraAaLayout.addWidget(cameraAaSlider)
+
+
+		renderRegionLayout = QtGui.QHBoxLayout()
+		renderRegionLabel = QtGui.QLabel("Region X:")
+		renderRegionLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
+		self.renderRegionXSpinBox = QtGui.QSpinBox()
+		renderRegionYLabel = QtGui.QLabel("Y:")
+		self.renderRegionYSpinBox = QtGui.QSpinBox()
+		renderRegionRLabel = QtGui.QLabel("R:")
+		self.renderRegionRSpinBox = QtGui.QSpinBox()
+		renderRegionTLabel = QtGui.QLabel("T:")
+		self.renderRegionTSpinBox = QtGui.QSpinBox()
+		renderRegionCheckBox = QtGui.QCheckBox()
+		renderRegionGetNukeButton = QtGui.QPushButton("Get")
+		renderRegionGetNukeButton.clicked.connect(self.getNukeCropNode)
+		renderRegionCheckBox.setLayoutDirection(QtCore.Qt.RightToLeft)
+		renderRegionLayout.addWidget(renderRegionLabel)
+		renderRegionLayout.addWidget(self.renderRegionXSpinBox)
+		renderRegionLayout.addWidget(renderRegionYLabel)
+		renderRegionLayout.addWidget(self.renderRegionYSpinBox)
+		renderRegionLayout.addWidget(renderRegionRLabel)
+		renderRegionLayout.addWidget(self.renderRegionRSpinBox)
+		renderRegionLayout.addWidget(renderRegionTLabel)
+		renderRegionLayout.addWidget(self.renderRegionTSpinBox)
+		renderRegionLayout.addWidget(renderRegionGetNukeButton)
+
+		for i in [renderRegionLabel,
+				  renderRegionYLabel,
+				  renderRegionRLabel,
+				  renderRegionTLabel]:
+			i.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
+
+		for i in [self.renderRegionXSpinBox,
+				  self.renderRegionYSpinBox,
+				  self.renderRegionRSpinBox,
+				  self.renderRegionTSpinBox]:
+			i.setRange(0,99999)
+			i.setMaximumSize(60,25)
+			i.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
+
+		self.renderRegionRSpinBox.setValue(self.getSceneOptions()["width"]-1)
+		self.renderRegionTSpinBox.setValue(int(self.getSceneOptions()["height"])-1)
 
 
 		ignoreLayout = QtGui.QHBoxLayout()
@@ -149,16 +206,21 @@ class Aton(QtGui.QDialog):
 		mainButtonslayout = QtGui.QHBoxLayout()
 		startButton = QtGui.QPushButton("Start / Refresh")
 		stopButton = QtGui.QPushButton("Stop")
+		resetButton = QtGui.QPushButton("Reset")
+
 
 		startButton.clicked.connect(self.render)
 		stopButton.clicked.connect(self.stop)
+		resetButton.clicked.connect(resetUi)
 
 		mainButtonslayout.addWidget(startButton)
 		mainButtonslayout.addWidget(stopButton)
+		mainButtonslayout.addWidget(resetButton)
 
 		overridesLayout.addLayout(cameraLayout)
 		overridesLayout.addLayout(resolutionLayout)
 		overridesLayout.addLayout(cameraAaLayout)
+		overridesLayout.addLayout(renderRegionLayout)
 		overridesLayout.addLayout(ignoreLayout)
 
 		mainLayout.addWidget(overridesGroupBox)
@@ -197,6 +259,11 @@ class Aton(QtGui.QDialog):
 		bump = not self.bumpCheckBox.isChecked()
 		sss = not self.sssCheckBox.isChecked()
 
+		rMinX = self.renderRegionXSpinBox.value()
+		rMinY = (self.getSceneOptions()["height"]-1) - self.renderRegionTSpinBox.value()
+		rMaxX = self.renderRegionRSpinBox.value()
+		rMaxY = (self.getSceneOptions()["height"]-1) - self.renderRegionYSpinBox.value()
+
 		core.createOptions()
 		cmds.arnoldIpr(cam=camera, width=width, height=height, mode='start')
 		nodeIter = AiUniverseGetNodeIterator(AI_NODE_ALL)
@@ -204,6 +271,10 @@ class Aton(QtGui.QDialog):
 		while not AiNodeIteratorFinished(nodeIter):
 			node = AiNodeIteratorGetNext(nodeIter)
 			AiNodeSetInt(node, "AA_samples", AASamples)
+			AiNodeSetInt(node, "region_min_x", rMinX)
+			AiNodeSetInt(node, "region_min_y", rMinY)
+			AiNodeSetInt(node, "region_max_x", rMaxX)
+			AiNodeSetInt(node, "region_max_y", rMaxY)
 			AiNodeSetBool(node, "ignore_motion_blur", motionBlur)
 			AiNodeSetBool(node, "ignore_subdivision", subdivs)
 			AiNodeSetBool(node, "ignore_displacement ", displace)
@@ -219,6 +290,36 @@ class Aton(QtGui.QDialog):
 	def stop(self):
 		cmds.arnoldIpr(mode='stop')
 
+	def getNukeCropNode(self, *args):
+
+		def find_between( s, first, last ):
+		    try:
+		        start = s.index( first ) + len( first )
+		        end = s.index( last, start )
+		        return s[start:end]
+		    except ValueError:
+		        return ""
+
+		clipboard = QtGui.QApplication.clipboard()
+		data = clipboard.text()
+
+		checkData1 = "set cut_paste_input [stack 0]"
+		checkData2 = "Crop {"
+
+		if (checkData1 in data.split('\n', 10)[0]) and \
+		   (checkData2 in data.split('\n', 10)[3]):
+				cropData = find_between(data.split('\n', 10)[4], " box {", "}" ).split()
+				nkX, nkY, nkR, nkT = int(cropData[0]),\
+									 int(cropData[1]),\
+									 int(cropData[2]),\
+									 int(cropData[3])
+
+				self.renderRegionXSpinBox.setValue(nkX)
+				self.renderRegionYSpinBox.setValue(nkY)
+				self.renderRegionRSpinBox.setValue(nkR)
+				self.renderRegionTSpinBox.setValue(nkT)
+
+				return cropData
 
 if __name__ == "__main__":
 	rc = Aton()
