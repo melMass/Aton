@@ -61,14 +61,20 @@ class Aton(QtGui.QDialog):
 			self.resolutionSpinBox.setValue(resolutionSlider.value()*5)
 			self.cameraAaSpinBox.setValue(cameraAaSlider.value())
 
+		def regionUpdateUi():
+			self.renderRegionRSpinBox.setValue(self.getSceneOptions()["width"] *
+											   self.resolutionSpinBox.value() / 100)
+			self.renderRegionTSpinBox.setValue(self.getSceneOptions()["height"] *
+											   self.resolutionSpinBox.value() / 100)
+
 		def resetUi(*args):
 			self.cameraComboBox.setCurrentIndex(0)
 			self.resolutionSpinBox.setValue(100)
 			self.cameraAaSpinBox.setValue(self.getSceneOptions()["AASamples"])
 			self.renderRegionXSpinBox.setValue(0)
 			self.renderRegionYSpinBox.setValue(0)
-			self.renderRegionRSpinBox.setValue(self.getSceneOptions()["width"]-1)
-			self.renderRegionTSpinBox.setValue(int(self.getSceneOptions()["height"])-1)
+			self.renderRegionRSpinBox.setValue(self.getSceneOptions()["width"])
+			self.renderRegionTSpinBox.setValue(self.getSceneOptions()["height"])
 			self.motionBlurCheckBox.setChecked(not self.getSceneOptions()["motionBlur"])
 			self.subdivsCheckBox.setChecked(not self.getSceneOptions()["subdivs"])
 			self.displaceCheckBox.setChecked(not self.getSceneOptions()["displace"])
@@ -179,8 +185,8 @@ class Aton(QtGui.QDialog):
 			i.setMaximumSize(60,25)
 			i.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
 
-		self.renderRegionRSpinBox.setValue(self.getSceneOptions()["width"]-1)
-		self.renderRegionTSpinBox.setValue(int(self.getSceneOptions()["height"])-1)
+		self.renderRegionRSpinBox.setValue(self.getSceneOptions()["width"])
+		self.renderRegionTSpinBox.setValue(int(self.getSceneOptions()["height"]))
 
 
 		ignoreLayout = QtGui.QHBoxLayout()
@@ -227,6 +233,8 @@ class Aton(QtGui.QDialog):
 		mainLayout.addLayout(mainButtonslayout)
 
 		self.connect(resolutionSlider, QtCore.SIGNAL("valueChanged(int)"), updateUi)
+		self.connect(self.resolutionSpinBox, QtCore.SIGNAL("valueChanged(int)"), regionUpdateUi)
+		self.connect(self.resolutionSpinBox, QtCore.SIGNAL("editingFinished()"), regionUpdateUi)
 		self.connect(cameraAaSlider, QtCore.SIGNAL("valueChanged(int)"), updateUi)
 
 		self.setLayout(mainLayout)
@@ -260,10 +268,10 @@ class Aton(QtGui.QDialog):
 		sss = not self.sssCheckBox.isChecked()
 
 		rMinX = self.renderRegionXSpinBox.value()
-		rMinY = (self.getSceneOptions()["height"]-1) - self.renderRegionTSpinBox.value()
-		rMaxX = self.renderRegionRSpinBox.value()
-		rMaxY = (self.getSceneOptions()["height"]-1) - self.renderRegionYSpinBox.value()
-
+		rMinY = height - self.renderRegionTSpinBox.value()
+		rMaxX = self.renderRegionRSpinBox.value() -1
+		rMaxY = (height - self.renderRegionYSpinBox.value()) - 1
+		print rMinX, rMinY, rMaxX, rMaxY
 		core.createOptions()
 		cmds.arnoldIpr(cam=camera, width=width, height=height, mode='start')
 		nodeIter = AiUniverseGetNodeIterator(AI_NODE_ALL)
@@ -271,10 +279,11 @@ class Aton(QtGui.QDialog):
 		while not AiNodeIteratorFinished(nodeIter):
 			node = AiNodeIteratorGetNext(nodeIter)
 			AiNodeSetInt(node, "AA_samples", AASamples)
-			AiNodeSetInt(node, "region_min_x", rMinX)
-			AiNodeSetInt(node, "region_min_y", rMinY)
-			AiNodeSetInt(node, "region_max_x", rMaxX)
-			AiNodeSetInt(node, "region_max_y", rMaxY)
+			if rMinX >= 0 and rMinY>=0 and rMaxX<=width and rMaxY<=height:
+				AiNodeSetInt(node, "region_min_x", rMinX)
+				AiNodeSetInt(node, "region_min_y", rMinY)
+				AiNodeSetInt(node, "region_max_x", rMaxX)
+				AiNodeSetInt(node, "region_max_y", rMaxY)
 			AiNodeSetBool(node, "ignore_motion_blur", motionBlur)
 			AiNodeSetBool(node, "ignore_subdivision", subdivs)
 			AiNodeSetBool(node, "ignore_displacement ", displace)
@@ -309,10 +318,10 @@ class Aton(QtGui.QDialog):
 		if (checkData1 in data.split('\n', 10)[0]) and \
 		   (checkData2 in data.split('\n', 10)[3]):
 				cropData = find_between(data.split('\n', 10)[4], " box {", "}" ).split()
-				nkX, nkY, nkR, nkT = int(cropData[0]),\
-									 int(cropData[1]),\
-									 int(cropData[2]),\
-									 int(cropData[3])
+				nkX, nkY, nkR, nkT = int(float(cropData[0])),\
+									 int(float(cropData[1])),\
+									 int(float(cropData[2])),\
+									 int(float(cropData[3]))
 
 				self.renderRegionXSpinBox.setValue(nkX)
 				self.renderRegionYSpinBox.setValue(nkY)
