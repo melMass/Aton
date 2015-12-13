@@ -186,7 +186,7 @@ class Aton(QtGui.QDialog):
 			i.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
 
 		self.renderRegionRSpinBox.setValue(self.getSceneOptions()["width"])
-		self.renderRegionTSpinBox.setValue(int(self.getSceneOptions()["height"]))
+		self.renderRegionTSpinBox.setValue(self.getSceneOptions()["height"])
 
 
 		ignoreLayout = QtGui.QHBoxLayout()
