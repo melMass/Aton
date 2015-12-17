@@ -38,8 +38,6 @@ const int aton_default_port = 9201;
 // our listener method
 static void atonListen(unsigned index, unsigned nthreads, void* data);
 
-static void captureCmd(unsigned index, unsigned nthreads, void* data);
-
 // lightweight pixel class
 class RenderColour
 {
@@ -112,6 +110,7 @@ class Aton: public Iop
         aton::Server m_server; // our aton::Server
         bool m_inError; // some error handling
         bool m_formatExists;
+        bool m_writing; // writing signal
         std::string m_connectionError;
         bool m_legit;
 
@@ -123,6 +122,7 @@ class Aton: public Iop
             m_fmt(Format(0, 0, 1.0)),
             m_inError(false),
             m_formatExists(false),
+            m_writing(false),
             m_connectionError(""),
             m_legit(false)
         {
@@ -147,6 +147,7 @@ class Aton: public Iop
             // We don't need to see these knobs
 			knob("m_formats_knob")->hide();
             knob("port_number")->hide();
+            knob("writing_knob")->hide();
         
 			// Running python code to check if we've already our format in the script
 			script_command("bool([i.name() for i in nuke.formats() if i.name()=='Aton'])");
@@ -298,6 +299,7 @@ class Aton: public Iop
         {
             Format_knob(f, &m_fmtp, "m_formats_knob", "format");
             Int_knob(f, &m_port, "port_number", "port");
+            Bool_knob(f, &m_writing, "writing_knob", "writing");
             Newline(f);
             File_knob(f, &m_path, "path_knob", "path");
             Int_knob(f, &m_slimit, "limit_knob", "limit");
@@ -485,12 +487,15 @@ class Aton: public Iop
                 script_unlock();
                 
                 // Execute the Write node
-                cmd = (boost::format("exec('''import thread, os.path\n"
+                cmd = (boost::format("exec('''import thread\n"
                                              "def writer():\n\t"
-                                                 "nuke.executeInMainThreadWithResult(nuke.execute,"
-                                                                                    "args='%s',"
-                                                                                    "kwargs={'start':1, 'end':1})\n"
-                                              "thread.start_new_thread(writer,())''')")%writeNodeName).str();
+                                                 "def status(b): nuke.toNode('%s')['writing_knob'].setValue(b)\n\t"
+                                                 "nuke.executeInMainThread(status, args=True)\n\t"
+                                                 "nuke.executeInMainThread(nuke.execute,"
+                                                                           "args='%s',"
+                                                                           "kwargs={'start':1, 'end':1})\n\t"
+                                                 "nuke.executeInMainThread(status, args=False)\n"
+                                              "thread.start_new_thread(writer,())''')")%node_name()%writeNodeName).str();
                 script_command(cmd.c_str(), true, false);
                 script_unlock();
             }
@@ -503,7 +508,6 @@ class Aton: public Iop
             std::vector<std::string> captures = getCaptures();
             boost::filesystem::path filepath(m_path);
             boost::filesystem::path dir = filepath.parent_path();
-            
             
             if ( !captures.empty() )
             {
@@ -526,7 +530,6 @@ class Aton: public Iop
                                                                                 %str_path ).str();
                 script_command(cmd.c_str(), true, false);
                 script_unlock();
-                
             }
             
         }
@@ -572,7 +575,6 @@ class Aton: public Iop
         static const Iop::Description desc;
 };
 //=====
-
 //=====
 // @brief our listening thread method
 static void atonListen(unsigned index, unsigned nthreads, void* data)
@@ -668,7 +670,10 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
 
                     // release lock
                     node->m_mutex.unlock();
-
+                    
+                    // Skip while capturing
+                    if (node->m_writing) continue;
+                    
                     // update the image
                     node->flagForUpdate();
                     break;
