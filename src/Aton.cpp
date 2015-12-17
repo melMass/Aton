@@ -6,6 +6,7 @@
 
 #include <time.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <cstdio>
 #include <vector>
 #include <string>
@@ -28,6 +29,9 @@ using namespace DD::Image;
 
 // class name
 static const char* const CLASS = "Aton";
+
+// version
+static const char* const VERSION = "1.0.0b";
 
 // help
 static const char* const HELP =
@@ -119,7 +123,7 @@ class Aton: public Iop
         Aton(Node* node) :
             Iop(node),
             m_port(aton_default_port),
-            m_path(setDefaultPath(getTmpPath())),
+            m_path(getPath()),
             m_slimit(20),
             m_fmt(Format(0, 0, 1.0)),
             m_inError(false),
@@ -304,11 +308,12 @@ class Aton: public Iop
             Bool_knob(f, &m_capturing, "writing_knob", "writing");
             Newline(f);
             File_knob(f, &m_path, "path_knob", "path");
-            Int_knob(f, &m_slimit, "limit_knob", "limit");
+            Int_knob(f, &m_slimit, "limit_knob", "limt");
             Button(f, "capture_knob", "Capture");
             Button(f, "import_latest_knob", "Import latest");
             Button(f, "import_all_knob", "Import all");
-            
+            Divider(f);
+            Text_knob(f, (boost::format("ver%s")%VERSION).str().c_str() );
         }
 
         int knob_changed(Knob* knob)
@@ -336,29 +341,34 @@ class Aton: public Iop
             return 0;
         }
     
-        std::string getTmpPath()
+        char * getPath()
         {
-            // Get OS specific tmp directory path
-            std::string tmp_path = boost::filesystem::temp_directory_path().string();
-            boost::replace_all(tmp_path, "\\", "/");
-            return tmp_path;
-        }
-    
-        char * setDefaultPath(std::string tmp_path)
-        {
+            char * aton_path;
+            std::string def_path;
             
-            // Create a default path for the Write node
-            boost::filesystem::path dir = tmp_path;
+            aton_path = getenv("ATON_CAPTURE_PATH");
+            
+            if (aton_path == NULL)
+            {
+                // Get OS specific tmp directory path
+                def_path = boost::filesystem::temp_directory_path().string();
+            }
+            else def_path = aton_path;
+            
+            boost::replace_all(def_path, "\\", "/");
+            
+            // Construct the full path for Write node
+            boost::filesystem::path dir = def_path;
             boost::filesystem::path file = "Aton.exr";
             boost::filesystem::path fullPath = dir / file;
             
             std::string str_path = fullPath.string();
             boost::replace_all(str_path, "\\", "/");
             
-            char * path = new char[str_path.length()+1];
-            strcpy(path, str_path.c_str());
+            char * full_path = new char[str_path.length()+1];
+            strcpy(full_path, str_path.c_str());
             
-            return path;
+            return full_path;
         }
     
         std::string getDateTime()
@@ -460,8 +470,7 @@ class Aton: public Iop
                 }
             }
         }
-    
-    
+
         void captureCmd()
         {
             if  (m_slimit != 0)
