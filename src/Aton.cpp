@@ -153,7 +153,7 @@ class Aton: public Iop
             // We don't need to see these knobs
 			knob("m_formats_knob")->hide();
             knob("port_number")->hide();
-            knob("writing_knob")->hide();
+            knob("capturing_knob")->hide();
         
 			// Running python code to check if we've already our format in the script
 			script_command("bool([i.name() for i in nuke.formats() if i.name()=='Aton'])");
@@ -305,7 +305,7 @@ class Aton: public Iop
         {
             Format_knob(f, &m_fmtp, "m_formats_knob", "format");
             Int_knob(f, &m_port, "port_number", "port");
-            Bool_knob(f, &m_capturing, "capture_knob", "capture");
+            Bool_knob(f, &m_capturing, "capturing_knob");
             Newline(f);
             File_knob(f, &m_path, "path_knob", "path");
             Int_knob(f, &m_slimit, "limit_knob", "limit");
@@ -512,7 +512,7 @@ class Aton: public Iop
                 // Execute the Write node
                 cmd = (boost::format("exec('''import thread\n"
                                              "def writer():\n\t"
-                                                 "def status(b): nuke.toNode('%s')['writing_knob'].setValue(b)\n\t"
+                                                 "def status(b): nuke.toNode('%s')['capturing_knob'].setValue(b)\n\t"
                                                  "nuke.executeInMainThread(status, args=True)\n\t"
                                                  "nuke.executeInMainThread(nuke.execute,"
                                                                            "args='%s',"
