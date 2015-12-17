@@ -6,6 +6,7 @@
 
 #include <time.h>
 #include <stdio.h>
+#include <cstdio>
 #include <vector>
 #include <string>
 #include <sstream>
@@ -110,7 +111,8 @@ class Aton: public Iop
         aton::Server m_server; // our aton::Server
         bool m_inError; // some error handling
         bool m_formatExists;
-        bool m_writing; // writing signal
+        bool m_capturing; // capturing signal
+        std::vector<std::string> garbageList;
         std::string m_connectionError;
         bool m_legit;
 
@@ -122,7 +124,7 @@ class Aton: public Iop
             m_fmt(Format(0, 0, 1.0)),
             m_inError(false),
             m_formatExists(false),
-            m_writing(false),
+            m_capturing(false),
             m_connectionError(""),
             m_legit(false)
         {
@@ -299,7 +301,7 @@ class Aton: public Iop
         {
             Format_knob(f, &m_fmtp, "m_formats_knob", "format");
             Int_knob(f, &m_port, "port_number", "port");
-            Bool_knob(f, &m_writing, "writing_knob", "writing");
+            Bool_knob(f, &m_capturing, "writing_knob", "writing");
             Newline(f);
             File_knob(f, &m_path, "path_knob", "path");
             Int_knob(f, &m_slimit, "limit_knob", "limit");
@@ -410,6 +412,18 @@ class Aton: public Iop
     
         void cleanByLimit()
         {
+            if ( !garbageList.empty() )
+            {
+                // in windows sometimes files can't be deleted due to lack of
+                // access so we collecting a garbage list and trying to remove
+                // them next time when user make a capture
+                for(std::vector<std::string>::iterator it = garbageList.begin();
+                    it != garbageList.end(); ++it)
+                {
+                    std::remove(it->c_str());
+                }
+            }
+            
             int count = 0;
             std::vector<std::string> captures = getCaptures();
             boost::filesystem::path filepath(m_path);
@@ -431,8 +445,8 @@ class Aton: public Iop
                     // Remove the file if it's out of limit
                     if (count >= m_slimit)
                     {
-                        if(boost::filesystem::exists(str_path))
-                            boost::filesystem::remove(str_path);
+                        if (std::remove(str_path.c_str()) != 0)
+                            garbageList.push_back(str_path);
                         
                         std::string cmd; // Our python command buffer
                         
@@ -672,7 +686,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     node->m_mutex.unlock();
                     
                     // Skip while capturing
-                    if (node->m_writing) continue;
+                    if (node->m_capturing) continue;
                     
                     // update the image
                     node->flagForUpdate();
