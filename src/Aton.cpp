@@ -305,10 +305,10 @@ class Aton: public Iop
         {
             Format_knob(f, &m_fmtp, "m_formats_knob", "format");
             Int_knob(f, &m_port, "port_number", "port");
-            Bool_knob(f, &m_capturing, "writing_knob", "writing");
+            Bool_knob(f, &m_capturing, "capture_knob", "capture");
             Newline(f);
             File_knob(f, &m_path, "path_knob", "path");
-            Int_knob(f, &m_slimit, "limit_knob", "limt");
+            Int_knob(f, &m_slimit, "limit_knob", "limit");
             Button(f, "capture_knob", "Capture");
             Button(f, "import_latest_knob", "Import latest");
             Button(f, "import_all_knob", "Import all");
