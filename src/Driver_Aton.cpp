@@ -73,28 +73,34 @@ driver_extension
 driver_open
 {
 
-   ShaderData *data = (ShaderData*)AiDriverGetLocalData(node);
+    ShaderData *data = (ShaderData*)AiDriverGetLocalData(node);
 
-   const char* host = AiNodeGetStr(node, "host");
-   int  port = AiNodeGetInt(node, "port");
-   int width = display_window.maxx - display_window.minx +1;
-   int height = display_window.maxy - display_window.miny +1;
-   // now we can connect to the server and start rendering
-   try
-   {
+    const char* host = AiNodeGetStr(node, "host");
+    int port = AiNodeGetInt(node, "port");
+    int width = display_window.maxx - display_window.minx +1;
+    int height = display_window.maxy - display_window.miny +1;
+
+    int rWidth = data_window.maxx - data_window.minx +1;
+    int rHeight = data_window.maxy - data_window.miny +1;
+    
+    int rArea = rWidth * rHeight;
+
+    // now we can connect to the server and start rendering
+    try
+    {
        // create a new aton object
        data->client = new aton::Client( host, port );
 
        // make image header & send to server
-       aton::Data header( 0, 0, width, height, 4 );
+       aton::Data header( 0, 0, width, height, 4, 0, 0, rArea );
        data->client->openImage( header );
-   }
-   catch (const std::exception &e)
-   {
-		const char *err = e.what();
-		AiMsgError("Aton display driver", "%s", err);
+    }
+    catch (const std::exception &e)
+    {
+        const char *err = e.what();
+        AiMsgError("Aton display driver", "%s", err);
 
-   }
+    }
 
 
 //   data->nchannels = 0;
@@ -153,7 +159,7 @@ driver_write_bucket
        // create our data object
        aton::Data packet(bucket_xo, bucket_yo,
                                   bucket_size_x, bucket_size_y,
-                                  4, ram, time, ptr);
+                                  4, ram, time, 0, ptr);
 
        // send it to the server
        data->client->sendPixels(packet);

@@ -710,8 +710,9 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     }
                     
                     // get image area to help calculate the progress percentage
-                    imageArea = d.width()*d.height();
-                    
+                    if (d.width()*d.height() == d.rArea())
+                        imageArea = d.width()*d.height();
+                    else imageArea = d.rArea();
                     // automatically set the knob to the right format
                     node->knob("formats_knob")->set_text("Aton");
                     break;
@@ -754,8 +755,6 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     node->m_mutex.unlock();
                     
                     // setting status parameters,
-                    // note that the progress is calcualated thrugh bucket areas,
-                    // so the render region, will never reach 100% for now.
                     node->stat.progress = progress;
                     node->stat.ram = _ram;
                     node->stat.time = _time;

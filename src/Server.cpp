@@ -110,14 +110,16 @@ Data Server::listen()
                 boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&image_id), sizeof(int) ) );
 
                 // get width & height
-                int width, height;
+                int width, height, rArea;
                 boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&width), sizeof(int)) );
                 boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&height), sizeof(int)) );
+                boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&rArea), sizeof(int)) );
 
                 // create data object
                 d.mType = key;
                 d.mWidth = width;
                 d.mHeight = height;
+                d.mRArea = rArea;
                 break;
             }
             case 1: // image data
@@ -136,6 +138,7 @@ Data Server::listen()
                 boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&d.mSpp), sizeof(int)) );
                 boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&d.mRam), sizeof(long long)) );
                 boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&d.mTime), sizeof(int)) );
+                boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&d.mRArea), sizeof(int)) );
 
                 // get pixels
                 int num_samples = d.width() * d.height() * d.spp();
