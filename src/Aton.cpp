@@ -17,14 +17,18 @@
 #include "DDImage/Thread.h"
 #include "DDImage/Knobs.h"
 #include "DDImage/DDMath.h"
+#include "DDimage/ArrayKnobI.h"
+
 using namespace DD::Image;
 
 #include "Data.h"
 #include "Server.h"
+
 #include "boost/format.hpp"
 #include "boost/foreach.hpp"
 #include "boost/regex.hpp"
 #include "boost/filesystem.hpp"
+#include "boost/lexical_cast.hpp"
 #include "boost/algorithm/string.hpp"
 
 // class name
@@ -99,7 +103,14 @@ class RenderBuffer
         unsigned int _width;
         unsigned int _height;
 };
-
+// status bar parameters
+struct status
+{
+    unsigned int progress;
+    unsigned long long ram;
+    unsigned int time;
+	status():progress(0),ram(0),time(0) { }
+};
 // our nuke node
 class Aton: public Iop
 {
@@ -108,6 +119,8 @@ class Aton: public Iop
         Format m_fmt; // The nuke display format
         int m_port; // the port we're listening on (knob)
         const char * m_path; // default path for Write node
+        std::string m_status; // status bar text
+        status stat; // object to hold status bar parameters
         int m_slimit; // The limit size
         RenderBuffer m_buffer; // our pixel buffer
         Lock m_mutex; // mutex for locking the pixel buffer
@@ -119,11 +132,12 @@ class Aton: public Iop
         std::vector<std::string> garbageList;
         std::string m_connectionError;
         bool m_legit;
-
+    
         Aton(Node* node) :
             Iop(node),
             m_port(aton_default_port),
             m_path(getPath()),
+            m_status(status()),
             m_slimit(20),
             m_fmt(Format(0, 0, 1.0)),
             m_inError(false),
@@ -134,7 +148,7 @@ class Aton: public Iop
         {
             inputs(0);
         }
-
+    
         ~Aton()
         {
             disconnect();
@@ -151,10 +165,10 @@ class Aton: public Iop
 			m_legit = true;
             
             // We don't need to see these knobs
-			knob("m_formats_knob")->hide();
+			knob("formats_knob")->hide();
             knob("port_number")->hide();
             knob("capturing_knob")->hide();
-        
+
 			// Running python code to check if we've already our format in the script
 			script_command("bool([i.name() for i in nuke.formats() if i.name()=='Aton'])");
             std::string result = script_result();
@@ -240,7 +254,7 @@ class Aton: public Iop
             // do we need to open a port?
             if ( m_server.isConnected()==false && !m_inError && m_legit )
                 changePort(m_port);
-
+                status(stat.progress, stat.ram, stat.time);
             // handle any connection error
             if ( m_inError )
                 error(m_connectionError.c_str());
@@ -303,12 +317,17 @@ class Aton: public Iop
 
         void knobs(Knob_Callback f)
         {
-            Format_knob(f, &m_fmtp, "m_formats_knob", "format");
+            Format_knob(f, &m_fmtp, "formats_knob", "format");
             Int_knob(f, &m_port, "port_number", "port");
             Bool_knob(f, &m_capturing, "capturing_knob");
             Newline(f);
             File_knob(f, &m_path, "path_knob", "path");
             Int_knob(f, &m_slimit, "limit_knob", "limit");
+            // This will show up in the viewer
+            BeginToolbar(f, "status_bar");
+            Knob * statusKnob = String_knob(f, &m_status, "status_knob", "");
+            statusKnob->set_flag(Knob::DISABLED, true);
+            EndToolbar(f);
             Button(f, "capture_knob", "Capture");
             Button(f, "import_latest_knob", "Import latest");
             Button(f, "import_all_knob", "Import all");
@@ -592,6 +611,34 @@ class Aton: public Iop
             }
         }
 
+        std::string status(int progress=0, long long ram=0, int time=0)
+        {
+            static int percentage = 0;
+            static std::string str_status = "Progress: 0% "
+                                            "Memory: 0MB "
+                                            "Time: 00h:00m:00s";
+            if (percentage != progress && !(progress==0 &&
+                                            ram==0 &&
+                                            time==0))
+            {
+                percentage = progress;
+                ram /= 1024*1024;
+                
+                int hour = time / (1000*60*60);
+                int minute = (time % (1000*60*60)) / (1000*60);
+                int second = ((time % (1000*60*60)) % (1000*60)) / 1000;
+                
+                std::string str_status = (boost::format("Progress: %03i%% "
+                                                        "Memory: %sMB "
+                                                        "Time: %02ih:%02im:%02is")%progress%ram
+                                                                                  %hour%minute
+                                                                                  %second).str();
+                knob("status_knob")->set_text(str_status.c_str());
+            }
+ 
+            return str_status;
+        }
+
         const char* Class() const { return CLASS; }
         const char* displayName() const { return CLASS; }
         const char* node_help() const { return HELP; }
@@ -612,6 +659,10 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
 
         // our incoming data object
         aton::Data d;
+        
+        // for progress percentage
+        unsigned int imageArea = 0;
+        unsigned int progress = 0;
 
         // loop over incoming data
         while ((d.type()==2||d.type()==9)==false)
@@ -635,7 +686,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     node->m_buffer.init(d.width(), d.height());
                     node->m_mutex.unlock();
 					
-					// Set the nuke display format
+					// set the nuke display format
                     if (node->m_formatExists == false)
                     {
                         node->m_fmt.set(0, 0, d.width(), d.height());
@@ -644,7 +695,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     }
                     else
                     {
-                        // If the format is already exist
+                        // if the format is already exist
                         // we need to get its pointer
                         Format *m_fmt_exist = nullptr;
                         for (int i=0; i < Format::size(); i++)
@@ -656,10 +707,13 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         m_fmt_exist->set(0, 0, d.width(), d.height());
                         m_fmt_exist->width(d.width());
                         m_fmt_exist->height(d.height());
-
                     }
-                    // Automatically set the knob to the right format
-                    node->knob("m_formats_knob")->set_text("Aton");
+                    
+                    // get image area to help calculate the progress percentage
+                    imageArea = d.width()*d.height();
+                    
+                    // automatically set the knob to the right format
+                    node->knob("formats_knob")->set_text("Aton");
                     break;
                 }
                 case 1: // image data
@@ -679,13 +733,18 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     int _width = d.width();
                     int _height = d.height();
                     int _spp = d.spp();
-
+                    long long _ram = d.ram();
+                    int _time = d.time();
+                    
+                    // calculating the progress percentage
+                    imageArea -= (_width*_height);
+                    progress = 100 - (imageArea*100) / (_w * _h);
+                    
                     const float* pixel_data = d.pixels();
                     for (_x = 0; _x < _width; ++_x)
                         for (_y = 0; _y < _height; ++_y)
                         {
-                            RenderColour &pix = node->m_buffer.get(_x
-                                    + _xorigin, _h - (_y + _yorigin + 1));
+                            RenderColour &pix = node->m_buffer.get(_x+ _xorigin, _h - (_y + _yorigin + 1));
                             offset = (_width * _y * _spp) + (_x * _spp);
                             for (_s = 0; _s < _spp; ++_s)
                                 pix[_s] = pixel_data[offset+_s];
@@ -694,20 +753,25 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     // release lock
                     node->m_mutex.unlock();
                     
-                    // Skip while capturing
+                    // setting status parameters,
+                    // note that the progress is calcualated thrugh bucket areas,
+                    // so the render region, will never reach 100% for now.
+                    node->stat.progress = progress;
+                    node->stat.ram = _ram;
+                    node->stat.time = _time;
+                    
+                    // skip while capturing
                     if (node->m_capturing) continue;
                     
                     // update the image
                     node->flagForUpdate();
+                    
                     break;
                 }
                 case 2: // close image
                 {
                     // update the image
                     node->flagForUpdate();
-
-					// Debug image finished
-					//std::cout << "Finish image" << std::endl;
                     break;
                 }
                 case 9: // this is sent when the parent process want to kill

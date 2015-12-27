@@ -12,13 +12,15 @@ using namespace aton;
 
 Data::Data( int x, int y, 
             int width, int height, 
-            int spp, const float *data ) :
+            int spp, long long ram, int time, const float *data ) :
     mType(-1),
     mX(x),
     mY(y),
     mWidth(width),
     mHeight(height),
-    mSpp(spp)
+    mSpp(spp),
+    mRam(ram),
+    mTime(time)
 {
     if ( data!=0 )
         mpData = const_cast<float*>(data);

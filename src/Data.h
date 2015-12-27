@@ -32,7 +32,7 @@ namespace aton
         //! Constructor
         Data( int x=0, int y=0,
               int width=0, int height=0,
-              int spp=0, const float *data=0 );
+              int spp=0, long long ram=0, int time=0, const float *data=0 );
         //! Destructor
         ~Data();
         
@@ -54,6 +54,10 @@ namespace aton
         int height() const { return mHeight; }
         //! Samples-per-pixel, aka channel depth
         int spp() const { return mSpp; }
+        //! Taken memory while rendering
+        long long ram() const { return mRam; }
+        //! Taken time while rendering
+        int time() const { return mTime; }
         //! Pointer to pixel data owned by the display driver (client-side)
         const float *data() const { return mpData; }
         //! Pointer to pixel data owned by this object (server-side)
@@ -67,7 +71,9 @@ namespace aton
         int mX, mY; 
         
         // width, height, num channels (samples)
-        unsigned int mWidth, mHeight, mSpp;
+        unsigned int mWidth, mHeight, mSpp, mTime;
+        
+        unsigned long long mRam;
 
         // our pixel data pointer (for driver-owned pixels)
         float *mpData; 

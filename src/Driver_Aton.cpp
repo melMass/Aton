@@ -147,11 +147,13 @@ driver_write_bucket
    while (AiOutputIteratorGetNext(iterator, &aov_name, &pixel_type, &bucket_data))
    {
        const float *ptr = reinterpret_cast<const float*> (bucket_data);
-
+       unsigned long long ram = AiMsgUtilGetUsedMemory();
+       unsigned int time = AiMsgUtilGetElapsedTime();
+       
        // create our data object
        aton::Data packet(bucket_xo, bucket_yo,
                                   bucket_size_x, bucket_size_y,
-                                  4, ptr);
+                                  4, ram, time, ptr);
 
        // send it to the server
        data->client->sendPixels(packet);
