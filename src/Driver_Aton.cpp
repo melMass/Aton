@@ -92,7 +92,7 @@ driver_open
        data->client = new aton::Client( host, port );
 
        // make image header & send to server
-       aton::Data header( 0, 0, width, height, 4, 0, 0, rArea );
+       aton::Data header( 0, 0, width, height, rArea );
        data->client->openImage( header );
     }
     catch (const std::exception &e)
@@ -159,7 +159,7 @@ driver_write_bucket
        // create our data object
        aton::Data packet(bucket_xo, bucket_yo,
                                   bucket_size_x, bucket_size_y,
-                                  4, ram, time, 0, ptr);
+                                  0, 4, ram, time, ptr);
 
        // send it to the server
        data->client->sendPixels(packet);

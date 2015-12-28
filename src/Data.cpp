@@ -11,17 +11,18 @@
 using namespace aton;
 
 Data::Data( int x, int y, 
-            int width, int height, 
-            int spp, long long ram, int time, int rArea, const float *data ) :
+            int width, int height, int rArea,
+            int spp, long long ram, int time, const float *data ) :
     mType(-1),
     mX(x),
     mY(y),
     mWidth(width),
     mHeight(height),
+    mRArea(rArea),
     mSpp(spp),
     mRam(ram),
-    mTime(time),
-    mRArea(rArea)
+    mTime(time)
+
 {
     if ( data!=0 )
         mpData = const_cast<float*>(data);

@@ -135,10 +135,10 @@ Data Server::listen()
                 boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&d.mY), sizeof(int)) );
                 boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&d.mWidth), sizeof(int)) );
                 boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&d.mHeight), sizeof(int)) );
+                boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&d.mRArea), sizeof(int)) );
                 boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&d.mSpp), sizeof(int)) );
                 boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&d.mRam), sizeof(long long)) );
                 boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&d.mTime), sizeof(int)) );
-                boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&d.mRArea), sizeof(int)) );
 
                 // get pixels
                 int num_samples = d.width() * d.height() * d.spp();

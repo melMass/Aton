@@ -83,10 +83,10 @@ void Client::sendPixels( Data &data )
 	boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&data.mY), sizeof(int)) );
 	boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&data.mWidth), sizeof(int)) );
 	boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&data.mHeight), sizeof(int)) );
+    boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&data.mRArea), sizeof(int)) );
 	boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&data.mSpp), sizeof(int)) );
     boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&data.mRam), sizeof(long long)) );
     boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&data.mTime), sizeof(int)) );
-    boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&data.mRArea), sizeof(int)) );
 	boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&data.mpData[0]), sizeof(float)*num_samples) );
 }
 
