@@ -332,17 +332,22 @@ class Aton: public Iop
             Bool_knob(f, &m_capturing, "capturing_knob");
             
             Newline(f);
-            File_knob(f, &m_path, "path_knob", "path");
             Int_knob(f, &m_slimit, "limit_knob", "limit");
-            
+            Spacer(f, 1000);
+            Help_knob(f, (boost::format("Aton ver%s")%VERSION).str().c_str());
+            File_knob(f, &m_path, "path_knob", "path");
+
             Newline(f);
             Bool_knob(f, &m_stamp, "use_stamp_knob", "Use stamp");
-            Int_knob(f, &m_stamp_size, "stamp_size_knob", "size");
-            
+            Spacer(f, 10);
+            Knob * stamp_size = Int_knob(f, &m_stamp_size, "stamp_size_knob", "size");
+            stamp_size->clear_flag(Knob::STARTLINE);
+
             // This will show up in the viewer as status bar
             BeginToolbar(f, "status_bar");
             Knob * statusKnob = String_knob(f, &m_status, "status_knob", "");
             statusKnob->set_flag(Knob::DISABLED, true);
+            statusKnob->set_flag(Knob::OUTPUT_ONLY, true);
             EndToolbar(f);
             
             String_knob(f, &m_comment, "comment_knob", "comment");
@@ -350,9 +355,6 @@ class Aton: public Iop
             Button(f, "capture_knob", "Capture");
             Button(f, "import_latest_knob", "Import latest");
             Button(f, "import_all_knob", "Import all");
-            
-            Spacer(f, 1000);
-            Help_knob(f, (boost::format("Aton ver%s")%VERSION).str().c_str());
         }
 
         int knob_changed(Knob* _knob)
