@@ -108,8 +108,9 @@ struct status
 {
     unsigned int progress;
     unsigned long long ram;
+    unsigned long long p_ram;
     unsigned int time;
-	status():progress(0),ram(0),time(0) { }
+	status(): progress(0), ram(0), p_ram(0), time(0) {}
 };
 // our nuke node
 class Aton: public Iop
@@ -121,6 +122,8 @@ class Aton: public Iop
         const char * m_path; // default path for Write node
         std::string m_status; // status bar text
         status stat; // object to hold status bar parameters
+        const char * m_comment;
+        bool m_stamp;
         int m_slimit; // The limit size
         RenderBuffer m_buffer; // our pixel buffer
         Lock m_mutex; // mutex for locking the pixel buffer
@@ -137,7 +140,12 @@ class Aton: public Iop
             Iop(node),
             m_port(aton_default_port),
             m_path(getPath()),
-            m_status(status()),
+            m_status("Progress: 0%  "
+                     "Used Memory: 0MB  "
+                     "Peak Memory: 0MB  "
+                     "Time: 00h:00m:00s"),
+            m_comment(""),
+            m_stamp(true),
             m_slimit(20),
             m_fmt(Format(0, 0, 1.0)),
             m_inError(false),
@@ -254,7 +262,7 @@ class Aton: public Iop
             // do we need to open a port?
             if ( m_server.isConnected()==false && !m_inError && m_legit )
                 changePort(m_port);
-                status(stat.progress, stat.ram, stat.time);
+                status(stat.progress, stat.ram, stat.p_ram, stat.time);
             // handle any connection error
             if ( m_inError )
                 error(m_connectionError.c_str());
@@ -323,16 +331,22 @@ class Aton: public Iop
             Newline(f);
             File_knob(f, &m_path, "path_knob", "path");
             Int_knob(f, &m_slimit, "limit_knob", "limit");
-            // This will show up in the viewer
+            Bool_knob(f, &m_stamp, "Use stamp");
+            
+            // This will show up in the viewer as status bar
             BeginToolbar(f, "status_bar");
             Knob * statusKnob = String_knob(f, &m_status, "status_knob", "");
             statusKnob->set_flag(Knob::DISABLED, true);
             EndToolbar(f);
+            
+            String_knob(f, &m_comment, "coments_knob", "comment");
+            Newline(f);
             Button(f, "capture_knob", "Capture");
             Button(f, "import_latest_knob", "Import latest");
             Button(f, "import_all_knob", "Import all");
-            Divider(f);
-            Text_knob(f, (boost::format("ver%s")%VERSION).str().c_str() );
+            Spacer(f, 1000);
+            Knob * help = Help_knob(f, (boost::format("Aton ver%s")%VERSION).str().c_str());
+            help->set_flag(Knob::TOOLBAR_RIGHT, true);
         }
 
         int knob_changed(Knob* knob)
@@ -518,15 +532,44 @@ class Aton: public Iop
                                                                                      %writeNodeName).str();
                 script_command(cmd.c_str(), true, false);
                 script_unlock();
-                
-                // Adding after render script to create a Read node and remove the Write node
-                cmd = (boost::format("nuke.toNode('%s')['afterRender']."
-                                     "setValue( '''nuke.nodes.Read(file='%s');"
-                                     "nuke.delete(nuke.toNode('%s'))''' )")%writeNodeName
-                                                                           %path.c_str()
-                                                                           %writeNodeName ).str();
-                script_command(cmd.c_str(), true, false);
-                script_unlock();
+
+                // Add text node in between to put a stamp on the capture
+                if (m_stamp)
+                {
+                    // Adding after render script to create a Read node and remove the Write and Text nodes
+                    cmd = (boost::format("nuke.toNode('%s')['afterRender']."
+                                         "setValue( '''nuke.nodes.Read(file='%s');"
+                                         "nuke.delete(nuke.toNode('%s').input(0));"
+                                         "nuke.delete(nuke.toNode('%s'))''' )")%writeNodeName
+                                                                               %path.c_str()
+                                                                               %writeNodeName
+                                                                               %writeNodeName).str();
+                    script_command(cmd.c_str(), true, false);
+                    script_unlock();
+                    
+                    std::string str_status = status(stat.progress, stat.ram, stat.p_ram, stat.time);
+                    
+                    cmd = (boost::format("exec('''stamp = nuke.nodes.Text(message='%s  Comment: %s',"
+                                                                         "yjustify='bottom', size=15)\n"
+                                                 "stamp['font'].setValue(nuke.defaultFontPathname())\n"
+                                                 "stamp.setInput(0, nuke.toNode('%s'))\n"
+                                                 "nuke.toNode('%s').setInput(0, stamp)''')")%str_status%m_comment
+                                                                                            %node_name()
+                                                                                            %writeNodeName ).str();
+                    script_command(cmd.c_str(), true, false);
+                    script_unlock();
+                }
+                else
+                {
+                    // Adding after render script to create a Read node and remove the Write node
+                    cmd = (boost::format("nuke.toNode('%s')['afterRender']."
+                                         "setValue( '''nuke.nodes.Read(file='%s');"
+                                         "nuke.delete(nuke.toNode('%s'))''' )")%writeNodeName
+                                                                               %path.c_str()
+                                                                               %writeNodeName).str();
+                    script_command(cmd.c_str(), true, false);
+                    script_unlock();
+                }
                 
                 // Execute the Write node
                 cmd = (boost::format("exec('''import thread\n"
@@ -541,7 +584,6 @@ class Aton: public Iop
                 script_command(cmd.c_str(), true, false);
                 script_unlock();
             }
-            
             cleanByLimit();
         }
     
@@ -611,30 +653,22 @@ class Aton: public Iop
             }
         }
 
-        std::string status(int progress=0, long long ram=0, int time=0)
+        std::string status(int progress=0, long long ram=0, long long p_ram=0, int time=0)
         {
-            static int percentage = 0;
-            static std::string str_status = "Progress: 0% "
-                                            "Memory: 0MB "
-                                            "Time: 00h:00m:00s";
-            if (percentage != progress && !(progress==0 &&
-                                            ram==0 &&
-                                            time==0))
-            {
-                percentage = progress;
-                ram /= 1024*1024;
-                
-                int hour = time / (1000*60*60);
-                int minute = (time % (1000*60*60)) / (1000*60);
-                int second = ((time % (1000*60*60)) % (1000*60)) / 1000;
-                
-                std::string str_status = (boost::format("Progress: %03i%% "
-                                                        "Memory: %sMB "
-                                                        "Time: %02ih:%02im:%02is")%progress%ram
-                                                                                  %hour%minute
-                                                                                  %second).str();
-                knob("status_knob")->set_text(str_status.c_str());
-            }
+            ram /= 1024*1024;
+            p_ram /= 1024*1024;
+            
+            int hour = time / (1000*60*60);
+            int minute = (time % (1000*60*60)) / (1000*60);
+            int second = ((time % (1000*60*60)) % (1000*60)) / 1000;
+            
+            std::string str_status = (boost::format("Progress: %s%%  "
+                                                    "Used Memory: %sMB  "
+                                                    "Peak Memory: %sMB  "
+                                                    "Time: %02ih:%02im:%02is")%progress%ram%p_ram
+                                                                              %hour%minute
+                                                                              %second).str();
+            knob("status_knob")->set_text(str_status.c_str());
  
             return str_status;
         }
@@ -757,6 +791,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     // setting status parameters,
                     node->stat.progress = progress;
                     node->stat.ram = _ram;
+                    node->stat.p_ram = _ram > node->stat.p_ram ? _ram : node->stat.p_ram;
                     node->stat.time = _time;
                     
                     // skip while capturing
