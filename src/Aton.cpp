@@ -124,6 +124,7 @@ class Aton: public Iop
         status stat; // object to hold status bar parameters
         const char * m_comment;
         bool m_stamp;
+        int m_stamp_size;
         int m_slimit; // The limit size
         RenderBuffer m_buffer; // our pixel buffer
         Lock m_mutex; // mutex for locking the pixel buffer
@@ -146,6 +147,7 @@ class Aton: public Iop
                      "Time: 00h:00m:00s"),
             m_comment(""),
             m_stamp(true),
+            m_stamp_size(15),
             m_slimit(20),
             m_fmt(Format(0, 0, 1.0)),
             m_inError(false),
@@ -328,10 +330,14 @@ class Aton: public Iop
             Format_knob(f, &m_fmtp, "formats_knob", "format");
             Int_knob(f, &m_port, "port_number", "port");
             Bool_knob(f, &m_capturing, "capturing_knob");
+            
             Newline(f);
             File_knob(f, &m_path, "path_knob", "path");
             Int_knob(f, &m_slimit, "limit_knob", "limit");
-            Bool_knob(f, &m_stamp, "Use stamp");
+            
+            Newline(f);
+            Bool_knob(f, &m_stamp, "use_stamp_knob", "Use stamp");
+            Int_knob(f, &m_stamp_size, "stamp_size_knob", "size");
             
             // This will show up in the viewer as status bar
             BeginToolbar(f, "status_bar");
@@ -339,34 +345,50 @@ class Aton: public Iop
             statusKnob->set_flag(Knob::DISABLED, true);
             EndToolbar(f);
             
-            String_knob(f, &m_comment, "coments_knob", "comment");
+            String_knob(f, &m_comment, "comment_knob", "comment");
             Newline(f);
             Button(f, "capture_knob", "Capture");
             Button(f, "import_latest_knob", "Import latest");
             Button(f, "import_all_knob", "Import all");
+            
             Spacer(f, 1000);
-            Knob * help = Help_knob(f, (boost::format("Aton ver%s")%VERSION).str().c_str());
-            help->set_flag(Knob::TOOLBAR_RIGHT, true);
+            Help_knob(f, (boost::format("Aton ver%s")%VERSION).str().c_str());
         }
 
-        int knob_changed(Knob* knob)
+        int knob_changed(Knob* _knob)
         {
-			if (knob->is("port_number"))
+			if (_knob->is("port_number"))
             {
                 changePort(m_port);
                 return 1;
             }
-            if (knob->is("capture_knob"))
+            if (_knob->is("capture_knob"))
             {
                 captureCmd();
                 return 1;
             }
-            if (knob->is("import_latest_knob"))
+            
+            if (_knob->is("use_stamp_knob"))
+            {
+                if(!m_stamp)
+                {
+                    knob("stamp_size_knob")->enable(false);
+                    knob("comment_knob")->enable(false);
+                }
+                else
+                {
+                    knob("stamp_size_knob")->enable(true);
+                    knob("comment_knob")->enable(true);
+                }
+ 
+                return 1;
+            }
+            if (_knob->is("import_latest_knob"))
             {
                 importLatestCmd();
                 return 1;
             }
-            if (knob->is("import_all_knob"))
+            if (_knob->is("import_all_knob"))
             {
                 importAllCmd();
                 return 1;
@@ -550,11 +572,11 @@ class Aton: public Iop
                     std::string str_status = status(stat.progress, stat.ram, stat.p_ram, stat.time);
                     
                     cmd = (boost::format("exec('''stamp = nuke.nodes.Text(message='%s  Comment: %s',"
-                                                                         "yjustify='bottom', size=15)\n"
+                                                                         "yjustify='bottom', size=%s)\n"
                                                  "stamp['font'].setValue(nuke.defaultFontPathname())\n"
                                                  "stamp.setInput(0, nuke.toNode('%s'))\n"
                                                  "nuke.toNode('%s').setInput(0, stamp)''')")%str_status%m_comment
-                                                                                            %node_name()
+                                                                                            %m_stamp_size%node_name()
                                                                                             %writeNodeName ).str();
                     script_command(cmd.c_str(), true, false);
                     script_unlock();
