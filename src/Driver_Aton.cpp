@@ -144,26 +144,39 @@ driver_process_bucket
 
 driver_write_bucket
 {
-   ShaderData *data = (ShaderData*)AiDriverGetLocalData(node);
+    ShaderData *data = (ShaderData*)AiDriverGetLocalData(node);
 
-   int         pixel_type;
-   const void* bucket_data;
-   const char* aov_name;
+    int pixel_type;
+    int spp = 0;
+    const void* bucket_data;
+    const char* aov_name;
 
-   while (AiOutputIteratorGetNext(iterator, &aov_name, &pixel_type, &bucket_data))
-   {
-       const float *ptr = reinterpret_cast<const float*> (bucket_data);
-       unsigned long long ram = AiMsgUtilGetUsedMemory();
-       unsigned int time = AiMsgUtilGetElapsedTime();
-       
-       // create our data object
-       aton::Data packet(bucket_xo, bucket_yo,
-                                  bucket_size_x, bucket_size_y,
-                                  0, 4, ram, time, ptr);
+    while (AiOutputIteratorGetNext(iterator, &aov_name, &pixel_type, &bucket_data))
+    {
+        const float *ptr = reinterpret_cast<const float*> (bucket_data);
+        unsigned long long ram = AiMsgUtilGetUsedMemory();
+        unsigned int time = AiMsgUtilGetElapsedTime();
+        
+        switch (pixel_type)
+        {
+            case(AI_TYPE_FLOAT):
+                spp = 1;
+                break;
+            case(AI_TYPE_RGBA):
+                spp = 4;
+                break;
+            default:
+                spp = 3;
+        }
+        
+        // create our data object
+        aton::Data packet(bucket_xo, bucket_yo,
+                          bucket_size_x, bucket_size_y,
+                          0, spp, ram, time, ptr);
 
-       // send it to the server
-       data->client->sendPixels(packet);
-   }
+        // send it to the server
+        data->client->sendPixels(packet);
+    }
 }
 
 driver_close

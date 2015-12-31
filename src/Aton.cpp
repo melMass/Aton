@@ -677,7 +677,10 @@ class Aton: public Iop
             }
         }
 
-        std::string status(int progress=0, long long ram=0, long long p_ram=0, int time=0)
+        std::string status(int progress=0,
+                           unsigned long long ram=0,
+                           unsigned long long p_ram=0,
+                           unsigned int time=0)
         {
             ram /= 1024*1024;
             p_ram /= 1024*1024;
@@ -720,7 +723,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
         
         // for progress percentage
         unsigned int imageArea = 0;
-        unsigned int progress = 0;
+        int progress = 0;
 
         // loop over incoming data
         while ((d.type()==2||d.type()==9)==false)
