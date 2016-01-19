@@ -1,6 +1,6 @@
 /*
  Copyright (c) 2015,
- Dan Bethell, Johannes Saam, Brian Scherbinski, Vahan Sosoyan.
+ Dan Bethell, Johannes Saam, Vahan Sosoyan.
  All rights reserved. See Copyright.txt for more details.
  */
 
@@ -36,8 +36,6 @@ AI_DRIVER_NODE_EXPORT_METHODS(AtonDriverMtd);
 
 struct ShaderData
 {
-   //boost::thread  thread;
-   //void* thread;
    aton::Client *client;
 };
 
@@ -53,7 +51,7 @@ node_parameters
 
 node_initialize
 {
-   AiDriverInitialize(node, true, AiMalloc(sizeof(ShaderData)));
+    AiDriverInitialize(node, true, AiMalloc(sizeof(ShaderData)));
 }
 
 node_update
@@ -62,12 +60,12 @@ node_update
 
 driver_supports_pixel_type
 {
-   return true;
+    return true;
 }
 
 driver_extension
 {
-   return NULL;
+    return NULL;
 }
 
 driver_open
@@ -83,7 +81,7 @@ driver_open
     int rWidth = data_window.maxx - data_window.minx +1;
     int rHeight = data_window.maxy - data_window.miny +1;
     
-    int rArea = rWidth * rHeight;
+    long long rArea = rWidth * rHeight;
 
     // now we can connect to the server and start rendering
     try
@@ -102,29 +100,6 @@ driver_open
 
     }
 
-
-//   data->nchannels = 0;
-//   unsigned int i = 0;
-//   while (AiOutputIteratorGetNext(iterator, &aov_name, &pixel_type, NULL))
-//   {
-//      aov_list.push_back(aov_name);
-//      if (i > 0)
-//         aov_names += ",";
-//      aov_names += std::string("\"") + aov_name + "\"";
-//      switch(pixel_type)
-//      {
-//         case AI_TYPE_RGB:
-//            data->nchannels = MAX(data->nchannels, 3);
-//            break;
-//         case AI_TYPE_RGBA:
-//            data->nchannels = MAX(data->nchannels, 4);
-//            break;
-//         default:
-//            break;
-//      }
-//      i++;
-//   }
-
 }
 
 driver_needs_bucket
@@ -134,7 +109,7 @@ driver_needs_bucket
 
 driver_prepare_bucket
 {
-   AiMsgDebug("[Aton] prepare bucket (%d, %d)", bucket_xo, bucket_yo);
+    AiMsgDebug("[Aton] prepare bucket (%d, %d)", bucket_xo, bucket_yo);
 }
 
 driver_process_bucket
@@ -156,7 +131,7 @@ driver_write_bucket
         const float *ptr = reinterpret_cast<const float*> (bucket_data);
         unsigned long long ram = AiMsgUtilGetUsedMemory();
         unsigned int time = AiMsgUtilGetElapsedTime();
-        
+
         switch (pixel_type)
         {
             case(AI_TYPE_FLOAT):
@@ -172,7 +147,7 @@ driver_write_bucket
         // create our data object
         aton::Data packet(bucket_xo, bucket_yo,
                           bucket_size_x, bucket_size_y,
-                          0, spp, ram, time, ptr);
+                          0, spp, ram, time, aov_name, ptr);
 
         // send it to the server
         data->client->sendPixels(packet);
@@ -181,46 +156,46 @@ driver_write_bucket
 
 driver_close
 {
-   AiMsgInfo("[Aton] driver close");
+    AiMsgInfo("[Aton] driver close");
 
-   ShaderData *data = (ShaderData*)AiDriverGetLocalData(node);
-   try
-   {
-		data->client->closeImage();
-   }
-   catch (const std::exception &e)
-   {
-	   AiMsgError("Error occured when trying to close connection");
-   }
+    ShaderData *data = (ShaderData*)AiDriverGetLocalData(node);
+    try
+    {
+        data->client->closeImage();
+    }
+    catch (const std::exception &e)
+    {
+        AiMsgError("Error occured when trying to close connection");
+    }
 }
 
 node_finish
 {
-   AiMsgInfo("[Aton] driver finish");
-   // release the driver
+    AiMsgInfo("[Aton] driver finish");
+    // release the driver
 
-   ShaderData *data = (ShaderData*)AiDriverGetLocalData(node);
-   delete data->client;
+    ShaderData *data = (ShaderData*)AiDriverGetLocalData(node);
+    delete data->client;
 
-   AiFree(data);
-   AiDriverDestroy(node);
+    AiFree(data);
+    AiDriverDestroy(node);
 }
 
 node_loader
 {
-   sprintf(node->version, AI_VERSION);
+    sprintf(node->version, AI_VERSION);
 
-   switch (i)
-   {
-      case 0:
-         node->methods      = (AtNodeMethods*) AtonDriverMtd;
-         node->output_type  = AI_TYPE_RGBA;
-         node->name         = "driver_aton";
-         node->node_type    = AI_NODE_DRIVER;
-         break;
-      default:
-      return false;
-   }
-   return true;
+    switch (i)
+    {
+        case 0:
+            node->methods      = (AtNodeMethods*) AtonDriverMtd;
+            node->output_type  = AI_TYPE_RGBA;
+            node->name         = "driver_aton";
+            node->node_type    = AI_NODE_DRIVER;
+            break;
+        default:
+        return false;
+    }
+    return true;
 }
 

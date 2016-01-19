@@ -1,6 +1,6 @@
 /*
  Copyright (c) 2015,
- Dan Bethell, Johannes Saam, Brian Scherbinski, Vahan Sosoyan.
+ Dan Bethell, Johannes Saam, Vahan Sosoyan.
  All rights reserved. See Copyright.txt for more details.
  */
 

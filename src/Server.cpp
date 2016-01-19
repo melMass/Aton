@@ -1,6 +1,6 @@
 /*
  Copyright (c) 2015,
- Dan Bethell, Johannes Saam, Brian Scherbinski, Vahan Sosoyan.
+ Dan Bethell, Johannes Saam, Vahan Sosoyan.
  All rights reserved. See Copyright.txt for more details.
  */
 
@@ -125,20 +125,28 @@ Data Server::listen()
             case 1: // image data
             {
                 d.mType = key;
-
+                
                 // receive image id
                 int image_id;
                 boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&image_id), sizeof(int)) );
-
+                
                 // get data info
                 boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&d.mX), sizeof(int)) );
                 boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&d.mY), sizeof(int)) );
                 boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&d.mWidth), sizeof(int)) );
                 boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&d.mHeight), sizeof(int)) );
-                boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&d.mRArea), sizeof(int)) );
+                boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&d.mRArea), sizeof(long long)) );
                 boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&d.mSpp), sizeof(int)) );
                 boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&d.mRam), sizeof(long long)) );
                 boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&d.mTime), sizeof(int)) );
+                
+                // get aov name's size
+                size_t aov_size=0;
+                boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&aov_size), sizeof(size_t)) );
+                
+                // get aov name
+                d.mAovName = new char[aov_size];
+                boost::asio::read( mSocket, boost::asio::buffer(d.mAovName, aov_size));
 
                 // get pixels
                 int num_samples = d.width() * d.height() * d.spp();

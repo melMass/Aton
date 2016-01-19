@@ -1,6 +1,6 @@
 /*
 Copyright (c) 2015,
-Dan Bethell, Johannes Saam, Brian Scherbinski, Vahan Sosoyan.
+Dan Bethell, Johannes Saam, Vahan Sosoyan.
 All rights reserved. See Copyright.txt for more details.
  */
 
@@ -76,17 +76,22 @@ void Client::sendPixels( Data &data )
 	int key = 1;
 	boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&key), sizeof(int)) );
 	boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&mImageId), sizeof(int)) );
-
+    
+    // get size of the aov name in bytes
+    size_t aov_size = strlen(data.mAovName)+1;
+    
 	// send pixel data
 	int num_samples = data.mWidth * data.mHeight * data.mSpp;
 	boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&data.mX), sizeof(int)) );
 	boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&data.mY), sizeof(int)) );
 	boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&data.mWidth), sizeof(int)) );
 	boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&data.mHeight), sizeof(int)) );
-    boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&data.mRArea), sizeof(int)) );
+    boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&data.mRArea), sizeof(long long)) );
 	boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&data.mSpp), sizeof(int)) );
     boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&data.mRam), sizeof(long long)) );
     boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&data.mTime), sizeof(int)) );
+    boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&aov_size), sizeof(size_t)) );
+    boost::asio::write( mSocket, boost::asio::buffer(data.mAovName, aov_size) );
 	boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&data.mpData[0]), sizeof(float)*num_samples) );
 }
 
