@@ -18,7 +18,6 @@
 #include "DDImage/Thread.h"
 #include "DDImage/Knobs.h"
 #include "DDImage/DDMath.h"
-#include "DDimage/ArrayKnobI.h"
 
 using namespace DD::Image;
 
