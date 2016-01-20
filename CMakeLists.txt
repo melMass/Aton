@@ -1,6 +1,6 @@
 #==========
 #
-# Copyright (c) 2010, Dan Bethell, Johannes Saam.
+# Copyright (c) 2015, Dan Bethell, Johannes Saam, Vahan Sosoyan.
 # All rights reserved.
 #
 # For license information regarding redistribution and
@@ -14,7 +14,7 @@ project( renderconnect )
 #=====
 # General
 set( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/config/cmake )
-find_package( Boost 1.40.0 COMPONENTS system REQUIRED )
+find_package( Boost 1.54.0 COMPONENTS system REQUIRED )
 find_package( Nuke REQUIRED )
 find_package( Doxygen )
 
