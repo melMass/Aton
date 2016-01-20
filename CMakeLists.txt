@@ -1,6 +1,6 @@
 #==========
 #
-# Copyright (c) 2010, Dan Bethell, Johannes Saam.
+# Copyright (c) 2015, Dan Bethell, Johannes Saam, Vahan Sosoyan.
 # All rights reserved.
 #
 # For license information regarding redistribution and
@@ -14,7 +14,7 @@ project( renderconnect )
 #=====
 # General
 set( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/config/cmake )
-find_package( Boost 1.40.0 COMPONENTS system REQUIRED )
+find_package( Boost 1.54.0 COMPONENTS system REQUIRED )
 find_package( Nuke REQUIRED )
 find_package( Doxygen )
 
@@ -28,7 +28,7 @@ include_directories(
 # Build the Nuke plugin
 add_library( nuke_plugin 
   SHARED
-  ${CMAKE_SOURCE_DIR}/src/nk_renderConnect.cpp 
+  ${CMAKE_SOURCE_DIR}/src/Aton.cpp 
   ${CMAKE_SOURCE_DIR}/src/Server.cpp
   ${CMAKE_SOURCE_DIR}/src/Client.cpp
   ${CMAKE_SOURCE_DIR}/src/Data.cpp
@@ -37,7 +37,7 @@ add_library( nuke_plugin
 set_target_properties( nuke_plugin
   PROPERTIES
   PREFIX ""
-  OUTPUT_NAME "RenderConnect"
+  OUTPUT_NAME "aton"
   COMPILE_FLAGS "-DUSE_GLEW ${Nuke_COMPILE_FLAGS}"
   LINK_FLAGS "${Nuke_LINK_FLAGS}"
   )
@@ -55,7 +55,7 @@ if( ARNOLD_FOUND )
     include_directories( ${Arnold_INCLUDE_DIR} )
     add_library( arnold_plugin
       SHARED
-      ${CMAKE_SOURCE_DIR}/src/d_arnoldConnect.cpp
+      ${CMAKE_SOURCE_DIR}/src/Driver_Aton.cpp
       ${CMAKE_SOURCE_DIR}/src/Client.cpp
       ${CMAKE_SOURCE_DIR}/src/Data.cpp
       )
@@ -63,7 +63,7 @@ if( ARNOLD_FOUND )
     set_target_properties( arnold_plugin
       PROPERTIES
       PREFIX ""
-      OUTPUT_NAME "d_arnoldConnect"
+      OUTPUT_NAME "driver_aton"
       COMPILE_FLAGS "${Arnold_COMPILE_FLAGS}"
     )
 
