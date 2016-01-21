@@ -16,8 +16,8 @@
     <div class="wrapper">
       <header>
         <h1>Aton</h1>
-        <p>RenderMan Interface-compatible display driver and plugin for rendering directly into Nuke.</p>
-
+        <img src="https://raw.githubusercontent.com/Sosoyan/Aton/master/icon/aton_logo.png" alt="HTML5 Icon" style="width:128px;height:128px;">
+        <p>Aton is Arnold Interface-compatible display driver and Nuke plugin for direct rendering into the Nuke interface.</p>
         <p class="view"><a href="https://github.com/Sosoyan/Aton">View the Project on GitHub <small>Sosoyan/Aton</small></a></p>
 
 
@@ -29,27 +29,29 @@
       </header>
       <section>
         <h1>
-<a id="aton" class="anchor" href="#aton" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Aton</h1>
+<!--<a id="aton" class="anchor" href="#aton" aria-hidden="true"><span class="octicon octicon-link"></span></a>Aton</h1>-->
 
-<h1></h1>
+<h1>
 
-<p>The Aton project is a Arnold Interface-compatible display driver
-and Nuke plugin for direct rendering into the Nuke interface.</p>
+<iframe src="https://player.vimeo.com/video/152096081?color=9dbbc9&title=0&byline=0&portrait=0" width="560" height="315" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
+
+</h1>
 
 <h2>
-<a id="how-to-install" class="anchor" href="#how-to-install" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>How to install</h2>
+<a id="how-to-install" class="anchor" href="#how-to-install" aria-hidden="true"><span class="octicon octicon-link"></span></a>How to install</h2>
 
 <h2></h2>
 
 <ol>
 <li>
 <p>Copy <strong>aton.dll</strong>(.dylib, .so) from ~/Bin to your <strong>$NUKE_PATH</strong></p>
-
 <ul>
 <li>
+<p><em>For example C:\Users\YourName\.nuke</em></p>
+</li>
+<li>
 <p>In your init.py</p>
-
-<p>nuke.load("aton")</p>
+<pre><code>nuke.load("aton")</code></pre>
 </li>
 <li>
 <p>In your menu.py </p>
@@ -64,11 +66,15 @@ m.addCommand("Aton", "nuke.createNode(\"Aton\")")
 </ul>
 </li>
 <li><p>Copy <strong>driver_aton.dll</strong>(.dylib, .so) from ~/Bin to your <strong>$ARNOLD_PLUGIN_PATH</strong></p></li>
+<ul><li><p><em>For example C:\solidangle\mtoadeploy\2016\shaders</em></p></li></ul>
 <li><p>Copy <strong>aton_maya.py</strong> from ~/Scripts to your Maya's scripts folder</p></li>
+<ul>
+<li><p>Binaries are compiled against Nuke 9.0, Arnold 4.2, Windows 7, OSX 10.11</p></li>
+</ul>
 </ol>
 
 <h2>
-<a id="how-to-use" class="anchor" href="#how-to-use" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>How to Use</h2>
+<a id="how-to-use" class="anchor" href="#how-to-use" aria-hidden="true"><span class="octicon octicon-link"></span></a>How to Use</h2>
 
 <ol>
 <li>Open Nuke and create an Aton node<br>
@@ -82,12 +88,16 @@ aton = Aton()
 aton.show()
 </code></pre>
 </li>
+<ul>
+<li><p>To use Crop node for the Render Region, first copy it to clipboard, click Get, then Start/Refresh.</p></li>
+<li><p>In order to change the default capture path, make an environment variable <strong>$ATON_CAPTURE_PATH</strong> and point it to your favorite directory.</p></li>
+<ul>
 </ol>
 
 <h1></h1>
 
 <h2>
-<a id="how-to-build" class="anchor" href="#how-to-build" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>How to Build</h2>
+<a id="how-to-build" class="anchor" href="#how-to-build" aria-hidden="true"><span class="octicon octicon-link"></span></a>How to Build</h2>
 
 <p>To build it yourself you will need to have</p>
 
@@ -97,16 +107,35 @@ aton.show()
 <li>Boost 1.54+</li>
 </ul>
 
-<p>It's based on: </p>
+<h2>
+<a id="like-it" class="anchor" aria-hidden="true" href="#like-it"></a>Like it?</h2>
+<p style="margin: 0 0 20px;">You can buy me a beer and share it.</p>
+<form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top" style="text-align: center; margin: 0 0 20px;">
+<input type="hidden" name="cmd" value="_s-xclick">
+<input type="hidden" name="hosted_button_id" value="QYLVSBLBUWPC2">
+<input type="image" src="https://www.paypalobjects.com/en_US/GB/i/btn/btn_donateCC_LG.gif" border="0" name="submit" alt="PayPal – The safer, easier way to pay online.">
+<img alt="" border="0" src="https://www.paypalobjects.com/en_GB/i/scr/pixel.gif" width="1" height="1">
+</form>
 
-<p><em>Dan Bethelli's Rmanconnect which is freely available at.</em>
+<div style="text-align: center; margin: 0 0 20px;">
+<script type="text/javascript">var switchTo5x=true;</script>
+<script type="text/javascript" src="http://w.sharethis.com/button/buttons.js"></script>
+<script type="text/javascript">stLight.options({publisher: "1aef2c78-fd6d-4169-bf66-4f080f786cf4", doNotHash: false, doNotCopy: false, hashAddressBar: false});</script>
+<span class='st_sharethis_large' displayText='ShareThis'></span>
+<span class='st_facebook_large' displayText='Facebook'></span>
+<span class='st_twitter_large' displayText='Tweet'></span>
+<span class='st_linkedin_large' displayText='LinkedIn'></span>
+<span class='st_pinterest_large' displayText='Pinterest'></span>
+<span class='st_email_large' displayText='Email'></span>
+</div>
+
+<p style="margin: 0;">It's based on: </p>
+<p style="margin: 0;"><em>Dan Bethelli's Rmanconnect which is freely available at.</em>
 <a href="http://github.com/danbethell/rmanconnect">http://github.com/danbethell/rmanconnect</a></p>
-
 <p><em>Chad Dombrova's driver for arnold, freely available at.</em>
 <a href="https://github.com/chadrik/renderconnect">https://github.com/chadrik/renderconnect</a>.</p>
 
-<p>Arnold® is a registered trademark of Solid Angle.</p>
-
+<p  style="margin: 0;">Arnold® is a registered trademark of Solid Angle.</p>
 <p>Nuke® is a registered trademark of The Foundry.</p>
       </section>
       <footer>
@@ -115,6 +144,5 @@ aton.show()
       </footer>
     </div>
     <script src="javascripts/scale.fix.js"></script>
-    
   </body>
 </html>
