@@ -1,0 +1,120 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>Aton by Sosoyan</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <meta name="viewport" content="width=device-width">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>Aton</h1>
+        <p>RenderMan Interface-compatible display driver and plugin for rendering directly into Nuke.</p>
+
+        <p class="view"><a href="https://github.com/Sosoyan/Aton">View the Project on GitHub <small>Sosoyan/Aton</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/Sosoyan/Aton/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/Sosoyan/Aton/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/Sosoyan/Aton">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>
+<a id="aton" class="anchor" href="#aton" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Aton</h1>
+
+<h1></h1>
+
+<p>The Aton project is a Arnold Interface-compatible display driver
+and Nuke plugin for direct rendering into the Nuke interface.</p>
+
+<h2>
+<a id="how-to-install" class="anchor" href="#how-to-install" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>How to install</h2>
+
+<h2></h2>
+
+<ol>
+<li>
+<p>Copy <strong>aton.dll</strong>(.dylib, .so) from ~/Bin to your <strong>$NUKE_PATH</strong></p>
+
+<ul>
+<li>
+<p>In your init.py</p>
+
+<p>nuke.load("aton")</p>
+</li>
+<li>
+<p>In your menu.py </p>
+
+<pre><code>import nuke
+toolbar = nuke.menu("Nodes")
+mainToolBar=nuke.toolbar("Nodes")
+m = mainToolBar.addMenu("Menu")
+m.addCommand("Aton", "nuke.createNode(\"Aton\")")
+</code></pre>
+</li>
+</ul>
+</li>
+<li><p>Copy <strong>driver_aton.dll</strong>(.dylib, .so) from ~/Bin to your <strong>$ARNOLD_PLUGIN_PATH</strong></p></li>
+<li><p>Copy <strong>aton_maya.py</strong> from ~/Scripts to your Maya's scripts folder</p></li>
+</ol>
+
+<h2>
+<a id="how-to-use" class="anchor" href="#how-to-use" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>How to Use</h2>
+
+<ol>
+<li>Open Nuke and create an Aton node<br>
+</li>
+<li>Open Maya, make sure Arnold is set as default renderer</li>
+<li>
+<p>Run this line bellow in script editor to open Aton UI or put it on the shelf</p>
+
+<pre><code>from aton_maya import *
+aton = Aton()
+aton.show()
+</code></pre>
+</li>
+</ol>
+
+<h1></h1>
+
+<h2>
+<a id="how-to-build" class="anchor" href="#how-to-build" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>How to Build</h2>
+
+<p>To build it yourself you will need to have</p>
+
+<ul>
+<li>Nuke 9.0+ SDK</li>
+<li>Arnold 4.2+ SDK</li>
+<li>Boost 1.54+</li>
+</ul>
+
+<p>It's based on: </p>
+
+<p><em>Dan Bethelli's Rmanconnect which is freely available at.</em>
+<a href="http://github.com/danbethell/rmanconnect">http://github.com/danbethell/rmanconnect</a></p>
+
+<p><em>Chad Dombrova's driver for arnold, freely available at.</em>
+<a href="https://github.com/chadrik/renderconnect">https://github.com/chadrik/renderconnect</a>.</p>
+
+<p>Arnold® is a registered trademark of Solid Angle.</p>
+
+<p>Nuke® is a registered trademark of The Foundry.</p>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/Sosoyan">Sosoyan</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
