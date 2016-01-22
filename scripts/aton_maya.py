@@ -271,7 +271,6 @@ class Aton(QtGui.QDialog):
 		rMinY = height - self.renderRegionTSpinBox.value()
 		rMaxX = self.renderRegionRSpinBox.value() -1
 		rMaxY = (height - self.renderRegionYSpinBox.value()) - 1
-		print rMinX, rMinY, rMaxX, rMaxY
 		core.createOptions()
 		cmds.arnoldIpr(cam=camera, width=width, height=height, mode='start')
 		nodeIter = AiUniverseGetNodeIterator(AI_NODE_ALL)
