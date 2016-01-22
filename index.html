@@ -68,6 +68,7 @@ m.addCommand("Aton", "nuke.createNode(\"Aton\")")
 <li><p>Copy <strong>driver_aton.dll</strong>(.dylib, .so) from ~/Bin to your <strong>$ARNOLD_PLUGIN_PATH</strong></p></li>
 <ul><li><p><em>For example C:\solidangle\mtoadeploy\2016\shaders</em></p></li></ul>
 <li><p>Copy <strong>aton_maya.py</strong> from ~/Scripts to your Maya's scripts folder</p></li>
+<ul><li><p><em>For example C:\Users\YourName\Documents\maya\scripts</em></p></li></ul>
 <ul>
 <li><p>Binaries are compiled against Nuke 9.0, Arnold 4.2, Windows 7, OSX 10.11</p></li>
 </ul>
@@ -81,7 +82,7 @@ m.addCommand("Aton", "nuke.createNode(\"Aton\")")
 </li>
 <li>Open Maya, make sure Arnold is set as default renderer</li>
 <li>
-<p>Run this line bellow in script editor to open Aton UI or put it on the shelf</p>
+<p>Run this Python code bellow in script editor to open Aton UI or put it on the shelf</p>
 
 <pre><code>from aton_maya import *
 aton = Aton()
