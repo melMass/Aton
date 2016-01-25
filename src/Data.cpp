@@ -26,9 +26,6 @@ Data::Data( int x, int y,
 
     if ( aovName!=0 )
     {
-//        mAovName = new char[aovSize];
-//        strcpy(mAovName, aovName);
-        
         mAovName = const_cast<char*>(aovName);
     }
 
@@ -39,11 +36,9 @@ Data::Data( int x, int y,
 void Data::clearAovName()
 {
     delete[] mAovName;
-    mAovName = nullptr;
+    mAovName = NULL;
 }
 
 Data::~Data()
 {
-//    delete[] mAovName;
-//    mAovName = nullptr;
 }

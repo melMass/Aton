@@ -294,7 +294,7 @@ class Aton: public Iop
             std::string n = "N";
             std::string p = "P";
             
-            for(auto it = m_aovs.begin(); it != m_aovs.end(); ++it)
+            for(std::vector<std::string>::iterator it = m_aovs.begin(); it != m_aovs.end(); ++it)
             {
                 if (it->compare(rgba)==0)
                 {
@@ -366,7 +366,7 @@ class Aton: public Iop
                 int b_index = 0;
                 std::string layer = getLayerName(z);
                 
-                for(auto it = m_aovs.begin(); it != m_aovs.end(); ++it)
+                for(std::vector<std::string>::iterator it = m_aovs.begin(); it != m_aovs.end(); ++it)
                 {
                     if (it->compare(layer) == 0)
                         b_index = static_cast<int>(it - m_aovs.begin());
@@ -845,7 +845,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     {
                         // if the format is already exist
                         // we need to get its pointer
-                        Format *m_fmt_exist = nullptr;
+                        Format *m_fmt_exist = NULL;
                         for (int i=0; i < Format::size(); i++)
                         {
                             m_fmt_exist = Format::index(i);
@@ -941,7 +941,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     if (node->m_buffers.size() > node->m_aovs.size())
                         node->m_buffers.resize(node->m_aovs.size());
                     
-                    for(auto it = node->m_aovs.begin(); it != node->m_aovs.end(); ++it)
+                    for(std::vector<std::string>::iterator it = node->m_aovs.begin(); it != node->m_aovs.end(); ++it)
                     {
                         if (it->compare(d.aovName()) == 0)
                         {
