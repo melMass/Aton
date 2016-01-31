@@ -69,14 +69,14 @@ class RenderAlpha
 public:
     RenderAlpha()
     {
-        _val[0] = 1.f;
+        _val = 1.f;
     }
     
-    float& operator[](int i){ return _val[i]; }
-    const float& operator[](int i) const { return _val[i]; }
+    float& operator[](int i){ return _val; }
+    const float& operator[](int i) const { return _val; }
     
     // data
-    float _val[1];
+    float _val;
 };
 
 // our image buffer class
