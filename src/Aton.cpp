@@ -35,7 +35,7 @@ using namespace DD::Image;
 static const char* const CLASS = "Aton";
 
 // version
-static const char* const VERSION = "1.0.0";
+static const char* const VERSION = "1.1.0";
 
 // help
 static const char* const HELP =
@@ -74,11 +74,12 @@ class RenderBuffer
         {
         }
 
-        void init(const unsigned int width, const unsigned int height)
+        void init(const unsigned int width, const unsigned int height, const bool empty = false)
         {
             _width = width;
             _height = height;
-            _data.resize(_width * _height);
+            if (!empty)
+                _data.resize(_width * _height);
         }
 
         RenderColour& get(unsigned int x, unsigned int y)
@@ -91,11 +92,6 @@ class RenderBuffer
         {
             unsigned int index = (_width * y) + x;
             return _data[index];
-        }
-
-        const unsigned int size() const
-        {
-            return _data.size();
         }
 
         // data
@@ -289,14 +285,14 @@ class Aton: public Iop
             info_.full_size_format(*m_fmtp.format());
             
             // add aovs as nuke channels
-            std::string rgba = "RGBA";
-            std::string z = "Z";
-            std::string n = "N";
-            std::string p = "P";
+            std::string RGBA = "RGBA";
+            std::string Z = "Z";
+            std::string N = "N";
+            std::string P = "P";
             
             for(std::vector<std::string>::iterator it = m_aovs.begin(); it != m_aovs.end(); ++it)
             {
-                if (it->compare(rgba)==0)
+                if (it->compare(RGBA)==0)
                 {
                     if (!m_channels.contains(Chan_Red))
                     {
@@ -306,12 +302,12 @@ class Aton: public Iop
                         m_channels.insert(Chan_Alpha);
                     }
                 }
-                else if (it->compare(z)==0)
+                else if (it->compare(Z)==0)
                 {
                     if (!m_channels.contains(Chan_Z))
                         m_channels.insert( Chan_Z );
                 }
-                else if (it->compare(n)==0 || it->compare(p)==0)
+                else if (it->compare(N)==0 || it->compare(P)==0)
                 {
                     if (!m_channels.contains(channel((boost::format("%s.X")%it->c_str()).str().c_str())))
                     {
@@ -365,13 +361,21 @@ class Aton: public Iop
             {
                 int b_index = 0;
                 std::string layer = getLayerName(z);
+                std::string Z = "Z";
+                std::string depth = "depth";
                 
                 for(std::vector<std::string>::iterator it = m_aovs.begin(); it != m_aovs.end(); ++it)
                 {
                     if (it->compare(layer) == 0)
+                    {
                         b_index = static_cast<int>(it - m_aovs.begin());
-                    else if ( it->compare("Z") == 0 && layer.compare("depth") == 0 )
+                        break;
+                    }
+                    else if ( it->compare(Z) == 0 && layer.compare(depth) == 0 )
+                    {
                         b_index = static_cast<int>(it - m_aovs.begin());
+                        break;
+                    }
                 }
 
                 float *rOut = out.writable(brother (z, 0)) + xx;
@@ -830,7 +834,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                 case 0: // open a new image
                 {
                     node->m_mutex.lock();
-                    node->m_buffer.init(d.width(), d.height());
+                    node->m_buffer.init(d.width(), d.height(), true);
                     
                     node->m_mutex.unlock();
 					
