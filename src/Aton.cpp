@@ -47,7 +47,7 @@ const int aton_default_port = 9201;
 // our listener method
 static void atonListen(unsigned index, unsigned nthreads, void* data);
 
-// lightweight pixel class
+// lightweight colour pixel class
 class RenderColour
 {
     public:
@@ -63,6 +63,7 @@ class RenderColour
         float _val[3];
 };
 
+// lightweight alpha pixel class
 class RenderAlpha
 {
 public:
