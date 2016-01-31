@@ -54,14 +54,28 @@ class RenderColour
         RenderColour()
         {
             _val[0] = _val[1] = _val[2] = 0.f;
-            _val[3] = 1.f;
         }
 
         float& operator[](int i){ return _val[i]; }
         const float& operator[](int i) const { return _val[i]; }
 
         // data
-        float _val[4];
+        float _val[3];
+};
+
+class RenderAlpha
+{
+public:
+    RenderAlpha()
+    {
+        _val[0] = 1.f;
+    }
+    
+    float& operator[](int i){ return _val[i]; }
+    const float& operator[](int i) const { return _val[i]; }
+    
+    // data
+    float _val[1];
 };
 
 // our image buffer class
@@ -74,28 +88,45 @@ class RenderBuffer
         {
         }
 
-        void init(const unsigned int width, const unsigned int height, const bool empty = false)
+        void init(const unsigned int width, const unsigned int height, const bool empty = false, const bool alpha=false)
         {
             _width = width;
             _height = height;
             if (!empty)
-                _data.resize(_width * _height);
+            {
+                _colour_data.resize(_width * _height);
+                if (alpha)
+                    _alpha_data.resize(_width * _height);
+            }
         }
 
-        RenderColour& get(unsigned int x, unsigned int y)
+        RenderColour& get_colour(unsigned int x, unsigned int y)
         {
             unsigned int index = (_width * y) + x;
-            return _data[index];
+            return _colour_data[index];
         }
 
-        const RenderColour& get(unsigned int x, unsigned int y) const
+        const RenderColour& get_colour(unsigned int x, unsigned int y) const
         {
             unsigned int index = (_width * y) + x;
-            return _data[index];
+            return _colour_data[index];
         }
 
+        RenderAlpha& get_alpha(unsigned int x, unsigned int y)
+        {
+            unsigned int index = (_width * y) + x;
+            return _alpha_data[index];
+        }
+    
+        const RenderAlpha& get_alpha(unsigned int x, unsigned int y) const
+        {
+            unsigned int index = (_width * y) + x;
+            return _alpha_data[index];
+        }
+    
         // data
-        std::vector<RenderColour> _data;
+        std::vector<RenderColour> _colour_data;
+        std::vector<RenderAlpha> _alpha_data;
         unsigned int _width;
         unsigned int _height;
 };
@@ -397,10 +428,10 @@ class Aton: public Iop
                         }
                         else
                         {
-                            *rOut = m_buffers[b_index].get(xxx, yyy)[0];
-                            *gOut = m_buffers[b_index].get(xxx, yyy)[1];
-                            *bOut = m_buffers[b_index].get(xxx, yyy)[2];
-                            *aOut = m_buffers[0].get(xxx, yyy)[3];
+                            *rOut = m_buffers[b_index].get_colour(xxx, yyy)[0];
+                            *gOut = m_buffers[b_index].get_colour(xxx, yyy)[1];
+                            *bOut = m_buffers[b_index].get_colour(xxx, yyy)[2];
+                            *aOut = m_buffers[0].get_alpha(xxx, yyy)[0];
                         }
                         ++rOut;
                         ++gOut;
@@ -937,7 +968,10 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         if (node->m_buffers.size() < node->m_aovs.size())
                         {
                             RenderBuffer buffer;
-                            buffer.init(_w, _h);
+                            if (_spp < 4)
+                                buffer.init(_w, _h);
+                            else
+                                buffer.init(_w, _h, false, true);
                             node->m_buffers.push_back(buffer);
                         }
                     }
@@ -955,10 +989,18 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                 for (_y = 0; _y < _height; ++_y)
                                 {
                                     int b_index = static_cast<int>(it - node->m_aovs.begin());
-                                    RenderColour &pix = node->m_buffers[b_index].get(_x+ _xorigin, _h - (_y + _yorigin + 1));
                                     offset = (_width * _y * _spp) + (_x * _spp);
+                                    
+                                    RenderColour &pix = node->m_buffers[b_index].get_colour(_x+ _xorigin, _h - (_y + _yorigin + 1));
                                     for (_s = 0; _s < _spp; ++_s)
-                                        pix[_s] = pixel_data[offset+_s];
+                                        if (_s != 3)
+                                            pix[_s] = pixel_data[offset+_s];
+                                    if (_spp == 4)
+                                    {
+                                        RenderAlpha &alpha_pix = node->m_buffers[b_index].get_alpha(_x+ _xorigin, _h - (_y + _yorigin + 1));
+                                        alpha_pix[0] = pixel_data[offset+3];
+                                    }
+
                                 }
                             break;
                         }
