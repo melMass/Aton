@@ -256,7 +256,7 @@ class Aton: public Iop
             else
                 hash_counter++;
             Box redrawBox(m_bucket.x, m_bucket.y, m_bucket.r, m_bucket.t);
-            asapUpdate(redrawBox, -1);
+            asapUpdate(redrawBox);
         }
 
         // we can use this to change our tcp port
@@ -1053,9 +1053,9 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         
                         // getting redraw bucket size
                         node->m_bucket.x = _xorigin;
-                        node->m_bucket.y = _yorigin;
+                        node->m_bucket.y = _yorigin - _height;
                         node->m_bucket.r = _xorigin + _width;
-                        node->m_bucket.t = _yorigin + _height;
+                        node->m_bucket.t = _yorigin;
                         
                         // setting status parameters
                         node->m_mutex.lock();
