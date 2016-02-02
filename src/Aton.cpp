@@ -683,12 +683,30 @@ class Aton: public Iop
                     // Adding after render script to create a Read node and remove the Write and Text nodes
                     cmd = (boost::format("nuke.toNode('%s')['afterRender']."
                                          "setValue( '''nuke.nodes.Read(file='%s');"
+										 "nuke.delete(nuke.toNode('%s').input(0).input(0));"
                                          "nuke.delete(nuke.toNode('%s').input(0));"
                                          "nuke.delete(nuke.toNode('%s'))''' )")%writeNodeName
                                                                                %path.c_str()
                                                                                %writeNodeName
+																			   %writeNodeName
                                                                                %writeNodeName).str();
                     script_command(cmd.c_str(), true, false);
+                    script_unlock();
+
+					// Create a rectangle node and return it's name
+					cmd = (boost::format("nuke.nodes.Rectangle(opacity=0.75, color = 0).name()")).str();
+					script_command(cmd.c_str());
+					std::string RectNodeName = script_result();
+					script_unlock();
+
+					// Set the rectangle size
+					cmd = (boost::format(	"rect = nuke.toNode('%s')\n"
+											"rect['area'].setValue([0,0,%s,%s])\n"
+											"rect.setInput(0, nuke.toNode('%s'))")	%RectNodeName
+																					%m_fmt.width()
+																					%m_stamp_size
+																					%node_name()).str();
+					script_command(cmd.c_str(), true, false);
                     script_unlock();
                     
                     std::string str_status = status(m_stat.progress, m_stat.ram, m_stat.p_ram, m_stat.time);
@@ -698,7 +716,7 @@ class Aton: public Iop
                                                  "stamp['font'].setValue(nuke.defaultFontPathname())\n"
                                                  "stamp.setInput(0, nuke.toNode('%s'))\n"
                                                  "nuke.toNode('%s').setInput(0, stamp)''')")%str_status%m_comment
-                                                                                            %m_stamp_size%node_name()
+                                                                                            %m_stamp_size%RectNodeName
                                                                                             %writeNodeName ).str();
                     script_command(cmd.c_str(), true, false);
                     script_unlock();
