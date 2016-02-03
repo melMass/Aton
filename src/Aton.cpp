@@ -132,17 +132,6 @@ class RenderBuffer
         unsigned int _height;
 };
 
-// Bucket redraw box parameters
-class Bucket
-{
-public:
-    Bucket(): x(0),y(0),r(0),t(0) {}
-    int x;
-    int y;
-    int r;
-    int t;
-};
-
 // status bar parameters
 class Status
 {
@@ -166,7 +155,6 @@ class Aton: public Iop
         const char * m_path; // default path for Write node
         std::string m_status; // status bar text
         Status m_stat; // object to hold status bar parameters
-        Bucket m_bucket;
         const char * m_comment;
         bool m_stamp;
         int m_stamp_size;
@@ -255,8 +243,6 @@ class Aton: public Iop
                 hash_counter=0;
             else
                 hash_counter++;
-            Box redrawBox(m_bucket.x, m_bucket.y, m_bucket.r, m_bucket.t);
-            asapUpdate(redrawBox);
         }
 
         // we can use this to change our tcp port
@@ -1050,12 +1036,6 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     {
                         imageArea -= (_width*_height);
                         progress = static_cast<int>(100 - (imageArea*100) / (_w * _h));
-                        
-                        // getting redraw bucket size
-                        node->m_bucket.x = _xorigin;
-                        node->m_bucket.y = _yorigin - _height;
-                        node->m_bucket.r = _xorigin + _width;
-                        node->m_bucket.t = _yorigin;
                         
                         // setting status parameters
                         node->m_mutex.lock();
