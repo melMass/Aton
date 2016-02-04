@@ -243,6 +243,7 @@ class Aton: public Iop
                 hash_counter=0;
             else
                 hash_counter++;
+            asapUpdate();
         }
 
         // we can use this to change our tcp port
