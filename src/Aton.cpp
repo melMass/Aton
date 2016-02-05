@@ -262,7 +262,7 @@ class Aton: public Iop
                 hash_counter=0;
             else
                 hash_counter++;
-            asapUpdate(m_bucket.size(), 1);
+            asapUpdate(m_bucket.size());
 //            asapUpdate();
         }
 
