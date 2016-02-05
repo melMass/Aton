@@ -262,9 +262,8 @@ class Aton: public Iop
                 hash_counter=0;
             else
                 hash_counter++;
-            asapUpdate(m_bucket.size());
+            asapUpdate(m_bucket.size(), 1);
 //            asapUpdate();
-
         }
 
         // we can use this to change our tcp port
@@ -382,8 +381,8 @@ class Aton: public Iop
             Box redrawBox(m_bucket.x, m_bucket.y, m_bucket.r, m_bucket.t);
             info_.channels( m_channels );
             info_.set(info().format());
-//            info_.set(redrawBox);
-//            info_.black_outside();
+//            info_.set(m_bucket.size());
+//            info_.black_outside(true);
         }
 
         void engine(int y, int xx, int r, ChannelMask channels, Row& out)
