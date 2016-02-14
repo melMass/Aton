@@ -1089,7 +1089,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         node->m_mutex.unlock();
                         
                         // update the image
-//                        node->flagForUpdate();
+                        node->flagForUpdate();
                     }
                     
                     // deallocate aov name
@@ -1098,7 +1098,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                 }
                 case 2: // close image
                 {
-                    node->flagForUpdate();
+//                    node->flagForUpdate();
                     break;
                 }
                 case 9: // this is sent when the parent process want to kill
