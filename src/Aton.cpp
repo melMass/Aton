@@ -267,6 +267,8 @@ class Aton: public Iop
             // called.
             m_legit = false;
             disconnect();
+            m_buffers.resize(0);
+            m_aovs.resize(0);
         }
 
         void flagForUpdate()
@@ -454,7 +456,7 @@ class Aton: public Iop
                         m_mutex.lock();
                         while (rOut < END)
                         {
-                            if ( xxx >= m_buffer._width || yyy >= m_buffer._height )
+                            if ( xxx >= m_buffer._width || yyy >= m_buffer._height || m_buffers.empty())
                             {
                                 *rOut = *gOut = *bOut = *aOut = 0.f;
                             }
@@ -1099,7 +1101,6 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                 }
                 case 2: // close image
                 {
-//                    node->flagForUpdate();
                     break;
                 }
                 case 9: // this is sent when the parent process want to kill
