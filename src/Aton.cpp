@@ -335,55 +335,57 @@ class Aton: public Iop
             
             if (m_stat.progress > 0)
                 setStatus(m_stat.progress,
-                       m_stat.ram,
-                       m_stat.p_ram,
-                       m_stat.time);
+                          m_stat.ram,
+                          m_stat.p_ram,
+                          m_stat.time);
             
             // handle any connection error
             if ( m_inError )
                 error(m_connectionError.c_str());
-
-            // setup format etc
-            info_.format(*m_fmtp.fullSizeFormat());
-            info_.full_size_format(*m_fmtp.format());
             
-            for(std::vector<std::string>::iterator it = m_aovs.begin(); it != m_aovs.end(); ++it)
+            if ( !m_aovs.empty() )
             {
-                if (it->compare(ChannelStr::RGBA)==0)
+                for(std::vector<std::string>::iterator it = m_aovs.begin(); it != m_aovs.end(); ++it)
                 {
-                    if (!m_channels.contains(Chan_Red))
+                    if (it->compare(ChannelStr::RGBA)==0)
                     {
-                        m_channels.insert(Chan_Red);
-                        m_channels.insert(Chan_Green);
-                        m_channels.insert(Chan_Blue);
-                        m_channels.insert(Chan_Alpha);
+                        if (!m_channels.contains(Chan_Red))
+                        {
+                            m_channels.insert(Chan_Red);
+                            m_channels.insert(Chan_Green);
+                            m_channels.insert(Chan_Blue);
+                            m_channels.insert(Chan_Alpha);
+                        }
                     }
-                }
-                else if (it->compare(ChannelStr::Z)==0)
-                {
-                    if (!m_channels.contains(Chan_Z))
-                        m_channels.insert( Chan_Z );
-                }
-                else if (it->compare(ChannelStr::N)==0 || it->compare(ChannelStr::P)==0)
-                {
-                    if (!m_channels.contains(channel((boost::format("%s.X")%it->c_str()).str().c_str())))
+                    else if (it->compare(ChannelStr::Z)==0)
                     {
-                        m_channels.insert( channel((boost::format("%s.X")%it->c_str()).str().c_str()) );
-                        m_channels.insert( channel((boost::format("%s.Y")%it->c_str()).str().c_str()) );
-                        m_channels.insert( channel((boost::format("%s.Z")%it->c_str()).str().c_str()) );
+                        if (!m_channels.contains(Chan_Z))
+                            m_channels.insert( Chan_Z );
                     }
-                }
-                else
-                {
-                    if (!m_channels.contains( channel((boost::format("%s.red")%it->c_str()).str().c_str())))
+                    else if (it->compare(ChannelStr::N)==0 || it->compare(ChannelStr::P)==0)
                     {
-                        m_channels.insert( channel((boost::format("%s.red")%it->c_str()).str().c_str()) );
-                        m_channels.insert( channel((boost::format("%s.blue")%it->c_str()).str().c_str()) );
-                        m_channels.insert( channel((boost::format("%s.green")%it->c_str()).str().c_str()) );
+                        if (!m_channels.contains(channel((boost::format("%s.X")%it->c_str()).str().c_str())))
+                        {
+                            m_channels.insert( channel((boost::format("%s.X")%it->c_str()).str().c_str()) );
+                            m_channels.insert( channel((boost::format("%s.Y")%it->c_str()).str().c_str()) );
+                            m_channels.insert( channel((boost::format("%s.Z")%it->c_str()).str().c_str()) );
+                        }
+                    }
+                    else
+                    {
+                        if (!m_channels.contains( channel((boost::format("%s.red")%it->c_str()).str().c_str())))
+                        {
+                            m_channels.insert( channel((boost::format("%s.red")%it->c_str()).str().c_str()) );
+                            m_channels.insert( channel((boost::format("%s.blue")%it->c_str()).str().c_str()) );
+                            m_channels.insert( channel((boost::format("%s.green")%it->c_str()).str().c_str()) );
+                        }
                     }
                 }
             }
             
+            // setup format etc
+            info_.format(*m_fmtp.fullSizeFormat());
+            info_.full_size_format(*m_fmtp.format());
             info_.channels( m_channels );
             info_.set(info().format());
         }
@@ -740,7 +742,7 @@ class Aton: public Iop
                     
                     std::string str_status = setStatus(m_stat.progress, m_stat.ram, m_stat.p_ram, m_stat.time);
                     
-                    cmd = (boost::format("exec('''stamp = nuke.nodes.Text(message='%s  Comment: %s',"
+                    cmd = (boost::format("exec('''stamp = nuke.nodes.Text(message='%s | Comment: %s',"
                                                                          "yjustify='bottom', size=%s)\n"
                                                  "stamp['font'].setValue(nuke.defaultFontPathname())\n"
                                                  "stamp['color'].setValue(0.5)\n"
@@ -985,9 +987,6 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                 }
                 case 1: // image data
                 {
-                    // lock buffer
-                    node->m_mutex.lock();
-
                     // copy data from d into node->m_buffer
                     int _w = node->m_buffer._width;
                     int _h = node->m_buffer._height;
@@ -1003,12 +1002,16 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     long long _ram = d.ram();
                     int _time = d.time();
                     
-                    // get aov names
+                    // get active aov names
                     if(!(std::find(active_aovs.begin(),
                                    active_aovs.end(),
                                    d.aovName()) != active_aovs.end()))
                         active_aovs.push_back(d.aovName());
                     
+                    // lock buffer
+                    node->m_mutex.lock();
+                    
+                    // get main aov names
                     if(!(std::find(node->m_aovs.begin(),
                                    node->m_aovs.end(),
                                    d.aovName()) != node->m_aovs.end()))
@@ -1086,7 +1089,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         node->m_mutex.unlock();
                         
                         // update the image
-                        node->flagForUpdate();
+//                        node->flagForUpdate();
                     }
                     
                     // deallocate aov name
@@ -1095,6 +1098,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                 }
                 case 2: // close image
                 {
+                    node->flagForUpdate();
                     break;
                 }
                 case 9: // this is sent when the parent process want to kill
