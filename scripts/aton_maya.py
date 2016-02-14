@@ -1,3 +1,8 @@
+__author__ = "Vahan Sosoyan"
+__copyright__ = "2016 All rights reserved. See Copyright.txt for more details."
+__version__ = "1.1.0"
+
+import sys
 import mtoa.core as core
 import maya.mel as mel
 
@@ -240,6 +245,16 @@ class Aton(QtGui.QDialog):
 		self.setLayout(mainLayout)
 
 	def render(self):
+
+		if self.cameraComboBox.currentIndex() == 0:
+			camera = self.getSceneOptions()["camera"]
+		else:
+			camera = cmds.listRelatives(self.cameraComboBoxDict[self.cameraComboBox.currentIndex()], s=1)[0]
+
+		if camera == None:
+			cmds.warning("Camera is not selected!")
+			return
+
 		try:
 			cmds.arnoldIpr(mode='stop')
 		except RuntimeError:
@@ -252,11 +267,6 @@ class Aton(QtGui.QDialog):
 		except RuntimeError:
 			cmds.warning("Aton driver for Arnold is not installed")
 			return
-
-		if self.cameraComboBox.currentIndex() == 0:
-			camera = self.getSceneOptions()["camera"]
-		else:
-			camera = cmds.listRelatives(self.cameraComboBoxDict[self.cameraComboBox.currentIndex()], s=1)[0]
 
 		width = self.getSceneOptions()["width"] * self.resolutionSpinBox.value() / 100
 		height = self.getSceneOptions()["height"] * self.resolutionSpinBox.value() / 100
@@ -272,6 +282,8 @@ class Aton(QtGui.QDialog):
 		rMaxX = self.renderRegionRSpinBox.value() -1
 		rMaxY = (height - self.renderRegionYSpinBox.value()) - 1
 		core.createOptions()
+
+
 		cmds.arnoldIpr(cam=camera, width=width, height=height, mode='start')
 		nodeIter = AiUniverseGetNodeIterator(AI_NODE_ALL)
 
@@ -291,12 +303,16 @@ class Aton(QtGui.QDialog):
 
 		# Temp trigger in order to start IPR immediately
 		cmds.setAttr("%s.bestFitClippingPlanes"%camera, True)
-
 		cmds.setAttr("defaultArnoldDisplayDriver.aiTranslator", defaultTranslator, type="string")
 
+		sys.stdout.write("// Info: Aton - Render started.\n")
 
 	def stop(self):
-		cmds.arnoldIpr(mode='stop')
+		try:
+			cmds.arnoldIpr(mode='stop')
+			sys.stdout.write("// Info: Aton - Render stopped.\n")
+		except RuntimeError:
+			pass
 
 	def getNukeCropNode(self, *args):
 
