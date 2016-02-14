@@ -228,6 +228,7 @@ class Aton: public Iop
         {
             disconnect();
             delete[] m_path;
+            m_path = NULL;
         }
 
         // It seems additional instances of a node get copied/constructed upon
