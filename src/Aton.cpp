@@ -735,6 +735,7 @@ class Aton: public Iop
 
 					// Set the rectangle size
 					cmd = (boost::format(	"rect = nuke.toNode('%s')\n"
+                                            "rect['output'].setValue('rgb')\n"
 											"rect['area'].setValue([0,0,%s,%s])\n"
 											"rect.setInput(0, nuke.toNode('%s'))")%RectNodeName
                                                                                   %m_fmt.width()
@@ -747,6 +748,7 @@ class Aton: public Iop
                     
                     cmd = (boost::format("exec('''stamp = nuke.nodes.Text(message='%s | Comment: %s',"
                                                                          "yjustify='bottom', size=%s)\n"
+                                                 "stamp['output'].setValue('rgb')\n"
                                                  "stamp['font'].setValue(nuke.defaultFontPathname())\n"
                                                  "stamp['color'].setValue(0.5)\n"
                                                  "stamp['translate'].setValue([5, 2.5])\n"
