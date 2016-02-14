@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2015,
+ Copyright (c) 2016,
  Dan Bethell, Johannes Saam, Vahan Sosoyan, Brian Scherbinski.
  All rights reserved. See Copyright.txt for more details.
  */
@@ -240,7 +240,7 @@ class Aton: public Iop
 			m_legit = true;
             
             // default status bar
-            status();
+            setStatus();
             
             // We don't need to see these knobs
 			knob("formats_knob")->hide();
@@ -334,7 +334,7 @@ class Aton: public Iop
                 changePort(m_port);
             
             if (m_stat.progress > 0)
-                status(m_stat.progress,
+                setStatus(m_stat.progress,
                        m_stat.ram,
                        m_stat.p_ram,
                        m_stat.time);
@@ -421,20 +421,23 @@ class Aton: public Iop
                 {
                     std::string layer = getLayerName(z);
                     
-                    for(std::vector<std::string>::iterator it = m_aovs.begin(); it != m_aovs.end(); ++it)
+                    if (layer.compare(ChannelStr::rgb) != 0)
                     {
-                        if (it->compare(layer) == 0)
+                        for(std::vector<std::string>::iterator it = m_aovs.begin(); it != m_aovs.end(); ++it)
                         {
-                            b_index = static_cast<int>(it - m_aovs.begin());
-                            break;
-                        }
-                        else if ( it->compare(ChannelStr::Z) == 0 && layer.compare(ChannelStr::depth) == 0 )
-                        {
-                            b_index = static_cast<int>(it - m_aovs.begin());
-                            break;
+                            if (it->compare(layer) == 0)
+                            {
+                                b_index = static_cast<int>(it - m_aovs.begin());
+                                break;
+                            }
+                            else if ( it->compare(ChannelStr::Z) == 0 && layer.compare(ChannelStr::depth) == 0 )
+                            {
+                                b_index = static_cast<int>(it - m_aovs.begin());
+                                break;
+                            }
                         }
                     }
-
+                    
                     float *rOut = out.writable(brother (z, 0)) + xx;
                     float *gOut = out.writable(brother (z, 1)) + xx;
                     float *bOut = out.writable(brother (z, 2)) + xx;
@@ -720,7 +723,7 @@ class Aton: public Iop
                     script_unlock();
 
 					// Create a rectangle node and return it's name
-					cmd = (boost::format("nuke.nodes.Rectangle(opacity=0.75, color = 0).name()")).str();
+					cmd = (boost::format("nuke.nodes.Rectangle(opacity=0.95, color = 0.05).name()")).str();
 					script_command(cmd.c_str());
 					std::string RectNodeName = script_result();
 					script_unlock();
@@ -728,18 +731,20 @@ class Aton: public Iop
 					// Set the rectangle size
 					cmd = (boost::format(	"rect = nuke.toNode('%s')\n"
 											"rect['area'].setValue([0,0,%s,%s])\n"
-											"rect.setInput(0, nuke.toNode('%s'))")	%RectNodeName
-																					%m_fmt.width()
-																					%m_stamp_size
-																					%node_name()).str();
+											"rect.setInput(0, nuke.toNode('%s'))")%RectNodeName
+                                                                                  %m_fmt.width()
+                                                                                  %(m_stamp_size+7)
+                                                                                  %node_name()).str();
 					script_command(cmd.c_str(), true, false);
                     script_unlock();
                     
-                    std::string str_status = status(m_stat.progress, m_stat.ram, m_stat.p_ram, m_stat.time);
+                    std::string str_status = setStatus(m_stat.progress, m_stat.ram, m_stat.p_ram, m_stat.time);
                     
                     cmd = (boost::format("exec('''stamp = nuke.nodes.Text(message='%s  Comment: %s',"
                                                                          "yjustify='bottom', size=%s)\n"
                                                  "stamp['font'].setValue(nuke.defaultFontPathname())\n"
+                                                 "stamp['color'].setValue(0.5)\n"
+                                                 "stamp['translate'].setValue([5, 2.5])\n"
                                                  "stamp.setInput(0, nuke.toNode('%s'))\n"
                                                  "nuke.toNode('%s').setInput(0, stamp)''')")%str_status%m_comment
                                                                                             %m_stamp_size%RectNodeName
@@ -840,10 +845,10 @@ class Aton: public Iop
             }
         }
 
-        std::string status(int progress=0,
-                           unsigned long long ram=0,
-                           unsigned long long p_ram=0,
-                           unsigned int time=0)
+        std::string setStatus(int progress=0,
+                              unsigned long long ram=0,
+                              unsigned long long p_ram=0,
+                              unsigned int time=0)
         {
             ram /= 1024*1024;
             p_ram /= 1024*1024;
@@ -858,8 +863,8 @@ class Aton: public Iop
                                                     "Used Memory: %sMB | "
                                                     "Peak Memory: %sMB | "
                                                     "Time: %02ih:%02im:%02is")%progress%ram%p_ram
-                                      %hour%minute
-                                      %second).str();
+                                                                              %hour%minute
+                                                                              %second).str();
             knob("status_knob")->set_text(str_status.c_str());
             return str_status;
         }
@@ -1086,13 +1091,10 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     
                     // deallocate aov name
                     d.clearAovName();
-                    
                     break;
                 }
                 case 2: // close image
                 {
-                    // update the image
-//                    node->flagForUpdate();
                     break;
                 }
                 case 9: // this is sent when the parent process want to kill
