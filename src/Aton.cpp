@@ -395,21 +395,54 @@ class Aton: public Iop
 
         void engine(int y, int xx, int r, ChannelMask channels, Row& out)
         {
-            // don't have a buffer yet
-            if ( m_buffer._width==0 && m_buffer._height==0 )
+            int b_index = 0;
+            
+            foreach(z, channels)
             {
+                std::string layer = getLayerName(z);
                 
-                float *rOut = out.writable(Chan_Red) + xx;
-                float *gOut = out.writable(Chan_Green) + xx;
-                float *bOut = out.writable(Chan_Blue) + xx;
+                // get the current buffer index
+                if (layer.compare(ChannelStr::rgb) != 0)
+                {
+                    for(std::vector<std::string>::iterator it = m_aovs.begin(); it != m_aovs.end(); ++it)
+                    {
+                        if (it->compare(layer) == 0)
+                        {
+                            b_index = static_cast<int>(it - m_aovs.begin());
+                            break;
+                        }
+                        else if ( it->compare(ChannelStr::Z) == 0 && layer.compare(ChannelStr::depth) == 0 )
+                        {
+                            b_index = static_cast<int>(it - m_aovs.begin());
+                            break;
+                        }
+                    }
+                }
+                
+                float *rOut = out.writable(brother (z, 0)) + xx;
+                float *gOut = out.writable(brother (z, 1)) + xx;
+                float *bOut = out.writable(brother (z, 2)) + xx;
                 float *aOut = out.writable(Chan_Alpha) + xx;
                 const float *END = rOut + (r - xx);
                 unsigned int xxx = static_cast<unsigned int> (xx);
-                
+                unsigned int yyy = static_cast<unsigned int> (y);
+
                 m_mutex.lock();
                 while (rOut < END)
                 {
-                    *rOut = *gOut = *bOut = *aOut = 0.f;
+                    if (m_buffers.empty() ||
+                        xxx >= m_buffer._width || yyy >= m_buffer._height ||
+                        (m_buffer._width==0 && m_buffer._height==0))
+                    {
+                        *rOut = *gOut = *bOut = *aOut = 0.f;
+                    }
+                    else
+                    {
+                        *rOut = m_buffers[b_index].get_colour(xxx, yyy)[0];
+                        *gOut = m_buffers[b_index].get_colour(xxx, yyy)[1];
+                        *bOut = m_buffers[b_index].get_colour(xxx, yyy)[2];
+                        *aOut = m_buffers[0].get_alpha(xxx, yyy)[0];
+                    }
                     ++rOut;
                     ++gOut;
                     ++bOut;
@@ -417,65 +450,6 @@ class Aton: public Iop
                     ++xxx;
                 }
                 m_mutex.unlock();
-            }
-            else
-            {
-                int b_index = 0;
-                
-                foreach(z, channels)
-                {
-                    std::string layer = getLayerName(z);
-                    
-                    if (layer.compare(ChannelStr::rgb) != 0)
-                    {
-                        for(std::vector<std::string>::iterator it = m_aovs.begin(); it != m_aovs.end(); ++it)
-                        {
-                            if (it->compare(layer) == 0)
-                            {
-                                b_index = static_cast<int>(it - m_aovs.begin());
-                                break;
-                            }
-                            else if ( it->compare(ChannelStr::Z) == 0 && layer.compare(ChannelStr::depth) == 0 )
-                            {
-                                b_index = static_cast<int>(it - m_aovs.begin());
-                                break;
-                            }
-                        }
-                    }
-                    
-                    float *rOut = out.writable(brother (z, 0)) + xx;
-                    float *gOut = out.writable(brother (z, 1)) + xx;
-                    float *bOut = out.writable(brother (z, 2)) + xx;
-                    float *aOut = out.writable(Chan_Alpha) + xx;
-                    const float *END = rOut + (r - xx);
-                    unsigned int xxx = static_cast<unsigned int> (xx);
-                    unsigned int yyy = static_cast<unsigned int> (y);
-                    
-                    if ( m_buffer._width > 0 && m_buffer._height > 0 )
-                    {
-                        m_mutex.lock();
-                        while (rOut < END)
-                        {
-                            if ( xxx >= m_buffer._width || yyy >= m_buffer._height || m_buffers.empty())
-                            {
-                                *rOut = *gOut = *bOut = *aOut = 0.f;
-                            }
-                            else
-                            {
-                                *rOut = m_buffers[b_index].get_colour(xxx, yyy)[0];
-                                *gOut = m_buffers[b_index].get_colour(xxx, yyy)[1];
-                                *bOut = m_buffers[b_index].get_colour(xxx, yyy)[2];
-                                *aOut = m_buffers[0].get_alpha(xxx, yyy)[0];
-                            }
-                            ++rOut;
-                            ++gOut;
-                            ++bOut;
-                            ++aOut;
-                            ++xxx;
-                        }
-                        m_mutex.unlock();
-                    }
-                }
             }
         }
     
