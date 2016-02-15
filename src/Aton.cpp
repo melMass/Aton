@@ -138,7 +138,7 @@ class Bucket
     public:
         Bucket(): x(0),y(0),r(1),t(1) {}
         
-        Box size()
+        Box getBBox()
         {
             Box bucket(x, y, r, t);
             return bucket;
@@ -277,7 +277,7 @@ class Aton: public Iop
                 hash_counter=0;
             else
                 hash_counter++;
-            asapUpdate(m_bucket.size());
+            asapUpdate(m_bucket.getBBox());
         }
 
         // we can use this to change our tcp port
