@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2015,
+ Copyright (c) 2016,
  Dan Bethell, Johannes Saam, Vahan Sosoyan, Brian Scherbinski.
  All rights reserved. See Copyright.txt for more details.
  */
@@ -66,17 +66,17 @@ class RenderColour
 // lightweight alpha pixel class
 class RenderAlpha
 {
-public:
-    RenderAlpha()
-    {
-        _val = 1.f;
-    }
-    
-    float& operator[](int i){ return _val; }
-    const float& operator[](int i) const { return _val; }
-    
-    // data
-    float _val;
+    public:
+        RenderAlpha()
+        {
+            _val = 1.f;
+        }
+        
+        float& operator[](int i){ return _val; }
+        const float& operator[](int i) const { return _val; }
+        
+        // data
+        float _val;
 };
 
 
@@ -134,37 +134,49 @@ class RenderBuffer
         unsigned int _height;
 };
 
-// Bucket redraw box parameters
+// bucket redraw box parameters
 class Bucket
 {
-public:
-    Bucket(): x(0),y(0),r(1),t(1) {}
-    
-    Box size()
-    {
-        Box bucket(x, y, r, t);
-        return bucket;
-    }
-    
-    int x;
-    int y;
-    int r;
-    int t;
+    public:
+        Bucket(): x(0),y(0),r(1),t(1) {}
+        
+        Box getBBox()
+        {
+            Box bucket(x, y, r, t);
+            return bucket;
+        }
+        
+        int x;
+        int y;
+        int r;
+        int t;
 };
 
 // status bar parameters
 class Status
 {
-public:
-    Status(): progress(0),
-              ram(0),
-              p_ram(0),
-              time(0) {}
-    unsigned int progress;
-    unsigned long long ram;
-    unsigned long long p_ram;
-    unsigned int time;
+    public:
+        Status(): progress(0),
+                  ram(0),
+                  p_ram(0),
+                  time(0) {}
+        unsigned int progress;
+        unsigned long long ram;
+        unsigned long long p_ram;
+        unsigned int time;
 };
+
+// channel strings
+namespace ChannelStr
+{
+    std::string RGBA = "RGBA";
+    std::string rgb = "rgb";
+    std::string depth = "depth";
+    std::string Z = "Z";
+    std::string N = "N";
+    std::string P = "P";
+};
+
 // our nuke node
 class Aton: public Iop
 {
@@ -199,12 +211,16 @@ class Aton: public Iop
             Iop(node),
             m_port(aton_default_port),
             m_path(getPath()),
+<<<<<<< HEAD
             m_status("Progress: 0%  "
                      "Used Memory: 0MB  "
                      "Peak Memory: 0MB  "
                      "Time: 00h:00m:00s "
 					 "Arnold: 0.0.0.0"),
 			m_version("0.0.0.0"),
+=======
+            m_status(""),
+>>>>>>> refs/remotes/Sosoyan/1.1
             m_comment(""),
             m_stamp(true),
             m_stamp_size(15),
@@ -224,6 +240,7 @@ class Aton: public Iop
         {
             disconnect();
             delete[] m_path;
+            m_path = NULL;
         }
 
         // It seems additional instances of a node get copied/constructed upon
@@ -234,6 +251,9 @@ class Aton: public Iop
         void attach()
 		{
 			m_legit = true;
+            
+            // default status bar
+            setStatus();
             
             // We don't need to see these knobs
 			knob("formats_knob")->hide();
@@ -259,6 +279,8 @@ class Aton: public Iop
             // called.
             m_legit = false;
             disconnect();
+            m_buffers.resize(0);
+            m_aovs.resize(0);
         }
 
         void flagForUpdate()
@@ -267,7 +289,7 @@ class Aton: public Iop
                 hash_counter=0;
             else
                 hash_counter++;
-            asapUpdate(m_bucket.size());
+            asapUpdate(m_bucket.getBBox());
         }
 
         // we can use this to change our tcp port
@@ -327,113 +349,88 @@ class Aton: public Iop
                 changePort(m_port);
             
             if (m_stat.progress > 0)
-                status(m_stat.progress,
-                       m_stat.ram,
-                       m_stat.p_ram,
-                       m_stat.time);
+                setStatus(m_stat.progress,
+                          m_stat.ram,
+                          m_stat.p_ram,
+                          m_stat.time);
             
             // handle any connection error
             if ( m_inError )
                 error(m_connectionError.c_str());
-
-            // setup format etc
-            info_.format(*m_fmtp.fullSizeFormat());
-            info_.full_size_format(*m_fmtp.format());
             
-            // add aovs as nuke channels
-            std::string RGBA = "RGBA";
-            std::string Z = "Z";
-            std::string N = "N";
-            std::string P = "P";
-            
-            for(std::vector<std::string>::iterator it = m_aovs.begin(); it != m_aovs.end(); ++it)
+            if ( !m_aovs.empty() )
             {
-                if (it->compare(RGBA)==0)
+                for(std::vector<std::string>::iterator it = m_aovs.begin(); it != m_aovs.end(); ++it)
                 {
-                    if (!m_channels.contains(Chan_Red))
+                    if (it->compare(ChannelStr::RGBA)==0)
                     {
-                        m_channels.insert(Chan_Red);
-                        m_channels.insert(Chan_Green);
-                        m_channels.insert(Chan_Blue);
-                        m_channels.insert(Chan_Alpha);
+                        if (!m_channels.contains(Chan_Red))
+                        {
+                            m_channels.insert(Chan_Red);
+                            m_channels.insert(Chan_Green);
+                            m_channels.insert(Chan_Blue);
+                            m_channels.insert(Chan_Alpha);
+                        }
                     }
-                }
-                else if (it->compare(Z)==0)
-                {
-                    if (!m_channels.contains(Chan_Z))
-                        m_channels.insert( Chan_Z );
-                }
-                else if (it->compare(N)==0 || it->compare(P)==0)
-                {
-                    if (!m_channels.contains(channel((boost::format("%s.X")%it->c_str()).str().c_str())))
+                    else if (it->compare(ChannelStr::Z)==0)
                     {
-                        m_channels.insert( channel((boost::format("%s.X")%it->c_str()).str().c_str()) );
-                        m_channels.insert( channel((boost::format("%s.Y")%it->c_str()).str().c_str()) );
-                        m_channels.insert( channel((boost::format("%s.Z")%it->c_str()).str().c_str()) );
+                        if (!m_channels.contains(Chan_Z))
+                            m_channels.insert( Chan_Z );
                     }
-                }
-                else
-                {
-                    if (!m_channels.contains( channel((boost::format("%s.red")%it->c_str()).str().c_str())))
+                    else if (it->compare(ChannelStr::N)==0 || it->compare(ChannelStr::P)==0)
                     {
-                        m_channels.insert( channel((boost::format("%s.red")%it->c_str()).str().c_str()) );
-                        m_channels.insert( channel((boost::format("%s.blue")%it->c_str()).str().c_str()) );
-                        m_channels.insert( channel((boost::format("%s.green")%it->c_str()).str().c_str()) );
+                        if (!m_channels.contains(channel((boost::format("%s.X")%it->c_str()).str().c_str())))
+                        {
+                            m_channels.insert( channel((boost::format("%s.X")%it->c_str()).str().c_str()) );
+                            m_channels.insert( channel((boost::format("%s.Y")%it->c_str()).str().c_str()) );
+                            m_channels.insert( channel((boost::format("%s.Z")%it->c_str()).str().c_str()) );
+                        }
+                    }
+                    else
+                    {
+                        if (!m_channels.contains( channel((boost::format("%s.red")%it->c_str()).str().c_str())))
+                        {
+                            m_channels.insert( channel((boost::format("%s.red")%it->c_str()).str().c_str()) );
+                            m_channels.insert( channel((boost::format("%s.blue")%it->c_str()).str().c_str()) );
+                            m_channels.insert( channel((boost::format("%s.green")%it->c_str()).str().c_str()) );
+                        }
                     }
                 }
             }
             
+            // setup format etc
+            info_.format(*m_fmtp.fullSizeFormat());
+            info_.full_size_format(*m_fmtp.format());
             info_.channels( m_channels );
             info_.set(info().format());
         }
 
         void engine(int y, int xx, int r, ChannelMask channels, Row& out)
         {
-            // don't have a buffer yet
-            if ( m_buffer._width==0 && m_buffer._height==0 )
-            {
-                
-                float *rOut = out.writable(Chan_Red) + xx;
-                float *gOut = out.writable(Chan_Green) + xx;
-                float *bOut = out.writable(Chan_Blue) + xx;
-                float *aOut = out.writable(Chan_Alpha) + xx;
-                const float *END = rOut + (r - xx);
-                unsigned int xxx = static_cast<unsigned int> (xx);
-                
-                m_mutex.lock();
-                while (rOut < END)
-                {
-                    *rOut = *gOut = *bOut = *aOut = 0.f;
-                    ++rOut;
-                    ++gOut;
-                    ++bOut;
-                    ++aOut;
-                    ++xxx;
-                }
-                m_mutex.unlock();
-            }
+            int b_index = 0;
             
             foreach(z, channels)
             {
-                int b_index = 0;
                 std::string layer = getLayerName(z);
-                std::string Z = "Z";
-                std::string depth = "depth";
                 
-                for(std::vector<std::string>::iterator it = m_aovs.begin(); it != m_aovs.end(); ++it)
+                // get the current buffer index
+                if (layer.compare(ChannelStr::rgb) != 0)
                 {
-                    if (it->compare(layer) == 0)
+                    for(std::vector<std::string>::iterator it = m_aovs.begin(); it != m_aovs.end(); ++it)
                     {
-                        b_index = static_cast<int>(it - m_aovs.begin());
-                        break;
-                    }
-                    else if ( it->compare(Z) == 0 && layer.compare(depth) == 0 )
-                    {
-                        b_index = static_cast<int>(it - m_aovs.begin());
-                        break;
+                        if (it->compare(layer) == 0)
+                        {
+                            b_index = static_cast<int>(it - m_aovs.begin());
+                            break;
+                        }
+                        else if ( it->compare(ChannelStr::Z) == 0 && layer.compare(ChannelStr::depth) == 0 )
+                        {
+                            b_index = static_cast<int>(it - m_aovs.begin());
+                            break;
+                        }
                     }
                 }
-
+                
                 float *rOut = out.writable(brother (z, 0)) + xx;
                 float *gOut = out.writable(brother (z, 1)) + xx;
                 float *bOut = out.writable(brother (z, 2)) + xx;
@@ -441,31 +438,30 @@ class Aton: public Iop
                 const float *END = rOut + (r - xx);
                 unsigned int xxx = static_cast<unsigned int> (xx);
                 unsigned int yyy = static_cast<unsigned int> (y);
-                
-                if ( m_buffer._width > 0 && m_buffer._height > 0 )
+
+                m_mutex.lock();
+                while (rOut < END)
                 {
-                    m_mutex.lock();
-                    while (rOut < END)
+                    if (m_buffers.empty() ||
+                        xxx >= m_buffer._width || yyy >= m_buffer._height ||
+                        (m_buffer._width==0 && m_buffer._height==0))
                     {
-                        if ( xxx >= m_buffer._width || yyy >= m_buffer._height )
-                        {
-                            *rOut = *gOut = *bOut = *aOut = 0.f;
-                        }
-                        else
-                        {
-                            *rOut = m_buffers[b_index].get_colour(xxx, yyy)[0];
-                            *gOut = m_buffers[b_index].get_colour(xxx, yyy)[1];
-                            *bOut = m_buffers[b_index].get_colour(xxx, yyy)[2];
-                            *aOut = m_buffers[0].get_alpha(xxx, yyy)[0];
-                        }
-                        ++rOut;
-                        ++gOut;
-                        ++bOut;
-                        ++aOut;
-                        ++xxx;
+                        *rOut = *gOut = *bOut = *aOut = 0.f;
                     }
-                    m_mutex.unlock();
+                    else
+                    {
+                        *rOut = m_buffers[b_index].get_colour(xxx, yyy)[0];
+                        *gOut = m_buffers[b_index].get_colour(xxx, yyy)[1];
+                        *bOut = m_buffers[b_index].get_colour(xxx, yyy)[2];
+                        *aOut = m_buffers[0].get_alpha(xxx, yyy)[0];
+                    }
+                    ++rOut;
+                    ++gOut;
+                    ++bOut;
+                    ++aOut;
+                    ++xxx;
                 }
+                m_mutex.unlock();
             }
         }
     
@@ -718,26 +714,30 @@ class Aton: public Iop
                     script_unlock();
 
 					// Create a rectangle node and return it's name
-					cmd = (boost::format("nuke.nodes.Rectangle(opacity=0.75, color = 0).name()")).str();
+					cmd = (boost::format("nuke.nodes.Rectangle(opacity=0.95, color = 0.05).name()")).str();
 					script_command(cmd.c_str());
 					std::string RectNodeName = script_result();
 					script_unlock();
 
 					// Set the rectangle size
 					cmd = (boost::format(	"rect = nuke.toNode('%s')\n"
+                                            "rect['output'].setValue('rgb')\n"
 											"rect['area'].setValue([0,0,%s,%s])\n"
-											"rect.setInput(0, nuke.toNode('%s'))")	%RectNodeName
-																					%m_fmt.width()
-																					%m_stamp_size
-																					%node_name()).str();
+											"rect.setInput(0, nuke.toNode('%s'))")%RectNodeName
+                                                                                  %m_fmt.width()
+                                                                                  %(m_stamp_size+7)
+                                                                                  %node_name()).str();
 					script_command(cmd.c_str(), true, false);
                     script_unlock();
                     
-                    std::string str_status = status(m_stat.progress, m_stat.ram, m_stat.p_ram, m_stat.time);
+                    std::string str_status = setStatus(m_stat.progress, m_stat.ram, m_stat.p_ram, m_stat.time);
                     
-                    cmd = (boost::format("exec('''stamp = nuke.nodes.Text(message='%s  Comment: %s',"
+                    cmd = (boost::format("exec('''stamp = nuke.nodes.Text(message='%s | Comment: %s',"
                                                                          "yjustify='bottom', size=%s)\n"
+                                                 "stamp['output'].setValue('rgb')\n"
                                                  "stamp['font'].setValue(nuke.defaultFontPathname())\n"
+                                                 "stamp['color'].setValue(0.5)\n"
+                                                 "stamp['translate'].setValue([5, 2.5])\n"
                                                  "stamp.setInput(0, nuke.toNode('%s'))\n"
                                                  "nuke.toNode('%s').setInput(0, stamp)''')")%str_status%m_comment
                                                                                             %m_stamp_size%RectNodeName
@@ -838,10 +838,10 @@ class Aton: public Iop
             }
         }
 
-        std::string status(int progress=0,
-                           unsigned long long ram=0,
-                           unsigned long long p_ram=0,
-                           unsigned int time=0)
+        std::string setStatus(int progress=0,
+                              unsigned long long ram=0,
+                              unsigned long long p_ram=0,
+                              unsigned int time=0)
         {
             ram /= 1024*1024;
             p_ram /= 1024*1024;
@@ -852,11 +852,18 @@ class Aton: public Iop
             
             if (progress>100) progress=100;
             
+<<<<<<< HEAD
             std::string str_status = (boost::format("Progress: %s%%  "
                                                     "Used Memory: %sMB  "
                                                     "Peak Memory: %sMB  "
                                                     "Time: %02ih:%02im:%02is "
 													"Arnold: %s")%progress%ram%p_ram
+=======
+            std::string str_status = (boost::format("Progress: %s%% | "
+                                                    "Used Memory: %sMB | "
+                                                    "Peak Memory: %sMB | "
+                                                    "Time: %02ih:%02im:%02is")%progress%ram%p_ram
+>>>>>>> refs/remotes/Sosoyan/1.1
                                                                               %hour%minute
                                                                               %second%m_version).str();
             knob("status_knob")->set_text(str_status.c_str());
@@ -986,9 +993,6 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                 }
                 case 1: // image data
                 {
-                    // lock buffer
-                    node->m_mutex.lock();
-
                     // copy data from d into node->m_buffer
                     int _w = node->m_buffer._width;
                     int _h = node->m_buffer._height;
@@ -1004,12 +1008,16 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     long long _ram = d.ram();
                     int _time = d.time();
                     
-                    // get aov names
+                    // get active aov names
                     if(!(std::find(active_aovs.begin(),
                                    active_aovs.end(),
                                    d.aovName()) != active_aovs.end()))
                         active_aovs.push_back(d.aovName());
                     
+                    // lock buffer
+                    node->m_mutex.lock();
+                    
+                    // get main aov names
                     if(!(std::find(node->m_aovs.begin(),
                                    node->m_aovs.end(),
                                    d.aovName()) != node->m_aovs.end()))
@@ -1070,6 +1078,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         imageArea -= (_width*_height);
                         progress = static_cast<int>(100 - (imageArea*100) / (_w * _h));
                         
+                        node->m_mutex.lock();
+                        
                         // getting redraw bucket size
                         node->m_bucket.x = _xorigin;
                         node->m_bucket.y = _h - _yorigin - _height;
@@ -1077,11 +1087,11 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         node->m_bucket.t = _h - _yorigin;
                         
                         // setting status parameters
-                        node->m_mutex.lock();
                         node->m_stat.progress = progress;
                         node->m_stat.ram = _ram;
                         node->m_stat.p_ram = _ram > node->m_stat.p_ram ? _ram : node->m_stat.p_ram;
                         node->m_stat.time = _time;
+                        
                         node->m_mutex.unlock();
                         
                         // update the image
@@ -1090,13 +1100,10 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     
                     // deallocate aov name
                     d.clearAovName();
-                    
                     break;
                 }
                 case 2: // close image
                 {
-                    // update the image
-                    node->flagForUpdate();
                     break;
                 }
                 case 9: // this is sent when the parent process want to kill
