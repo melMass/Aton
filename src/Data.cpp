@@ -11,7 +11,7 @@
 using namespace aton;
 
 Data::Data( int x, int y, 
-            int width, int height, long long rArea,
+            int width, int height, long long rArea, int version,
             int spp, long long ram, int time, const char *aovName, const float *data ) :
     mType(-1),
     mX(x),
@@ -19,6 +19,7 @@ Data::Data( int x, int y,
     mWidth(width),
     mHeight(height),
     mRArea(rArea),
+	mVersion(version),
     mSpp(spp),
     mRam(ram),
     mTime(time)

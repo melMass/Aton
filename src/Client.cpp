@@ -63,6 +63,7 @@ void Client::openImage( Data &header )
 	boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&header.mWidth), sizeof(int)) );
 	boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&header.mHeight), sizeof(int)) );
     boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&header.mRArea), sizeof(int)) );
+	boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&header.mVersion), sizeof(int)) );
 }
 
 void Client::sendPixels( Data &data )
@@ -87,6 +88,7 @@ void Client::sendPixels( Data &data )
 	boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&data.mWidth), sizeof(int)) );
 	boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&data.mHeight), sizeof(int)) );
     boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&data.mRArea), sizeof(long long)) );
+	boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&data.mVersion), sizeof(int)) );
 	boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&data.mSpp), sizeof(int)) );
     boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&data.mRam), sizeof(long long)) );
     boost::asio::write( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&data.mTime), sizeof(int)) );
