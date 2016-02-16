@@ -24,6 +24,7 @@ using namespace DD::Image;
 #include "Data.h"
 #include "Server.h"
 
+#include <boost/timer.hpp>
 #include "boost/format.hpp"
 #include "boost/foreach.hpp"
 #include "boost/regex.hpp"
@@ -878,9 +879,15 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
         // our incoming data object
         aton::Data d;
         
+        // our timer object
+        boost::timer t;
+        
         // for progress percentage
         long long imageArea = 0;
         int progress = 0;
+        
+        // bucket start time
+        double bs_time = 0;
         
         // loop over incoming data
         while ((d.type()==2||d.type()==9)==false)
@@ -1079,8 +1086,16 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         
                         node->m_mutex.unlock();
                         
-                        // update the image
-                        node->flagForUpdate();
+                        // bucket arrived time
+                        double b_time = t.elapsed() - bs_time;
+                        
+                        // updating image when the time between
+                        // arrived buckets is greater than 1/10sec
+                        if (b_time > .1f)
+                        {
+                            node->flagForUpdate();
+                            bs_time = t.elapsed();
+                        }
                     }
                     
                     // deallocate aov name
@@ -1089,6 +1104,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                 }
                 case 2: // close image
                 {
+                    node->flagForUpdate();
                     break;
                 }
                 case 9: // this is sent when the parent process want to kill
