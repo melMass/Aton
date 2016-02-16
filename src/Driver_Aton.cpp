@@ -1,6 +1,6 @@
 /*
  Copyright (c) 2015,
- Dan Bethell, Johannes Saam, Vahan Sosoyan.
+ Dan Bethell, Johannes Saam, Vahan Sosoyan, Brian Scherbinski.
  All rights reserved. See Copyright.txt for more details.
  */
 
@@ -70,6 +70,11 @@ driver_extension
 
 driver_open
 {
+	//construct full version number into padded interger
+	int version = std::stoi(AI_VERSION_ARCH) * 1000000;
+	version += std::stoi(AI_VERSION_MAJOR)*10000;
+	version += std::stoi(AI_VERSION_MINOR)*100;
+	version += std::stoi(AI_VERSION_FIX);
 
     ShaderData *data = (ShaderData*)AiDriverGetLocalData(node);
 
@@ -90,7 +95,7 @@ driver_open
        data->client = new aton::Client( host, port );
 
        // make image header & send to server
-       aton::Data header( 0, 0, width, height, rArea );
+       aton::Data header( 0, 0, width, height, rArea, version);
        data->client->openImage( header );
     }
     catch (const std::exception &e)
@@ -147,7 +152,7 @@ driver_write_bucket
         // create our data object
         aton::Data packet(bucket_xo, bucket_yo,
                           bucket_size_x, bucket_size_y,
-                          0, spp, ram, time, aov_name, ptr);
+                          0, 0, spp, ram, time, aov_name, ptr);
 
         // send it to the server
         data->client->sendPixels(packet);

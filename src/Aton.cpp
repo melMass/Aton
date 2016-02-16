@@ -79,6 +79,8 @@ class RenderAlpha
         float _val;
 };
 
+
+
 // our image buffer class
 class RenderBuffer
 {
@@ -185,6 +187,7 @@ class Aton: public Iop
         const char * m_path; // default path for Write node
         std::string m_status; // status bar text
         Status m_stat; // object to hold status bar parameters
+		std::string m_version; // hold the arnold core version number
         Bucket m_bucket;
         const char * m_comment;
         bool m_stamp;
@@ -208,7 +211,8 @@ class Aton: public Iop
             Iop(node),
             m_port(aton_default_port),
             m_path(getPath()),
-            m_status(""),
+			m_status(""),
+			m_version("0.0.0.0"),
             m_comment(""),
             m_stamp(true),
             m_stamp_size(15),
@@ -840,12 +844,13 @@ class Aton: public Iop
             
             if (progress>100) progress=100;
             
-            std::string str_status = (boost::format("Progress: %s%% | "
-                                                    "Used Memory: %sMB | "
-                                                    "Peak Memory: %sMB | "
-                                                    "Time: %02ih:%02im:%02is")%progress%ram%p_ram
+            std::string str_status = (boost::format("Progress: %s%%  "
+                                                    "Used Memory: %sMB  "
+                                                    "Peak Memory: %sMB  "
+                                                    "Time: %02ih:%02im:%02is "
+													"Arnold: %s")%progress%ram%p_ram
                                                                               %hour%minute
-                                                                              %second).str();
+                                                                              %second%m_version).str();
             knob("status_knob")->set_text(str_status.c_str());
             return str_status;
         }
@@ -927,7 +932,14 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     if (d.width()*d.height() == d.rArea())
                         imageArea = d.width()*d.height();
                     else imageArea = d.rArea();
-                    
+					
+					// Construct a string from the version number passed
+					int archV = (d.version()%10000000)/1000000;
+					int majorV = (d.version()%1000000)/10000;
+					int minorV = (d.version()%10000)/100;
+					int fixV = d.version()%100;
+                    node->m_version = (boost::format("%s.%s.%s.%s")%archV%majorV%minorV%fixV).str();
+
                     // reset aovs
                     if (!active_aovs.empty() &&
                         !node->m_aovs.empty() && active_aovs!=node->m_aovs)
