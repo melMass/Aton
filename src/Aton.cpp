@@ -1063,9 +1063,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         imageArea -= (_width*_height);
                         progress = static_cast<int>(100 - (imageArea*100) / (_w * _h));
                         
-                        node->m_mutex.lock();
-                        
                         // getting redraw bucket size
+                        node->m_mutex.lock();
                         node->m_bucket.x = _xorigin;
                         node->m_bucket.y = _h - _yorigin - _height;
                         node->m_bucket.r = _xorigin + _width;
@@ -1076,7 +1075,6 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         node->m_stat.ram = _ram;
                         node->m_stat.p_ram = _ram > node->m_stat.p_ram ? _ram : node->m_stat.p_ram;
                         node->m_stat.time = _time;
-                        
                         node->m_mutex.unlock();
                         
                         // update the image
