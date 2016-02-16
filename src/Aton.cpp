@@ -1090,8 +1090,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         double b_time = t.elapsed() - bs_time;
                         
                         // updating image when the time between
-                        // arrived buckets is greater than 1/10sec
-                        if (b_time > .1f)
+                        // arrived buckets is greater than 1/25 sec
+                        if (b_time > .04f)
                         {
                             node->flagForUpdate();
                             bs_time = t.elapsed();
