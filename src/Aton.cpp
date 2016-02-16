@@ -211,16 +211,8 @@ class Aton: public Iop
             Iop(node),
             m_port(aton_default_port),
             m_path(getPath()),
-<<<<<<< HEAD
-            m_status("Progress: 0%  "
-                     "Used Memory: 0MB  "
-                     "Peak Memory: 0MB  "
-                     "Time: 00h:00m:00s "
-					 "Arnold: 0.0.0.0"),
+			m_status(""),
 			m_version("0.0.0.0"),
-=======
-            m_status(""),
->>>>>>> refs/remotes/Sosoyan/1.1
             m_comment(""),
             m_stamp(true),
             m_stamp_size(15),
@@ -852,18 +844,11 @@ class Aton: public Iop
             
             if (progress>100) progress=100;
             
-<<<<<<< HEAD
             std::string str_status = (boost::format("Progress: %s%%  "
                                                     "Used Memory: %sMB  "
                                                     "Peak Memory: %sMB  "
                                                     "Time: %02ih:%02im:%02is "
 													"Arnold: %s")%progress%ram%p_ram
-=======
-            std::string str_status = (boost::format("Progress: %s%% | "
-                                                    "Used Memory: %sMB | "
-                                                    "Peak Memory: %sMB | "
-                                                    "Time: %02ih:%02im:%02is")%progress%ram%p_ram
->>>>>>> refs/remotes/Sosoyan/1.1
                                                                               %hour%minute
                                                                               %second%m_version).str();
             knob("status_knob")->set_text(str_status.c_str());
