@@ -20,6 +20,9 @@
 #include <ai_render.h>
 #include <ai_universe.h>
 
+#include <boost/foreach.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <boost/thread/thread.hpp>
@@ -71,9 +74,20 @@ driver_extension
 driver_open
 {
 	//construct full version number into padded interger
-	char arch, major, minor, fix;
-	AiGetVersion(&arch, &major, &minor, &fix);
-	unsigned int version = std::atoi(&fix) + std::atoi(&minor)*100 + std::atoi(&major)*10000 + std::atoi(&arch) * 1000000;
+
+	string versionString = AiGetVersion(NULL, NULL, NULL, NULL);
+	vector<string> svec;
+	vector<int> ivec;
+
+    boost::split(svec, versionString, boost::is_any_of("."));
+
+    BOOST_FOREACH(std::string item, svec)
+    {
+        int i = boost::lexical_cast<int>(item);
+        ivec.push_back(i);
+	}
+
+	int version = ivec[3] + ivec[2]*100 + ivec[1]*10000 + ivec[0] * 1000000;
 
     ShaderData *data = (ShaderData*)AiDriverGetLocalData(node);
 
