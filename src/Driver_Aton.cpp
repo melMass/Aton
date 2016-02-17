@@ -71,10 +71,9 @@ driver_extension
 driver_open
 {
 	//construct full version number into padded interger
-	int version = std::stoi(AI_VERSION_ARCH) * 1000000;
-	version += std::stoi(AI_VERSION_MAJOR)*10000;
-	version += std::stoi(AI_VERSION_MINOR)*100;
-	version += std::stoi(AI_VERSION_FIX);
+	char arch, major, minor, fix;
+	AiGetVersion(&arch, &major, &minor, &fix);
+	unsigned int version = std::atoi(&fix) + std::atoi(&minor)*100 + std::atoi(&major)*10000 + std::atoi(&arch) * 1000000;
 
     ShaderData *data = (ShaderData*)AiDriverGetLocalData(node);
 

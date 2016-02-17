@@ -844,13 +844,13 @@ class Aton: public Iop
             
             if (progress>100) progress=100;
             
-            std::string str_status = (boost::format("Progress: %s%%  "
+            std::string str_status = (boost::format("Arnold: %s "
                                                     "Used Memory: %sMB  "
                                                     "Peak Memory: %sMB  "
                                                     "Time: %02ih:%02im:%02is "
-													"Arnold: %s")%progress%ram%p_ram
+													"Progress: %s%%")%m_version%ram%p_ram
                                                                               %hour%minute
-                                                                              %second%m_version).str();
+                                                                              %second%progress).str();
             knob("status_knob")->set_text(str_status.c_str());
             return str_status;
         }
