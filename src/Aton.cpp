@@ -1070,9 +1070,10 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     if (node->m_capturing)
                         continue;
                     
-                    // calculating the progress percentage
+                    // update only on last aov
                     if( node->m_aovs.back().compare(d.aovName()) == 0 )
                     {
+                        // calculating the progress percentage
                         imageArea -= (_width*_height);
                         progress = static_cast<int>(100 - (imageArea*100) / (_w * _h));
                         
