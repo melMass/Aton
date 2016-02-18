@@ -191,6 +191,7 @@ class Aton: public Iop
         Bucket m_bucket;
         const char * m_comment;
         bool m_stamp;
+        bool m_enable_aovs;
         int m_stamp_size;
         int m_slimit; // The limit size
         RenderBuffer m_buffer; // our pixel buffer
@@ -468,7 +469,9 @@ class Aton: public Iop
             Spacer(f, 1000);
             Help_knob(f, (boost::format("Aton ver%s")%VERSION).str().c_str());
             File_knob(f, &m_path, "path_knob", "path");
-
+            
+            Newline(f);
+            Bool_knob(f, &m_enable_aovs, "enable_aovs", "Enable AOVs");
             Newline(f);
             Bool_knob(f, &m_stamp, "use_stamp_knob", "Use stamp");
             Spacer(f, 10);
@@ -997,8 +1000,17 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     if(!(std::find(active_aovs.begin(),
                                    active_aovs.end(),
                                    d.aovName()) != active_aovs.end()))
-                        active_aovs.push_back(d.aovName());
-                    
+                    {
+                        if (node->m_enable_aovs)
+                            active_aovs.push_back(d.aovName());
+                        else
+                        {
+                            if (active_aovs.size()==0)
+                                active_aovs.push_back(d.aovName());
+                            else if (active_aovs.size() > 1)
+                                active_aovs.resize(1);
+                        }
+                    }
                     // lock buffer
                     node->m_mutex.lock();
                     
@@ -1007,7 +1019,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                    node->m_aovs.end(),
                                    d.aovName()) != node->m_aovs.end()))
                     {
-                        node->m_aovs.push_back(d.aovName());
+                        if (node->m_enable_aovs || node->m_aovs.size()==0)
+                            node->m_aovs.push_back(d.aovName());
 
                         if (node->m_buffers.size() < node->m_aovs.size())
                         {
@@ -1044,7 +1057,6 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                         RenderAlpha &alpha_pix = node->m_buffers[b_index].get_alpha(_x+ _xorigin, _h - (_y + _yorigin + 1));
                                         alpha_pix[0] = pixel_data[offset+3];
                                     }
-
                                 }
                             break;
                         }
