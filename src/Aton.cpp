@@ -906,9 +906,10 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                 {
                     node->m_mutex.lock();
                     node->m_buffer.init(d.width(), d.height(), true);
-                    
                     node->m_mutex.unlock();
-					
+                    
+                    //std::cout << d.currentFrame() << std::endl;
+                    
 					// set the nuke display format
                     if (node->m_formatExists == false)
                     {
@@ -985,7 +986,6 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     // copy data from d into node->m_buffer
                     int _w = node->m_buffer._width;
                     int _h = node->m_buffer._height;
-
                     unsigned int _x, _x0, _y, _y0, _s, offset;
                     _x = _x0 = _y = _y0 = _s = 0;
 

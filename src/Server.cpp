@@ -111,10 +111,13 @@ Data Server::listen()
 
                 // get width & height
                 int width, height, rArea, version;
+                float currentFrame;
+                
                 boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&width), sizeof(int)) );
                 boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&height), sizeof(int)) );
                 boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&rArea), sizeof(int)) );
 				boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&version), sizeof(int)) );
+                boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&currentFrame), sizeof(int)) );
 
                 // create data object
                 d.mType = key;
@@ -122,6 +125,7 @@ Data Server::listen()
                 d.mHeight = height;
                 d.mRArea = rArea;
 				d.mVersion = version;
+                d.mCurrentFrame = currentFrame;
                 break;
             }
             case 1: // image data
@@ -139,6 +143,7 @@ Data Server::listen()
                 boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&d.mHeight), sizeof(int)) );
                 boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&d.mRArea), sizeof(long long)) );
 				boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&d.mVersion), sizeof(int)) );
+                boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&d.mCurrentFrame), sizeof(float)) );
                 boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&d.mSpp), sizeof(int)) );
                 boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&d.mRam), sizeof(long long)) );
                 boost::asio::read( mSocket, boost::asio::buffer(reinterpret_cast<char*>(&d.mTime), sizeof(int)) );

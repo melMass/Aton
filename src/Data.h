@@ -31,7 +31,7 @@ namespace aton
     public:
         //! Constructor
         Data( int x=0, int y=0,
-              int width=0, int height=0, long long rArea=0, int version = 0,
+              int width=0, int height=0, long long rArea=0, int version = 0, float currentFrame=0.f,
               int spp=0, long long ram=0, int time=0, const char *aovName = 0, const float *data=0 );
         //! Destructor
         ~Data();
@@ -56,6 +56,8 @@ namespace aton
         long long rArea() const { return mRArea; }
 		//! Version number
 		int version() const {return mVersion; }
+        //! Current frame
+        float currentFrame() const {return mCurrentFrame; }
         //! Samples-per-pixel, aka channel depth
         int spp() const { return mSpp; }
         //! Taken memory while rendering
@@ -79,6 +81,9 @@ namespace aton
 
 		// version number
 		int mVersion;
+        
+        // current frame
+        float mCurrentFrame;
         
         // width, height, num channels (samples)
         unsigned int mWidth, mHeight, mSpp, mTime;
