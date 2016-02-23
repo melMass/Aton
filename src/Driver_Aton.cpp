@@ -93,6 +93,7 @@ driver_open
     
     AtNode *options = AiUniverseGetOptions();
     float currentFrame = AiNodeGetFlt(options, "frame");
+//    float currentFrame = static_cast<float>(AiNodeGetInt(options, "AA_samples"));
 
     const char* host = AiNodeGetStr(node, "host");
     int port = AiNodeGetInt(node, "port");
