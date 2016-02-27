@@ -188,6 +188,8 @@ class Aton: public Iop
         std::string m_status; // status bar text
         Status m_stat; // object to hold status bar parameters
         std::string m_version; // hold the arnold core version number
+        bool m_sync_frame;
+        double m_current_frame;
         Bucket m_bucket;
         const char * m_comment;
         bool m_stamp;
@@ -201,7 +203,7 @@ class Aton: public Iop
         bool m_inError; // some error handling
         bool m_formatExists;
         bool m_capturing; // capturing signal
-        std::vector<std::string> garbageList;
+        std::vector<std::string> m_garbageList;
         std::vector<std::string> m_aovs;
         std::vector<RenderBuffer> m_buffers;
         std::string m_connectionError;
@@ -214,6 +216,8 @@ class Aton: public Iop
             m_path(getPath()),
             m_status(""),
             m_version("0.0.0.0"),
+            m_sync_frame(true),
+            m_current_frame(0),
             m_comment(""),
             m_stamp(true),
             m_enable_aovs(true),
@@ -391,7 +395,7 @@ class Aton: public Iop
                     }
                 }
             }
-
+            
             // setup format etc
             info_.format(*m_fmtp.fullSizeFormat());
             info_.full_size_format(*m_fmtp.format());
@@ -473,6 +477,7 @@ class Aton: public Iop
 
             Newline(f);
             Bool_knob(f, &m_enable_aovs, "enable_aovs", "Enable AOVs");
+            Bool_knob(f, &m_sync_frame, "sync_frame", "Sync Frame");
             Newline(f);
             Bool_knob(f, &m_stamp, "use_stamp_knob", "Use stamp");
             Spacer(f, 10);
@@ -533,7 +538,17 @@ class Aton: public Iop
             }
             return 0;
         }
-
+    
+        void setCurrentFrame(float frame)
+        {
+            std::string cmd; // Our python command buffer
+            
+            // Create a Write node and return it's name
+            cmd = (boost::format("nuke.frame(%s)")%frame).str();
+            script_command(cmd.c_str());
+            script_unlock();
+        }
+    
         char * getPath()
         {
             char * aton_path;
@@ -615,13 +630,13 @@ class Aton: public Iop
 
         void cleanByLimit()
         {
-            if ( !garbageList.empty() )
+            if ( !m_garbageList.empty() )
             {
                 // in windows sometimes files can't be deleted due to lack of
                 // access so we collecting a garbage list and trying to remove
                 // them next time when user make a capture
-                for(std::vector<std::string>::iterator it = garbageList.begin();
-                    it != garbageList.end(); ++it)
+                for(std::vector<std::string>::iterator it = m_garbageList.begin();
+                    it != m_garbageList.end(); ++it)
                 {
                     std::remove(it->c_str());
                 }
@@ -649,7 +664,7 @@ class Aton: public Iop
                     if (count >= m_slimit)
                     {
                         if (std::remove(str_path.c_str()) != 0)
-                            garbageList.push_back(str_path);
+                            m_garbageList.push_back(str_path);
 
                         std::string cmd; // Our python command buffer
 
@@ -848,13 +863,14 @@ class Aton: public Iop
 
             if (progress>100) progress=100;
 
-            std::string str_status = (boost::format("Arnold: %s "
-                                                    "Used Memory: %sMB  "
-                                                    "Peak Memory: %sMB  "
-                                                    "Time: %02ih:%02im:%02is "
+            std::string str_status = (boost::format("Arnold: %s | "
+                                                    "Used Memory: %sMB | "
+                                                    "Peak Memory: %sMB | "
+                                                    "Time: %02ih:%02im:%02is | "
+                                                    "Frame: %s | "
                                                     "Progress: %s%%")%m_version%ram%p_ram
-                                                                              %hour%minute
-                                                                              %second%progress).str();
+                                                                              %hour%minute%second
+                                                                              %m_current_frame%progress).str();
             knob("status_knob")->set_text(str_status.c_str());
             return str_status;
         }
@@ -907,9 +923,20 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     node->m_mutex.lock();
                     node->m_buffer.init(d.width(), d.height(), true);
                     node->m_mutex.unlock();
-
-                    std::cout << d.currentFrame() << std::endl;
-
+                    
+                    // sync timeline
+                    if (node->m_sync_frame)
+                    {
+                        // get current frame
+                        double _currentFrame = static_cast<double>(d.currentFrame());
+                        if (node->m_current_frame != _currentFrame)
+                            node->m_current_frame = _currentFrame;
+                        
+                        //set current frame
+                        if (node->m_current_frame != node->outputContext().frame())
+                            node->setCurrentFrame(node->m_current_frame);
+                    }
+                    
                     // set the nuke display format
                     if (node->m_formatExists == false)
                     {
