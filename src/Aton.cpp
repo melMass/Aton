@@ -686,11 +686,18 @@ class Aton: public Iop
                 // Get the path and add time date suffix to it
                 std::string key (".");
                 std::string path = std::string(m_path);
-                std::string timeSuffix = "_" + getDateTime() + ".";
-
+                std::string timeFrameSuffix = "_" + getDateTime();
+                
+                if (m_sync_frame)
+                {
+                    std::string frame = (boost::format("%04i")%m_current_frame).str();
+                    timeFrameSuffix += "_" + frame;
+                }
+                
+                timeFrameSuffix += ".";
                 std::size_t found = path.rfind(key);
                 if (found!=std::string::npos)
-                    path.replace(found, key.length(), timeSuffix);
+                    path.replace(found, key.length(), timeFrameSuffix);
 
                 std::string cmd; // Our python command buffer
 
