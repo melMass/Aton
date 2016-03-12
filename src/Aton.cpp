@@ -188,7 +188,8 @@ class Aton: public Iop
         std::string m_status; // status bar text
         Status m_stat; // object to hold status bar parameters
         std::string m_version; // hold the arnold core version number
-        bool m_sync_frame;
+        bool m_sync_timeline;
+        bool m_date_capture;
         double m_current_frame;
         Bucket m_bucket;
         const char * m_comment;
@@ -215,8 +216,9 @@ class Aton: public Iop
             m_port(aton_default_port),
             m_path(getPath()),
             m_status(""),
-            m_version("0.0.0.0"),
-            m_sync_frame(true),
+            m_version(""),
+            m_sync_timeline(true),
+            m_date_capture(true),
             m_current_frame(0),
             m_comment(""),
             m_stamp(true),
@@ -465,37 +467,40 @@ class Aton: public Iop
 
         void knobs(Knob_Callback f)
         {
+            // hidden knobs
             Format_knob(f, &m_fmtp, "formats_knob", "format");
             Int_knob(f, &m_port, "port_number", "port");
             Bool_knob(f, &m_capturing, "capturing_knob");
+            
+            Spacer(f, 10000);
+            Text_knob(f, (boost::format("Aton ver.%s")%VERSION).str().c_str());
 
-            Newline(f);
-            Int_knob(f, &m_slimit, "limit_knob", "limit");
-            Spacer(f, 1000);
-            Help_knob(f, (boost::format("Aton ver%s")%VERSION).str().c_str());
-            File_knob(f, &m_path, "path_knob", "path");
-
+            Divider(f, "General");
             Newline(f);
             Bool_knob(f, &m_enable_aovs, "enable_aovs", "Enable AOVs");
-            Bool_knob(f, &m_sync_frame, "sync_frame", "Sync Frame");
+            Newline(f);
+            Bool_knob(f, &m_sync_timeline, "sync_timeline", "Sync Timeline");
+
+            Divider(f, "Capture");
+            Int_knob(f, &m_slimit, "limit_knob", "limit");
+            Newline(f);
+            Bool_knob(f, &m_date_capture, "date_capture_knob", "Insert date in filename");
+            File_knob(f, &m_path, "path_knob", "path");
             Newline(f);
             Bool_knob(f, &m_stamp, "use_stamp_knob", "Use stamp");
-            Spacer(f, 10);
-            Knob * stamp_size = Int_knob(f, &m_stamp_size, "stamp_size_knob", "size");
-            stamp_size->clear_flag(Knob::STARTLINE);
-
-            // this will show up in the viewer as status bar
-            BeginToolbar(f, "status_bar");
-            Knob * statusKnob = String_knob(f, &m_status, "status_knob", "");
-            statusKnob->set_flag(Knob::DISABLED, true);
-            statusKnob->set_flag(Knob::OUTPUT_ONLY, true);
-            EndToolbar(f);
-
+            Int_knob(f, &m_stamp_size, "stamp_size_knob", "size");
             String_knob(f, &m_comment, "comment_knob", "comment");
             Newline(f);
             Button(f, "capture_knob", "Capture");
             Button(f, "import_latest_knob", "Import latest");
             Button(f, "import_all_knob", "Import all");
+
+            // This will show up in the viewer as a status bar
+            BeginToolbar(f, "status_bar");
+            Knob * statusKnob = String_knob(f, &m_status, "status_knob", "");
+            statusKnob->set_flag(Knob::DISABLED, true);
+            statusKnob->set_flag(Knob::OUTPUT_ONLY, true);
+            EndToolbar(f);
         }
 
         int knob_changed(Knob* _knob)
@@ -686,13 +691,13 @@ class Aton: public Iop
                 // Get the path and add time date suffix to it
                 std::string key (".");
                 std::string path = std::string(m_path);
-                std::string timeFrameSuffix = "_" + getDateTime();
+                std::string timeFrameSuffix;
+                double currentFrame = uiContext().frame();
                 
-                if (m_sync_frame)
-                {
-                    std::string frame = (boost::format("%04i")%m_current_frame).str();
-                    timeFrameSuffix += "_" + frame;
-                }
+                if (m_date_capture)
+                    timeFrameSuffix += "_" + getDateTime();
+                if (m_sync_timeline)
+                    timeFrameSuffix += "_" + (boost::format("%04i")%currentFrame).str();
                 
                 timeFrameSuffix += ".";
                 std::size_t found = path.rfind(key);
@@ -774,7 +779,7 @@ class Aton: public Iop
                     script_command(cmd.c_str(), true, false);
                     script_unlock();
                 }
-
+                
                 // Execute the Write node
                 cmd = (boost::format("exec('''import thread\n"
                                              "def writer():\n\t"
@@ -782,9 +787,12 @@ class Aton: public Iop
                                                  "nuke.executeInMainThread(status, args=True)\n\t"
                                                  "nuke.executeInMainThread(nuke.execute,"
                                                                            "args='%s',"
-                                                                           "kwargs={'start':1, 'end':1})\n\t"
+                                                                           "kwargs={'start':%s, 'end':%s})\n\t"
                                                  "nuke.executeInMainThread(status, args=False)\n"
-                                              "thread.start_new_thread(writer,())''')")%node_name()%writeNodeName).str();
+                                              "thread.start_new_thread(writer,())''')")%node_name()
+                                                                                       %writeNodeName
+                                                                                       %currentFrame
+                                                                                       %currentFrame).str();
                 script_command(cmd.c_str(), true, false);
                 script_unlock();
             }
@@ -932,7 +940,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     node->m_mutex.unlock();
                     
                     // sync timeline
-                    if (node->m_sync_frame)
+                    if (node->m_sync_timeline)
                     {
                         // get current frame
                         double _currentFrame = static_cast<double>(d.currentFrame());
