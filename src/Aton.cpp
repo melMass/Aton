@@ -918,6 +918,10 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
         // for progress percentage
         long long imageArea = 0;
         int progress = 0;
+        
+        // for time to reset per every IPR iteration
+        static int active_time = 0;
+        static int delta_time = 0;
 
         // loop over incoming data
         while ((d.type()==2||d.type()==9)==false)
@@ -1020,7 +1024,10 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         node->m_aovs.clear();
                         node->m_mutex.unlock();
                     }
-
+                    
+                    // get delta time per IPR iteration
+                    delta_time = active_time;
+                    
                     // automatically set the knob to the right format
                     node->knob("formats_knob")->set_text("Aton");
                     break;
@@ -1040,6 +1047,9 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     int _spp = d.spp();
                     long long _ram = d.ram();
                     int _time = d.time();
+                    
+                    // get active time
+                    active_time = d.time();
 
                     // get active aov names
                     if(!(std::find(active_aovs.begin(),
@@ -1132,7 +1142,10 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         node->m_stat.progress = progress;
                         node->m_stat.ram = _ram;
                         node->m_stat.p_ram = _ram > node->m_stat.p_ram ? _ram : node->m_stat.p_ram;
-                        node->m_stat.time = _time;
+                        if (delta_time > _time)
+                            node->m_stat.time = _time;
+                        else
+                            node->m_stat.time = _time - delta_time;
                         node->m_mutex.unlock();
 
                         // update the image
