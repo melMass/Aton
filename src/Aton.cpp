@@ -189,7 +189,7 @@ class Aton: public Iop
         Status m_stat; // object to hold status bar parameters
         std::string m_version; // hold the arnold core version number
         bool m_sync_timeline;
-        bool m_date_capture;
+        bool m_date_filename;
         double m_current_frame;
         Bucket m_bucket;
         const char * m_comment;
@@ -218,7 +218,7 @@ class Aton: public Iop
             m_status(""),
             m_version(""),
             m_sync_timeline(true),
-            m_date_capture(true),
+            m_date_filename(true),
             m_current_frame(0),
             m_comment(""),
             m_stamp(true),
@@ -477,19 +477,20 @@ class Aton: public Iop
 
             Divider(f, "General");
             Newline(f);
-            Bool_knob(f, &m_enable_aovs, "enable_aovs", "Enable AOVs");
+            Bool_knob(f, &m_enable_aovs, "enable_aovs_knob", "Enable AOVs");
             Newline(f);
-            Bool_knob(f, &m_sync_timeline, "sync_timeline", "Sync Timeline");
+            Bool_knob(f, &m_sync_timeline, "sync_timeline_knob", "Sync Timeline");
 
             Divider(f, "Capture");
-            Int_knob(f, &m_slimit, "limit_knob", "limit");
+            Int_knob(f, &m_slimit, "limit_knob", "Limit");
             Newline(f);
-            Bool_knob(f, &m_date_capture, "date_capture_knob", "Insert date in filename");
-            File_knob(f, &m_path, "path_knob", "path");
+            File_knob(f, &m_path, "path_knob", "Path");
             Newline(f);
-            Bool_knob(f, &m_stamp, "use_stamp_knob", "Use stamp");
-            Int_knob(f, &m_stamp_size, "stamp_size_knob", "size");
-            String_knob(f, &m_comment, "comment_knob", "comment");
+            Bool_knob(f, &m_date_filename, "date_filename_knob", "Date in Filename");
+            Newline(f);
+            Bool_knob(f, &m_stamp, "use_stamp_knob", "Use Stamp");
+            Int_knob(f, &m_stamp_size, "stamp_size_knob", "Size");
+            String_knob(f, &m_comment, "comment_knob", "Comment");
             Newline(f);
             Button(f, "capture_knob", "Capture");
             Button(f, "import_latest_knob", "Import latest");
@@ -694,7 +695,7 @@ class Aton: public Iop
                 std::string timeFrameSuffix;
                 double currentFrame = uiContext().frame();
                 
-                if (m_date_capture)
+                if (m_date_filename)
                     timeFrameSuffix += "_" + getDateTime();
                 if (m_sync_timeline)
                     timeFrameSuffix += "_" + (boost::format("%04i")%currentFrame).str();
@@ -884,8 +885,9 @@ class Aton: public Iop
                                                     "Time: %02ih:%02im:%02is | "
                                                     "Frame: %s | "
                                                     "Progress: %s%%")%m_version%ram%p_ram
-                                                                              %hour%minute%second
-                                                                              %m_current_frame%progress).str();
+                                                                     %hour%minute%second
+                                                                     %m_current_frame
+                                                                     %progress).str();
             knob("status_knob")->set_text(str_status.c_str());
             return str_status;
         }
