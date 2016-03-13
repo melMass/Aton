@@ -360,6 +360,7 @@ class Aton: public Iop
 
             if ( !m_aovs.empty() )
             {
+                m_mutex.lock();
                 for(std::vector<std::string>::iterator it = m_aovs.begin(); it != m_aovs.end(); ++it)
                 {
                     if (it->compare(ChannelStr::RGBA)==0)
@@ -381,21 +382,22 @@ class Aton: public Iop
                     {
                         if (!m_channels.contains(channel((boost::format("%s.X")%it->c_str()).str().c_str())))
                         {
-                            m_channels.insert( channel((boost::format("%s.X")%it->c_str()).str().c_str()) );
-                            m_channels.insert( channel((boost::format("%s.Y")%it->c_str()).str().c_str()) );
-                            m_channels.insert( channel((boost::format("%s.Z")%it->c_str()).str().c_str()) );
+                            m_channels.insert(channel((boost::format("%s.X")%it->c_str()).str().c_str()));
+                            m_channels.insert(channel((boost::format("%s.Y")%it->c_str()).str().c_str()));
+                            m_channels.insert(channel((boost::format("%s.Z")%it->c_str()).str().c_str()));
                         }
                     }
                     else
                     {
-                        if (!m_channels.contains( channel((boost::format("%s.red")%it->c_str()).str().c_str())))
+                        if (!m_channels.contains(channel((boost::format("%s.red")%it->c_str()).str().c_str())))
                         {
-                            m_channels.insert( channel((boost::format("%s.red")%it->c_str()).str().c_str()) );
-                            m_channels.insert( channel((boost::format("%s.blue")%it->c_str()).str().c_str()) );
-                            m_channels.insert( channel((boost::format("%s.green")%it->c_str()).str().c_str()) );
+                            m_channels.insert(channel((boost::format("%s.red")%it->c_str()).str().c_str()));
+                            m_channels.insert(channel((boost::format("%s.blue")%it->c_str()).str().c_str()));
+                            m_channels.insert(channel((boost::format("%s.green")%it->c_str()).str().c_str()));
                         }
                     }
                 }
+                m_mutex.unlock();
             }
             
             // setup format etc
