@@ -35,7 +35,7 @@ using namespace DD::Image;
 static const char* const CLASS = "Aton";
 
 // version
-static const char* const VERSION = "1.1.0";
+static const char* const VERSION = "1.1.0b";
 
 // help
 static const char* const HELP =
@@ -340,6 +340,7 @@ class Aton: public Iop
         void append(Hash& hash)
         {
             hash.append(hash_counter);
+            hash.append(outputContext().frame());
         }
 
         void _validate(bool for_real)
