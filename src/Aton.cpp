@@ -401,6 +401,9 @@ class Aton: public Iop
                 m_mutex.unlock();
             }
             
+            // disable caching
+            slowness(0);
+            
             // setup format etc
             info_.format(*m_fmtp.fullSizeFormat());
             info_.full_size_format(*m_fmtp.format());
@@ -894,7 +897,8 @@ class Aton: public Iop
             knob("status_knob")->set_text(str_status.c_str());
             return str_status;
         }
-
+    
+        bool firstEngineRendersWholeRequest() const { return true; }
         const char* Class() const { return CLASS; }
         const char* displayName() const { return CLASS; }
         const char* node_help() const { return HELP; }
