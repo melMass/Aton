@@ -29,6 +29,7 @@
 #include <boost/format.hpp>
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <iostream>
 #include <deque>
 
@@ -42,10 +43,43 @@ struct ShaderData
    aton::Client *client;
 };
 
+char * getHost()
+{
+    char * aton_host;
+    std::string def_host;
+    
+    aton_host = getenv("ATON_HOST");
+    
+    if (aton_host == NULL)
+        def_host = "127.0.0.1";
+    else
+        def_host = aton_host;
+    
+    char * host = new char[def_host.length()+1];
+    strcpy(host, def_host.c_str());
+    
+    return host;
+}
+
+int getPort()
+{
+    char * aton_port;
+    int def_port;
+    
+    aton_port = getenv("ATON_PORT");
+    
+    if (aton_port == NULL)
+        def_port = 9201;
+    else
+        def_port = atoi(aton_port);
+    
+    return def_port;
+}
+
 node_parameters
 {
-    AiParameterSTR("host", "127.0.0.1");
-    AiParameterINT("port", 9201);
+    AiParameterSTR("host", getHost());
+    AiParameterINT("port", getPort());
     AiMetaDataSetStr(mds, NULL, "maya.translator", "aton");
     AiMetaDataSetStr(mds, NULL, "maya.attr_prefix", "");
     AiMetaDataSetBool(mds, NULL, "display_driver", true);
@@ -196,6 +230,7 @@ node_finish
 
     ShaderData *data = (ShaderData*)AiDriverGetLocalData(node);
     delete data->client;
+    delete[] getHost();
 
     AiFree(data);
     AiDriverDestroy(node);

@@ -41,9 +41,6 @@ static const char* const VERSION = "1.1.0b";
 static const char* const HELP =
     "Listens for renders coming from the Aton display driver.";
 
-// our default port
-const int aton_default_port = 9201;
-
 // our listener method
 static void atonListen(unsigned index, unsigned nthreads, void* data);
 
@@ -215,7 +212,7 @@ class Aton: public Iop
         Aton(Node* node) :
             Iop(node),
             m_node(firstNode()),
-            m_port(aton_default_port),
+            m_port(getPort()),
             m_path(getPath()),
             m_status(""),
             m_version(""),
@@ -596,6 +593,21 @@ class Aton: public Iop
             strcpy(full_path, str_path.c_str());
 
             return full_path;
+        }
+    
+        int getPort()
+        {
+            char * aton_port;
+            int def_port;
+            
+            aton_port = getenv("ATON_PORT");
+            
+            if (aton_port == NULL)
+                def_port = 9201;
+            else
+                def_port = atoi(aton_port);
+            
+            return def_port;
         }
 
         std::string getDateTime()
