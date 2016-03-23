@@ -181,6 +181,7 @@ namespace ChannelStr
 class Aton: public Iop
 {
     public:
+        Aton * m_node;
         FormatPair m_fmtp; // our buffer format (knob)
         Format m_fmt; // The nuke display format
         int m_port; // the port we're listening on (knob)
@@ -213,6 +214,7 @@ class Aton: public Iop
 
         Aton(Node* node) :
             Iop(node),
+            m_node(firstNode()),
             m_port(aton_default_port),
             m_path(getPath()),
             m_status(""),
@@ -241,6 +243,11 @@ class Aton: public Iop
             disconnect();
             delete[] m_path;
             m_path = NULL;
+        }
+    
+        Aton* firstNode()
+        {
+            return dynamic_cast<Aton*>(firstOp());
         }
 
         // It seems additional instances of a node get copied/constructed upon
@@ -359,10 +366,10 @@ class Aton: public Iop
             if ( m_inError )
                 error(m_connectionError.c_str());
 
-            if ( !m_aovs.empty() )
+            if ( !m_node->m_aovs.empty() )
             {
                 m_mutex.lock();
-                for(std::vector<std::string>::iterator it = m_aovs.begin(); it != m_aovs.end(); ++it)
+                for(std::vector<std::string>::iterator it = m_node->m_aovs.begin(); it != m_node->m_aovs.end(); ++it)
                 {
                     if (it->compare(ChannelStr::RGBA)==0)
                     {
@@ -414,7 +421,7 @@ class Aton: public Iop
         void engine(int y, int xx, int r, ChannelMask channels, Row& out)
         {
             int b_index = 0;
-
+            
             foreach(z, channels)
             {
                 std::string layer = getLayerName(z);
@@ -422,16 +429,16 @@ class Aton: public Iop
                 // get the current buffer index
                 if (layer.compare(ChannelStr::rgb) != 0)
                 {
-                    for(std::vector<std::string>::iterator it = m_aovs.begin(); it != m_aovs.end(); ++it)
+                    for(std::vector<std::string>::iterator it = m_node->m_aovs.begin(); it != m_node->m_aovs.end(); ++it)
                     {
                         if (it->compare(layer) == 0)
                         {
-                            b_index = static_cast<int>(it - m_aovs.begin());
+                            b_index = static_cast<int>(it - m_node->m_aovs.begin());
                             break;
                         }
                         else if ( it->compare(ChannelStr::Z) == 0 && layer.compare(ChannelStr::depth) == 0 )
                         {
-                            b_index = static_cast<int>(it - m_aovs.begin());
+                            b_index = static_cast<int>(it - m_node->m_aovs.begin());
                             break;
                         }
                     }
@@ -448,18 +455,18 @@ class Aton: public Iop
                 m_mutex.lock();
                 while (rOut < END)
                 {
-                    if (m_buffers.empty() ||
-                        xxx >= m_buffer._width || yyy >= m_buffer._height ||
-                        (m_buffer._width==0 && m_buffer._height==0))
+                    if (m_node->m_buffers.empty() ||
+                        xxx >= m_node->m_buffer._width || yyy >= m_node->m_buffer._height ||
+                        (m_node->m_buffer._width==0 && m_node->m_buffer._height==0))
                     {
                         *rOut = *gOut = *bOut = *aOut = 0.f;
                     }
                     else
                     {
-                        *rOut = m_buffers[b_index].get_colour(xxx, yyy)[0];
-                        *gOut = m_buffers[b_index].get_colour(xxx, yyy)[1];
-                        *bOut = m_buffers[b_index].get_colour(xxx, yyy)[2];
-                        *aOut = m_buffers[0].get_alpha(xxx, yyy)[0];
+                        *rOut = m_node->m_buffers[b_index].get_colour(xxx, yyy)[0];
+                        *gOut = m_node->m_buffers[b_index].get_colour(xxx, yyy)[1];
+                        *bOut = m_node->m_buffers[b_index].get_colour(xxx, yyy)[2];
+                        *aOut = m_node->m_buffers[0].get_alpha(xxx, yyy)[0];
                     }
                     ++rOut;
                     ++gOut;
@@ -1098,7 +1105,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     if (node->m_buffers.size() > node->m_aovs.size())
                         node->m_buffers.resize(node->m_aovs.size());
 
-                    for(std::vector<std::string>::iterator it = node->m_aovs.begin(); it != node->m_aovs.end(); ++it)
+                    for(std::vector<std::string>::iterator it = node->m_aovs.begin();
+                                                           it != node->m_aovs.end(); ++it)
                     {
                         if (it->compare(d.aovName()) == 0)
                         {
