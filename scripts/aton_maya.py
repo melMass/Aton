@@ -1,6 +1,6 @@
 __author__ = "Vahan Sosoyan"
 __copyright__ = "2016 All rights reserved. See Copyright.txt for more details."
-__version__ = "1.1.0"
+__version__ = "v1.1.0"
 
 import sys
 import mtoa.core as core
@@ -87,7 +87,7 @@ class Aton(QtGui.QDialog):
 			self.sssCheckBox.setChecked(not self.getSceneOptions()["sss"])
 
 		self.setObjectName(self.windowName)
-		self.setWindowTitle("Aton")
+		self.setWindowTitle("Aton %s"%__version__)
 		self.setWindowFlags(QtCore.Qt.Tool)
 		self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 		self.setMinimumSize(400, 200)
@@ -141,6 +141,7 @@ class Aton(QtGui.QDialog):
 		self.cameraAaSpinBox = QtGui.QSpinBox()
 		self.cameraAaSpinBox.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
 		self.cameraAaSpinBox.setMaximum(64)
+		self.cameraAaSpinBox.setMinimum(-64)
 		self.cameraAaSpinBox.setValue(self.getSceneOptions()["AASamples"])
 		cameraAaSlider = QtGui.QSlider()
 		cameraAaSlider.setOrientation(QtCore.Qt.Horizontal)
