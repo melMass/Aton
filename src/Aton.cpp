@@ -39,7 +39,8 @@ static const char* const VERSION = "1.1.0b";
 
 // help
 static const char* const HELP =
-    "Listens for renders coming from the Aton display driver.";
+    "Listens for renders coming from the Aton display driver. "
+    "For more info go to http://sosoyan.github.io/Aton/";
 
 // our listener method
 static void atonListen(unsigned index, unsigned nthreads, void* data);
@@ -186,7 +187,7 @@ class Aton: public Iop
         std::string m_status; // status bar text
         Status m_stat; // object to hold status bar parameters
         std::string m_version; // hold the arnold core version number
-        bool m_sync_timeline;
+        bool m_sync_current_frame;
         bool m_date_filename;
         double m_current_frame;
         Bucket m_bucket;
@@ -216,7 +217,7 @@ class Aton: public Iop
             m_path(getPath()),
             m_status(""),
             m_version(""),
-            m_sync_timeline(true),
+            m_sync_current_frame(true),
             m_date_filename(true),
             m_current_frame(0),
             m_comment(""),
@@ -477,41 +478,56 @@ class Aton: public Iop
 
         void knobs(Knob_Callback f)
         {
-            // hidden knobs
-            Format_knob(f, &m_fmtp, "formats_knob", "format");
-            Int_knob(f, &m_port, "port_number", "port");
-            Bool_knob(f, &m_capturing, "capturing_knob");
+            // Hidden knobs
+            Knob * formats_knob = Format_knob(f, &m_fmtp, "formats_knob", "format");
+            Knob * port_number = Int_knob(f, &m_port, "port_number", "port");
+            Knob * capturing_knob = Bool_knob(f, &m_capturing, "capturing_knob");
             
+            // Main knobs
             Spacer(f, 10000);
             Text_knob(f, (boost::format("Aton ver.%s")%VERSION).str().c_str());
 
             Divider(f, "General");
             Newline(f);
-            Bool_knob(f, &m_enable_aovs, "enable_aovs_knob", "Enable AOVs");
+            Knob * enable_aovs_knob = Bool_knob(f, &m_enable_aovs, "enable_aovs_knob", "Enable AOVs");
             Newline(f);
-            Bool_knob(f, &m_sync_timeline, "sync_timeline_knob", "Sync Timeline");
+            Knob * sync_current_frame_knob = Bool_knob(f, &m_sync_current_frame, "sync_current_frame_knob", "Sync Current Frame");
 
             Divider(f, "Capture");
-            Int_knob(f, &m_slimit, "limit_knob", "Limit");
+            Knob * limit_knob = Int_knob(f, &m_slimit, "limit_knob", "Limit");
             Newline(f);
-            File_knob(f, &m_path, "path_knob", "Path");
+            Knob * path_knob = File_knob(f, &m_path, "path_knob", "Path");
             Newline(f);
-            Bool_knob(f, &m_date_filename, "date_filename_knob", "Date in Filename");
+            Knob * date_filename_knob = Bool_knob(f, &m_date_filename, "date_filename_knob", "Insert Date in Filename");
             Newline(f);
-            Bool_knob(f, &m_stamp, "use_stamp_knob", "Use Stamp");
-            Int_knob(f, &m_stamp_size, "stamp_size_knob", "Size");
-            String_knob(f, &m_comment, "comment_knob", "Comment");
+            Knob * use_stamp_knob = Bool_knob(f, &m_stamp, "use_stamp_knob", "Use Stamp");
+            Knob * stamp_size_knob = Int_knob(f, &m_stamp_size, "stamp_size_knob", "Size");
+            Knob * comment_knob = String_knob(f, &m_comment, "comment_knob", "Comment");
             Newline(f);
             Button(f, "capture_knob", "Capture");
             Button(f, "import_latest_knob", "Import latest");
             Button(f, "import_all_knob", "Import all");
 
-            // This will show up in the viewer as a status bar
+            // Status Bar knobs
             BeginToolbar(f, "status_bar");
             Knob * statusKnob = String_knob(f, &m_status, "status_knob", "");
+            EndToolbar(f);
+            
+            // Set Flags
+            formats_knob->set_flag(Knob::NO_RERENDER, true);
+            port_number->set_flag(Knob::NO_RERENDER, true);
+            capturing_knob->set_flag(Knob::NO_RERENDER, true);
+            enable_aovs_knob->set_flag(Knob::NO_RERENDER, true);
+            sync_current_frame_knob->set_flag(Knob::NO_RERENDER, true);
+            limit_knob->set_flag(Knob::NO_RERENDER, true);
+            path_knob->set_flag(Knob::NO_RERENDER, true);
+            date_filename_knob->set_flag(Knob::NO_RERENDER, true);
+            use_stamp_knob->set_flag(Knob::NO_RERENDER, true);
+            stamp_size_knob->set_flag(Knob::NO_RERENDER, true);
+            comment_knob->set_flag(Knob::NO_RERENDER, true);
+            statusKnob->set_flag(Knob::NO_RERENDER, true);
             statusKnob->set_flag(Knob::DISABLED, true);
             statusKnob->set_flag(Knob::OUTPUT_ONLY, true);
-            EndToolbar(f);
         }
 
         int knob_changed(Knob* _knob)
@@ -722,7 +738,7 @@ class Aton: public Iop
                 
                 if (m_date_filename)
                     timeFrameSuffix += "_" + getDateTime();
-                if (m_sync_timeline)
+                if (m_sync_current_frame)
                     timeFrameSuffix += "_" + (boost::format("%04i")%currentFrame).str();
                 
                 timeFrameSuffix += ".";
@@ -972,7 +988,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     node->m_mutex.unlock();
                     
                     // sync timeline
-                    if (node->m_sync_timeline)
+                    if (node->m_sync_current_frame)
                     {
                         // get current frame
                         double _currentFrame = static_cast<double>(d.currentFrame());
