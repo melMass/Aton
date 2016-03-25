@@ -77,8 +77,6 @@ class RenderAlpha
         float _val;
 };
 
-
-
 // our image buffer class
 class RenderBuffer
 {
@@ -626,13 +624,11 @@ class Aton: public Iop
         int getPort()
         {
             char * aton_port;
-            int def_port;
+            int def_port = 9201;
             
             aton_port = getenv("ATON_PORT");
             
-            if (aton_port == NULL)
-                def_port = 9201;
-            else
+            if (aton_port != NULL)
                 def_port = atoi(aton_port);
             
             return def_port;
