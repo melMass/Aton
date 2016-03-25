@@ -302,12 +302,24 @@ class Aton: public Iop
         {
             m_inError = false;
             m_connectionError = "";
-
+            
+            // for multiple node support
+            int nodeCount = 0;
+            std::string nodeName = node_name();
+            
+            nodeName.erase(nodeName.length() - 1);
+            
+            if (nodeName.compare(CLASS) == 0)
+            {
+                nodeCount = atoi(&node_name()[node_name().length() - 1]);
+                port += nodeCount - 1;
+            }
+            
             // try to reconnect
             disconnect();
             try
             {
-                m_server.connect( m_port );
+                m_server.connect( port );
             }
             catch ( ... )
             {
