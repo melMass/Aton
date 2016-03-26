@@ -178,6 +178,7 @@ class Aton: public Iop
 {
     public:
         Aton * m_node;
+        const char * m_node_name;
         FormatPair m_fmtp; // our buffer format (knob)
         Format m_fmt; // The nuke display format
         int m_port; // the port we're listening on (knob)
@@ -237,8 +238,6 @@ class Aton: public Iop
         ~Aton()
         {
             disconnect();
-            delete[] m_path;
-            m_path = NULL;
         }
     
         Aton* firstNode()
@@ -262,16 +261,24 @@ class Aton: public Iop
             knob("formats_knob")->hide();
             knob("capturing_knob")->hide();
 
+            // Allocate node name in order to pass it to format
+            char * format = new char[node_name().length() + 1];
+            strcpy(format, node_name().c_str());
+            m_node_name = format;
+            
             // Running python code to check if we've already our format in the script
-            script_command("bool([i.name() for i in nuke.formats() if i.name()=='Aton'])");
+            std::string cmd; // Our python command buffer
+            
+            cmd = (boost::format("bool([i.name() for i in nuke.formats() if i.name()=='%s'])")%m_node_name).str();
+            script_command(cmd.c_str());
             std::string result = script_result();
             script_unlock();
-
+            
             // Checking if the format is already exist
             if (result.compare("True") != 0)
-                m_fmt.add("Aton");
-            else m_formatExists = true;
-
+                m_fmt.add(m_node_name);
+            else
+                m_formatExists = true;
         }
 
         void detach()
@@ -283,6 +290,11 @@ class Aton: public Iop
             disconnect();
             m_buffers.resize(0);
             m_aovs.resize(0);
+            
+            delete[] m_path;
+            delete[] m_node_name;
+            m_path = NULL;
+            m_node_name = NULL;
         }
 
         void flagForUpdate()
@@ -326,7 +338,7 @@ class Aton: public Iop
                 
                 // Update port in the UI
                 std::string cmd; // Our python command buffer
-                cmd = (boost::format("nuke.toNode('%s')['port_number'].setValue(%s)")%node_name()
+                cmd = (boost::format("nuke.toNode('%s')['port_number'].setValue(%s)")%m_node_name
                                                                                      %m_server.getPort()).str();
                 script_command(cmd.c_str());
                 script_unlock();
@@ -485,11 +497,11 @@ class Aton: public Iop
         void knobs(Knob_Callback f)
         {
             // Hidden knobs
-            Knob * formats_knob = Format_knob(f, &m_fmtp, "formats_knob", "format");
-            Knob * capturing_knob = Bool_knob(f, &m_capturing, "capturing_knob");
+            Format_knob(f, &m_fmtp, "formats_knob", "format");
+            Bool_knob(f, &m_capturing, "capturing_knob");
             
             // Main knobs
-            Knob * port_number = Int_knob(f, &m_port, "port_number", "Port");
+            Int_knob(f, &m_port, "port_number", "Port");
             Spacer(f, 10000);
             Text_knob(f, (boost::format("Aton v%s")%VERSION).str().c_str());
 
@@ -528,9 +540,6 @@ class Aton: public Iop
             EndToolbar(f);
             
             // Set Flags
-            formats_knob->set_flag(Knob::NO_RERENDER, true);
-            port_number->set_flag(Knob::NO_RERENDER, true);
-            capturing_knob->set_flag(Knob::NO_RERENDER, true);
             enable_aovs_knob->set_flag(Knob::NO_RERENDER, true);
             sync_current_frame_knob->set_flag(Knob::NO_RERENDER, true);
             limit_knob->set_flag(Knob::NO_RERENDER, true);
@@ -770,7 +779,7 @@ class Aton: public Iop
                 // Connect to Write node
                 cmd = (boost::format("nuke.toNode('%s').setInput(0, nuke.toNode('%s'));"
                                      "nuke.toNode('%s')['channels'].setValue('all')")%writeNodeName
-                                                                                     %node_name()
+                                                                                     %m_node_name
                                                                                      %writeNodeName).str();
                 script_command(cmd.c_str(), true, false);
                 script_unlock();
@@ -804,7 +813,7 @@ class Aton: public Iop
                                             "rect.setInput(0, nuke.toNode('%s'))")%RectNodeName
                                                                                   %m_fmt.width()
                                                                                   %(m_stamp_size+7)
-                                                                                  %node_name()).str();
+                                                                                  %m_node_name).str();
                     script_command(cmd.c_str(), true, false);
                     script_unlock();
 
@@ -844,7 +853,7 @@ class Aton: public Iop
                                                                            "args='%s',"
                                                                            "kwargs={'start':%s, 'end':%s})\n\t"
                                                  "nuke.executeInMainThread(status, args=False)\n"
-                                              "thread.start_new_thread(writer,())''')")%node_name()
+                                              "thread.start_new_thread(writer,())''')")%m_node_name
                                                                                        %writeNodeName
                                                                                        %currentFrame
                                                                                        %currentFrame).str();
@@ -1028,7 +1037,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         for (int i=0; i < Format::size(); i++)
                         {
                             m_fmt_exist = Format::index(i);
-                            if (std::string(m_fmt_exist->name()).compare("Aton") == 0)
+                            if (std::string(m_fmt_exist->name()).compare(node->m_node_name) == 0)
                                 break;
                         }
                         m_fmt_exist->set(0, 0, d.width(), d.height());
@@ -1084,7 +1093,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     delta_time = active_time;
                     
                     // automatically set the knob to the right format
-                    node->knob("formats_knob")->set_text("Aton");
+                    node->knob("formats_knob")->set_text(node->m_node_name);
                     break;
                 }
                 case 1: // image data
