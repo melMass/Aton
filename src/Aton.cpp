@@ -308,7 +308,8 @@ class Aton: public Iop
             {
                 try
                 {
-                    m_server.connect( port++);
+                    m_server.connect(port++);
+                    m_port = port;
                     break;
                 }
                 catch ( ... )
