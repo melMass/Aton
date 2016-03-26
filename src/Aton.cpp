@@ -260,7 +260,6 @@ class Aton: public Iop
 
             // We don't need to see these knobs
             knob("formats_knob")->hide();
-            knob("port_number")->hide();
             knob("capturing_knob")->hide();
 
             // Running python code to check if we've already our format in the script
@@ -324,6 +323,14 @@ class Aton: public Iop
             {
                 Thread::spawn(::atonListen, 1, this);
                 print_name( std::cout );
+                
+                // Update port in the UI
+                std::string cmd; // Our python command buffer
+                cmd = (boost::format("nuke.toNode('%s')['port_number'].setValue(%s)")%node_name()
+                                                                                     %m_server.getPort()).str();
+                script_command(cmd.c_str());
+                script_unlock();
+                
                 std::cout << ": Connected to port " << m_server.getPort() << std::endl;
             }
         }
@@ -479,25 +486,33 @@ class Aton: public Iop
         {
             // Hidden knobs
             Knob * formats_knob = Format_knob(f, &m_fmtp, "formats_knob", "format");
-            Knob * port_number = Int_knob(f, &m_port, "port_number", "port");
             Knob * capturing_knob = Bool_knob(f, &m_capturing, "capturing_knob");
             
             // Main knobs
+            Knob * port_number = Int_knob(f, &m_port, "port_number", "Port");
             Spacer(f, 10000);
-            Text_knob(f, (boost::format("Aton ver.%s")%VERSION).str().c_str());
+            Text_knob(f, (boost::format("Aton v%s")%VERSION).str().c_str());
 
             Divider(f, "General");
+            Knob * enable_aovs_knob = Bool_knob(f,
+                                                &m_enable_aovs,
+                                                "enable_aovs_knob",
+                                                "Enable AOVs");
             Newline(f);
-            Knob * enable_aovs_knob = Bool_knob(f, &m_enable_aovs, "enable_aovs_knob", "Enable AOVs");
-            Newline(f);
-            Knob * sync_current_frame_knob = Bool_knob(f, &m_sync_current_frame, "sync_current_frame_knob", "Sync Current Frame");
+            Knob * sync_current_frame_knob = Bool_knob(f,
+                                                       &m_sync_current_frame,
+                                                       "sync_current_frame_knob",
+                                                       "Sync Current Frame");
 
             Divider(f, "Capture");
             Knob * limit_knob = Int_knob(f, &m_slimit, "limit_knob", "Limit");
             Newline(f);
             Knob * path_knob = File_knob(f, &m_path, "path_knob", "Path");
             Newline(f);
-            Knob * date_filename_knob = Bool_knob(f, &m_date_filename, "date_filename_knob", "Insert Date in Filename");
+            Knob * date_filename_knob = Bool_knob(f,
+                                                  &m_date_filename,
+                                                  "date_filename_knob",
+                                                  "Date in Filename");
             Newline(f);
             Knob * use_stamp_knob = Bool_knob(f, &m_stamp, "use_stamp_knob", "Use Stamp");
             Knob * stamp_size_knob = Int_knob(f, &m_stamp_size, "stamp_size_knob", "Size");
@@ -524,6 +539,7 @@ class Aton: public Iop
             use_stamp_knob->set_flag(Knob::NO_RERENDER, true);
             stamp_size_knob->set_flag(Knob::NO_RERENDER, true);
             comment_knob->set_flag(Knob::NO_RERENDER, true);
+            
             statusKnob->set_flag(Knob::NO_RERENDER, true);
             statusKnob->set_flag(Knob::DISABLED, true);
             statusKnob->set_flag(Knob::OUTPUT_ONLY, true);
