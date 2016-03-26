@@ -303,30 +303,20 @@ class Aton: public Iop
             
             // try to reconnect
             disconnect();
-            
-            while (!m_server.isConnected())
+
+            try
             {
-                try
-                {
-                    m_server.connect(port++);
-                    m_port = port;
-                    break;
-                }
-                catch ( ... )
-                {
-                    // limit up to 32 connected nodes
-                    if (port - m_port == 32)
-                    {
-                        std::stringstream ss;
-                        ss << "Could not connect to port: " << port;
-                        m_connectionError = ss.str();
-                        m_inError = true;
-                        print_name( std::cerr );
-                        std::cerr << ": " << ss.str() << std::endl;
-                        return;
-                    }
-                    continue;
-                }
+                m_server.connect(port, true);
+            }
+            catch ( ... )
+            {
+                std::stringstream ss;
+                ss << "Could not connect to port: " << port;
+                m_connectionError = ss.str();
+                m_inError = true;
+                print_name( std::cerr );
+                std::cerr << ": " << ss.str() << std::endl;
+                return;
             }
 
             // success

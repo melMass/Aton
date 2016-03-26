@@ -49,7 +49,7 @@ void Server::connect( int port, bool search )
         {
             tcp::endpoint endpoint( boost::asio::ip::tcp::v4(), port );
             mAcceptor.open(endpoint.protocol());
-            mAcceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
+            mAcceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(false));
             mAcceptor.bind(endpoint);
             mAcceptor.listen();
             mPort = port;

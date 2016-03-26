@@ -48,7 +48,7 @@ namespace aton
          * available. To find out which port the server managed to connect to,
          * call getPort() afterwards.
          */
-        void connect( int port, bool seach=false );
+        void connect( int port, bool search=false );
 
         /*! \brief Sets up the server to accept an incoming Client connections.
          */
