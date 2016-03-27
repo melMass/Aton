@@ -31,6 +31,7 @@ class Aton(QtGui.QDialog):
 	def getSceneOptions(self):
 		sceneOptions = {}
 		if cmds.getAttr("defaultRenderGlobals.ren") == "arnold":
+			sceneOptions["port"] = cmds.getAttr("defaultArnoldDisplayDriver.port")
 			sceneOptions["camera"] = core.ACTIVE_CAMERA
 			sceneOptions["width"]  = cmds.getAttr("defaultResolution.width")
 			sceneOptions["height"] = cmds.getAttr("defaultResolution.height")
@@ -45,8 +46,8 @@ class Aton(QtGui.QDialog):
 			sceneOptions["displace"] = cmds.getAttr("defaultArnoldRenderOptions.ignoreDisplacement")
 			sceneOptions["bump"] = cmds.getAttr("defaultArnoldRenderOptions.ignoreBump")
 			sceneOptions["sss"] = cmds.getAttr("defaultArnoldRenderOptions.ignoreSss")
-
 		else:
+			sceneOptions["port"] = 0
 			sceneOptions["camera"] = "None"
 			sceneOptions["width"]  = 0
 			sceneOptions["height"] = 0
@@ -63,6 +64,7 @@ class Aton(QtGui.QDialog):
 	def setupUi(self):
 
 		def updateUi():
+			self.portSpinBox.setValue(portSlider.value()+self.defaultPort)
 			self.resolutionSpinBox.setValue(resolutionSlider.value()*5)
 			self.cameraAaSpinBox.setValue(cameraAaSlider.value())
 
@@ -73,9 +75,13 @@ class Aton(QtGui.QDialog):
 											   self.resolutionSpinBox.value() / 100)
 
 		def resetUi(*args):
+			self.portSpinBox.setValue(self.defaultPort)
+			portSlider.setValue(0)
 			self.cameraComboBox.setCurrentIndex(0)
 			self.resolutionSpinBox.setValue(100)
+			resolutionSlider.setValue(20)
 			self.cameraAaSpinBox.setValue(self.getSceneOptions()["AASamples"])
+			cameraAaSlider.setValue(self.getSceneOptions()["AASamples"])
 			self.renderRegionXSpinBox.setValue(0)
 			self.renderRegionYSpinBox.setValue(0)
 			self.renderRegionRSpinBox.setValue(self.getSceneOptions()["width"])
@@ -90,8 +96,8 @@ class Aton(QtGui.QDialog):
 		self.setWindowTitle("Aton %s"%__version__)
 		self.setWindowFlags(QtCore.Qt.Tool)
 		self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-		self.setMinimumSize(400, 200)
-		self.setMaximumSize(400, 200)
+		self.setMinimumSize(400, 250)
+		self.setMaximumSize(400, 250)
 
 		mainLayout = QtGui.QVBoxLayout()
 		mainLayout.setContentsMargins(5,5,5,5)
@@ -100,6 +106,28 @@ class Aton(QtGui.QDialog):
 		overridesGroupBox = QtGui.QGroupBox("Overrides")
 		overridesLayout = QtGui.QVBoxLayout(overridesGroupBox)
 
+		# Port Layout
+		portLayout = QtGui.QHBoxLayout()
+		portLabel = QtGui.QLabel("Port:")
+		portLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
+		portLabel.setMaximumSize(75, 20)
+		portLabel.setMinimumSize(75, 20)
+		self.portSpinBox = QtGui.QSpinBox()
+		self.portSpinBox.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
+		self.portSpinBox.setMaximum(1024)
+		self.portSpinBox.setMaximum(9999)
+		self.defaultPort = self.getSceneOptions()["port"]
+		self.portSpinBox.setValue(self.defaultPort)
+		portSlider = QtGui.QSlider()
+		portSlider.setOrientation(QtCore.Qt.Horizontal)
+		portSlider.setMinimum(0)
+		portSlider.setMaximum(15)
+		portSlider.setValue(0)
+		portLayout.addWidget(portLabel)
+		portLayout.addWidget(self.portSpinBox)
+		portLayout.addWidget(portSlider)
+
+		# Camera Layout
 		cameraLayout = QtGui.QHBoxLayout()
 		cameraLabel = QtGui.QLabel("Camera:")
 		cameraLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
@@ -114,7 +142,7 @@ class Aton(QtGui.QDialog):
 		cameraLayout.addWidget(cameraLabel)
 		cameraLayout.addWidget(self.cameraComboBox)
 
-
+		# Resolution Layout
 		resolutionLayout = QtGui.QHBoxLayout()
 		resolutionLabel = QtGui.QLabel("Resolution %:")
 		resolutionLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
@@ -128,12 +156,11 @@ class Aton(QtGui.QDialog):
 		resolutionSlider.setOrientation(QtCore.Qt.Horizontal)
 		resolutionSlider.setValue(20)
 		resolutionSlider.setMaximum(20)
-		resolutionSlider.sliderMoved.connect(self.resolutionSpinBox.setValue)
 		resolutionLayout.addWidget(resolutionLabel)
 		resolutionLayout.addWidget(self.resolutionSpinBox)
 		resolutionLayout.addWidget(resolutionSlider)
 
-
+		# Camera Layout
 		cameraAaLayout = QtGui.QHBoxLayout()
 		cameraAaLabel = QtGui.QLabel("Camera (AA):")
 		cameraAaLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
@@ -147,12 +174,11 @@ class Aton(QtGui.QDialog):
 		cameraAaSlider.setOrientation(QtCore.Qt.Horizontal)
 		cameraAaSlider.setValue(self.cameraAaSpinBox.value())
 		cameraAaSlider.setMaximum(16)
-		cameraAaSlider.sliderMoved.connect(self.cameraAaSpinBox.setValue)
 		cameraAaLayout.addWidget(cameraAaLabel)
 		cameraAaLayout.addWidget(self.cameraAaSpinBox)
 		cameraAaLayout.addWidget(cameraAaSlider)
 
-
+		# Render region layout
 		renderRegionLayout = QtGui.QHBoxLayout()
 		renderRegionLabel = QtGui.QLabel("Region X:")
 		renderRegionLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
@@ -194,7 +220,7 @@ class Aton(QtGui.QDialog):
 		self.renderRegionRSpinBox.setValue(self.getSceneOptions()["width"])
 		self.renderRegionTSpinBox.setValue(self.getSceneOptions()["height"])
 
-
+		# Ignore Layout
 		ignoreLayout = QtGui.QHBoxLayout()
 		ignoreLabel = QtGui.QLabel("Ignore:")
 		ignoreLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
@@ -214,21 +240,20 @@ class Aton(QtGui.QDialog):
 		ignoreLayout.addWidget(self.bumpCheckBox)
 		ignoreLayout.addWidget(self.sssCheckBox)
 
-
+		# Main Buttons Layout
 		mainButtonslayout = QtGui.QHBoxLayout()
 		startButton = QtGui.QPushButton("Start / Refresh")
 		stopButton = QtGui.QPushButton("Stop")
 		resetButton = QtGui.QPushButton("Reset")
-
-
 		startButton.clicked.connect(self.render)
 		stopButton.clicked.connect(self.stop)
 		resetButton.clicked.connect(resetUi)
-
 		mainButtonslayout.addWidget(startButton)
 		mainButtonslayout.addWidget(stopButton)
 		mainButtonslayout.addWidget(resetButton)
 
+		# Add Layouts to Main
+		overridesLayout.addLayout(portLayout)
 		overridesLayout.addLayout(cameraLayout)
 		overridesLayout.addLayout(resolutionLayout)
 		overridesLayout.addLayout(cameraAaLayout)
@@ -238,6 +263,7 @@ class Aton(QtGui.QDialog):
 		mainLayout.addWidget(overridesGroupBox)
 		mainLayout.addLayout(mainButtonslayout)
 
+		self.connect(portSlider, QtCore.SIGNAL("valueChanged(int)"), updateUi)
 		self.connect(resolutionSlider, QtCore.SIGNAL("valueChanged(int)"), updateUi)
 		self.connect(self.resolutionSpinBox, QtCore.SIGNAL("valueChanged(int)"), regionUpdateUi)
 		self.connect(self.resolutionSpinBox, QtCore.SIGNAL("editingFinished()"), regionUpdateUi)
@@ -269,6 +295,7 @@ class Aton(QtGui.QDialog):
 			cmds.warning("Aton driver for Arnold is not installed")
 			return
 
+		port = self.portSpinBox.value()
 		width = self.getSceneOptions()["width"] * self.resolutionSpinBox.value() / 100
 		height = self.getSceneOptions()["height"] * self.resolutionSpinBox.value() / 100
 		AASamples = self.cameraAaSpinBox.value()
@@ -282,9 +309,10 @@ class Aton(QtGui.QDialog):
 		rMinY = height - self.renderRegionTSpinBox.value()
 		rMaxX = self.renderRegionRSpinBox.value() -1
 		rMaxY = (height - self.renderRegionYSpinBox.value()) - 1
+
+		cmds.setAttr("defaultArnoldDisplayDriver.port", port)
+
 		core.createOptions()
-
-
 		cmds.arnoldIpr(cam=camera, width=width, height=height, mode='start')
 		nodeIter = AiUniverseGetNodeIterator(AI_NODE_ALL)
 
