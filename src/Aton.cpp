@@ -204,7 +204,8 @@ class Aton: public Iop
         bool m_capturing; // capturing signal
         std::vector<std::string> m_garbageList;
         std::vector<std::string> m_aovs;
-        std::vector<RenderBuffer> m_buffers;
+        std::vector<double> m_frames;
+        std::vector<std::vector<RenderBuffer>> m_framebuffers;
         std::string m_connectionError;
         ChannelSet m_channels;
         bool m_legit;
@@ -288,7 +289,8 @@ class Aton: public Iop
             // called.
             m_legit = false;
             disconnect();
-            m_buffers.resize(0);
+            m_frames.resize(0);
+            m_framebuffers.resize(0);
             m_aovs.resize(0);
             
             delete[] m_path;
@@ -371,12 +373,12 @@ class Aton: public Iop
             // do we need to open a port?
             if ( m_server.isConnected()==false && !m_inError && m_legit )
                 changePort(m_port);
-
+            
             if (m_stat.progress > 0)
-                setStatus(m_stat.progress,
-                          m_stat.ram,
-                          m_stat.p_ram,
-                          m_stat.time);
+                setStatus(m_node->m_stat.progress,
+                          m_node->m_stat.ram,
+                          m_node->m_stat.p_ram,
+                          m_node->m_stat.time);
 
             // handle any connection error
             if ( m_inError )
@@ -436,7 +438,38 @@ class Aton: public Iop
 
         void engine(int y, int xx, int r, ChannelMask channels, Row& out)
         {
+            // frame and buffer(aov) indexes
+            int f_index = 0;
             int b_index = 0;
+
+            // get the current frame index
+            if (!m_node->m_frames.empty())
+            {
+                int currentFrame = outputContext().frame();
+                int nearFIndex = INT_MIN;
+                int minFIndex = INT_MAX;
+                
+                for(std::vector<double>::iterator it = m_node->m_frames.begin();
+                    it != m_node->m_frames.end(); ++it)
+                {
+                    if (currentFrame == *it)
+                    {
+                        f_index = static_cast<int>(it - m_node->m_frames.begin());
+                        break;
+                    }
+                    else if (currentFrame > *it && nearFIndex < *it)
+                    {
+                        nearFIndex = *it;
+                        f_index = static_cast<int>(it - m_node->m_frames.begin());
+                        continue;
+                    }
+                    else if (*it < minFIndex && nearFIndex == INT_MIN)
+                    {
+                        minFIndex = *it;
+                        f_index = static_cast<int>(it - m_node->m_frames.begin());
+                    }
+                }
+            }
             
             foreach(z, channels)
             {
@@ -471,18 +504,20 @@ class Aton: public Iop
                 m_mutex.lock();
                 while (rOut < END)
                 {
-                    if (m_node->m_buffers.empty() ||
+                    if (m_node->m_framebuffers.empty()||
                         xxx >= m_node->m_buffer._width || yyy >= m_node->m_buffer._height ||
                         (m_node->m_buffer._width==0 && m_node->m_buffer._height==0))
                     {
                         *rOut = *gOut = *bOut = *aOut = 0.f;
                     }
+                    else if (m_node->m_framebuffers[0].empty())
+                        *rOut = *gOut = *bOut = *aOut = 0.f;
                     else
                     {
-                        *rOut = m_node->m_buffers[b_index].get_colour(xxx, yyy)[0];
-                        *gOut = m_node->m_buffers[b_index].get_colour(xxx, yyy)[1];
-                        *bOut = m_node->m_buffers[b_index].get_colour(xxx, yyy)[2];
-                        *aOut = m_node->m_buffers[0].get_alpha(xxx, yyy)[0];
+                        *rOut = m_node->m_framebuffers[f_index][b_index].get_colour(xxx, yyy)[0];
+                        *gOut = m_node->m_framebuffers[f_index][b_index].get_colour(xxx, yyy)[1];
+                        *bOut = m_node->m_framebuffers[f_index][b_index].get_colour(xxx, yyy)[2];
+                        *aOut = m_node->m_framebuffers[f_index][0].get_alpha(xxx, yyy)[0];
                     }
                     ++rOut;
                     ++gOut;
@@ -506,13 +541,11 @@ class Aton: public Iop
             Text_knob(f, (boost::format("Aton v%s")%VERSION).str().c_str());
 
             Divider(f, "General");
-            Knob * enable_aovs_knob = Bool_knob(f,
-                                                &m_enable_aovs,
+            Knob * enable_aovs_knob = Bool_knob(f, &m_enable_aovs,
                                                 "enable_aovs_knob",
                                                 "Enable AOVs");
             Newline(f);
-            Knob * sync_current_frame_knob = Bool_knob(f,
-                                                       &m_sync_current_frame,
+            Knob * sync_current_frame_knob = Bool_knob(f, &m_sync_current_frame,
                                                        "sync_current_frame_knob",
                                                        "Sync Current Frame");
 
@@ -521,8 +554,7 @@ class Aton: public Iop
             Newline(f);
             Knob * path_knob = File_knob(f, &m_path, "path_knob", "Path");
             Newline(f);
-            Knob * date_filename_knob = Bool_knob(f,
-                                                  &m_date_filename,
+            Knob * date_filename_knob = Bool_knob(f, &m_date_filename,
                                                   "date_filename_knob",
                                                   "Date in Filename");
             Newline(f);
@@ -566,7 +598,6 @@ class Aton: public Iop
                 captureCmd();
                 return 1;
             }
-
             if (_knob->is("use_stamp_knob"))
             {
                 if(!m_stamp)
@@ -579,7 +610,6 @@ class Aton: public Iop
                     knob("stamp_size_knob")->enable(true);
                     knob("comment_knob")->enable(true);
                 }
-
                 return 1;
             }
             if (_knob->is("import_latest_knob"))
@@ -949,7 +979,7 @@ class Aton: public Iop
                                                     "Frame: %s | "
                                                     "Progress: %s%%")%m_version%ram%p_ram
                                                                      %hour%minute%second
-                                                                     %m_current_frame
+                                                                     %m_node->m_current_frame
                                                                      %progress).str();
             knob("status_knob")->set_text(str_status.c_str());
             return str_status;
@@ -1005,22 +1035,44 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
             {
                 case 0: // open a new image
                 {
+                    std::vector<RenderBuffer> buffers;
+                    double _active_frame = static_cast<double>(d.currentFrame());
+                    int f_index = 0;
+                    
+                    // init blank buffer
                     node->m_mutex.lock();
                     node->m_buffer.init(d.width(), d.height(), true);
-                    node->m_mutex.unlock();
+                    
+                    // init current frame
+                    if (node->m_current_frame != _active_frame)
+                        node->m_current_frame = _active_frame;
                     
                     // sync timeline
                     if (node->m_sync_current_frame)
                     {
-                        // get current frame
-                        double _currentFrame = static_cast<double>(d.currentFrame());
-                        if (node->m_current_frame != _currentFrame)
-                            node->m_current_frame = _currentFrame;
-                        
-                        //set current frame
-                        if (node->m_current_frame != node->outputContext().frame())
-                            node->setCurrentFrame(node->m_current_frame);
+                        if (std::find(node->m_frames.begin(),
+                                      node->m_frames.end(),
+                                      _active_frame) == node->m_frames.end())
+                        {
+                            node->m_frames.push_back(_active_frame);
+                            node->m_framebuffers.push_back(buffers);
+                        }
                     }
+                    else
+                    {
+                        if (node->m_frames.empty())
+                        {
+                            node->m_frames.push_back(_active_frame);
+                            node->m_framebuffers.push_back(buffers);
+                        }
+
+                        if (node->m_frames.size() > 1)
+                        {
+                            node->m_frames.resize(1);
+                            node->m_framebuffers.resize(1);
+                        }
+                    }
+                    node->m_mutex.unlock();
                     
                     // set the nuke display format
                     if (node->m_formatExists == false)
@@ -1077,20 +1129,34 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
 
                     if(!active_aovs.empty())
                         active_aovs.clear();
-
+                    
+                    for(std::vector<double>::iterator it = node->m_frames.begin();
+                        it != node->m_frames.end(); ++it)
+                    {
+                        if (*it == _active_frame)
+                        {
+                            f_index = static_cast<int>(it - node->m_frames.begin());
+                        }
+                    }
+                    
                     // reset buffers
-                    if (!node->m_buffers.empty() &&
-                        node->m_buffers[0]._width != d.width() &&
-                        node->m_buffers[0]._height != d.height())
+                    if (!node->m_framebuffers[f_index].empty() &&
+                        node->m_framebuffers[f_index][0]._width != d.width() &&
+                        node->m_framebuffers[f_index][0]._height != d.height())
                     {
                         node->m_mutex.lock();
-                        node->m_buffers.clear();
+                        node->m_framebuffers[f_index].clear();
                         node->m_aovs.clear();
                         node->m_mutex.unlock();
                     }
                     
                     // get delta time per IPR iteration
                     delta_time = active_time;
+                    
+                    // set current frame
+                    if (node->m_sync_current_frame &&
+                        node->outputContext().frame() != node->m_current_frame)
+                        node->setCurrentFrame(node->m_current_frame);
                     
                     // automatically set the knob to the right format
                     node->knob("formats_knob")->set_text(node->m_node_name);
@@ -1103,6 +1169,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     int _h = node->m_buffer._height;
                     unsigned int _x, _x0, _y, _y0, _s, offset;
                     _x = _x0 = _y = _y0 = _s = 0;
+                    int f_index = 0;
 
                     int _xorigin = d.x();
                     int _yorigin = d.y();
@@ -1132,7 +1199,19 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     }
                     // lock buffer
                     node->m_mutex.lock();
-
+                    
+                    if (node->m_sync_current_frame)
+                    {
+                        for(std::vector<double>::iterator it = node->m_frames.begin();
+                                                          it != node->m_frames.end(); ++it)
+                        {
+                            if (*it == node->m_current_frame)
+                            {
+                                f_index = static_cast<int>(it - node->m_frames.begin());
+                            }
+                        }
+                    }
+                    
                     // get main aov names
                     if(!(std::find(node->m_aovs.begin(),
                                    node->m_aovs.end(),
@@ -1140,20 +1219,20 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     {
                         if (node->m_enable_aovs || node->m_aovs.size()==0)
                             node->m_aovs.push_back(d.aovName());
-
-                        if (node->m_buffers.size() < node->m_aovs.size())
-                        {
-                            RenderBuffer buffer;
-                            if (_spp < 4)
-                                buffer.init(_w, _h);
-                            else
-                                buffer.init(_w, _h, false, true);
-                            node->m_buffers.push_back(buffer);
-                        }
+                    }
+                    
+                    if (node->m_framebuffers[f_index].size() < node->m_aovs.size())
+                    {
+                        RenderBuffer buffer;
+                        if (_spp < 4)
+                            buffer.init(_w, _h);
+                        else
+                            buffer.init(_w, _h, false, true);
+                        node->m_framebuffers[f_index].push_back(buffer);
                     }
 
-                    if (node->m_buffers.size() > node->m_aovs.size())
-                        node->m_buffers.resize(node->m_aovs.size());
+                    if (node->m_framebuffers[f_index].size() > node->m_aovs.size())
+                        node->m_framebuffers[f_index].resize(node->m_aovs.size());
 
                     for(std::vector<std::string>::iterator it = node->m_aovs.begin();
                                                            it != node->m_aovs.end(); ++it)
@@ -1168,13 +1247,13 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                     int b_index = static_cast<int>(it - node->m_aovs.begin());
                                     offset = (_width * _y * _spp) + (_x * _spp);
 
-                                    RenderColour &pix = node->m_buffers[b_index].get_colour(_x+ _xorigin, _h - (_y + _yorigin + 1));
+                                    RenderColour &pix = node->m_framebuffers[f_index][b_index].get_colour(_x+ _xorigin, _h - (_y + _yorigin + 1));
                                     for (_s = 0; _s < _spp; ++_s)
                                         if (_s != 3)
                                             pix[_s] = pixel_data[offset+_s];
                                     if (_spp == 4)
                                     {
-                                        RenderAlpha &alpha_pix = node->m_buffers[b_index].get_alpha(_x+ _xorigin, _h - (_y + _yorigin + 1));
+                                        RenderAlpha &alpha_pix = node->m_framebuffers[f_index][b_index].get_alpha(_x+ _xorigin, _h - (_y + _yorigin + 1));
                                         alpha_pix[0] = pixel_data[offset+3];
                                     }
                                 }
@@ -1189,8 +1268,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     if (node->m_capturing)
                         continue;
 
-                    // update only on last aov
-                    if( node->m_aovs.back().compare(d.aovName()) == 0 )
+                    // update only on first aov
+                    if( node->m_aovs.front().compare(d.aovName()) == 0 )
                     {
                         // calculating the progress percentage
                         imageArea -= (_width*_height);
@@ -1211,8 +1290,9 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                             node->m_stat.time = _time;
                         else
                             node->m_stat.time = _time - delta_time;
+                        
                         node->m_mutex.unlock();
-
+                        
                         // update the image
                         node->flagForUpdate();
                     }
