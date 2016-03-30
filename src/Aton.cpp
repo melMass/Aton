@@ -122,6 +122,14 @@ class RenderBuffer
             unsigned int index = (_width * y) + x;
             return _alpha_data[index];
         }
+    
+        unsigned int width() { return _width; }
+        unsigned int height() { return _height; }
+    
+        bool empty()
+        {
+            return _colour_data.empty();
+        }
 
         // data
         std::vector<RenderColour> _colour_data;
@@ -186,7 +194,7 @@ class Aton: public Iop
         std::string m_status; // status bar text
         Status m_stat; // object to hold status bar parameters
         std::string m_version; // hold the arnold core version number
-        bool m_sync_current_frame;
+        bool m_multiframe_cache;
         bool m_date_filename;
         double m_current_frame;
         Bucket m_bucket;
@@ -217,7 +225,7 @@ class Aton: public Iop
             m_path(getPath()),
             m_status(""),
             m_version(""),
-            m_sync_current_frame(true),
+            m_multiframe_cache(true),
             m_date_filename(true),
             m_current_frame(0),
             m_comment(""),
@@ -427,8 +435,41 @@ class Aton: public Iop
             }
             
             // disable caching
-            slowness(0);
+//            slowness(0);
             
+            // get the frame and set the format
+            int f_index = getFrameIndex(outputContext().frame());
+            
+            if (!m_node->m_framebuffers.empty())
+                if (!m_node->m_framebuffers[f_index].empty())
+                    if (!m_node->m_framebuffers[f_index][0].empty())
+                    {
+                        if (!m_formatExists)
+                        {
+                            m_node->m_fmt.set(0, 0, m_node->m_framebuffers[f_index][0].width(),
+                                                    m_node->m_framebuffers[f_index][0].height());
+                            m_node->m_fmt.width(m_node->m_framebuffers[f_index][0].width());
+                            m_node->m_fmt.height(m_node->m_framebuffers[f_index][0].height());
+                        }
+                        else
+                        {
+                            // if the format is already exist we need to get its pointer
+                            Format *m_fmt_exist = NULL;
+                            for (int i=0; i < Format::size(); i++)
+                            {
+                                m_fmt_exist = Format::index(i);
+                                if (std::string(m_fmt_exist->name()).compare(m_node->m_node_name) == 0)
+                                    break;
+                            }
+                            m_fmt_exist->set(0, 0, m_node->m_framebuffers[f_index][0]._width,
+                                                   m_node->m_framebuffers[f_index][0]._height);
+                            m_fmt_exist->width(m_node->m_framebuffers[f_index][0]._width);
+                            m_fmt_exist->height(m_node->m_framebuffers[f_index][0]._height);
+                        }
+                        
+                        knob("formats_knob")->set_text(m_node->m_node_name);
+                    }
+
             // setup format etc
             info_.format(*m_fmtp.fullSizeFormat());
             info_.full_size_format(*m_fmtp.format());
@@ -438,60 +479,11 @@ class Aton: public Iop
 
         void engine(int y, int xx, int r, ChannelMask channels, Row& out)
         {
-            // frame and buffer(aov) indexes
-            int f_index = 0;
-            int b_index = 0;
+            int f_index = getFrameIndex(outputContext().frame());
 
-            // get the current frame index
-            if (!m_node->m_frames.empty())
-            {
-                int currentFrame = outputContext().frame();
-                int nearFIndex = INT_MIN;
-                int minFIndex = INT_MAX;
-                
-                for(std::vector<double>::iterator it = m_node->m_frames.begin();
-                    it != m_node->m_frames.end(); ++it)
-                {
-                    if (currentFrame == *it)
-                    {
-                        f_index = static_cast<int>(it - m_node->m_frames.begin());
-                        break;
-                    }
-                    else if (currentFrame > *it && nearFIndex < *it)
-                    {
-                        nearFIndex = *it;
-                        f_index = static_cast<int>(it - m_node->m_frames.begin());
-                        continue;
-                    }
-                    else if (*it < minFIndex && nearFIndex == INT_MIN)
-                    {
-                        minFIndex = *it;
-                        f_index = static_cast<int>(it - m_node->m_frames.begin());
-                    }
-                }
-            }
-            
             foreach(z, channels)
             {
-                std::string layer = getLayerName(z);
-
-                // get the current buffer index
-                if (layer.compare(ChannelStr::rgb) != 0)
-                {
-                    for(std::vector<std::string>::iterator it = m_node->m_aovs.begin(); it != m_node->m_aovs.end(); ++it)
-                    {
-                        if (it->compare(layer) == 0)
-                        {
-                            b_index = static_cast<int>(it - m_node->m_aovs.begin());
-                            break;
-                        }
-                        else if ( it->compare(ChannelStr::Z) == 0 && layer.compare(ChannelStr::depth) == 0 )
-                        {
-                            b_index = static_cast<int>(it - m_node->m_aovs.begin());
-                            break;
-                        }
-                    }
-                }
+                int b_index = getBufferIndex(z);
 
                 float *rOut = out.writable(brother (z, 0)) + xx;
                 float *gOut = out.writable(brother (z, 1)) + xx;
@@ -510,7 +502,7 @@ class Aton: public Iop
                     {
                         *rOut = *gOut = *bOut = *aOut = 0.f;
                     }
-                    else if (m_node->m_framebuffers[0].empty())
+                    else if (m_node->m_framebuffers[f_index].size() != m_node->m_aovs.size())
                         *rOut = *gOut = *bOut = *aOut = 0.f;
                     else
                     {
@@ -545,9 +537,9 @@ class Aton: public Iop
                                                 "enable_aovs_knob",
                                                 "Enable AOVs");
             Newline(f);
-            Knob * sync_current_frame_knob = Bool_knob(f, &m_sync_current_frame,
-                                                       "sync_current_frame_knob",
-                                                       "Sync Current Frame");
+            Knob * sync_current_frame_knob = Bool_knob(f, &m_multiframe_cache,
+                                                       "multi_frame_cache_knob",
+                                                       "Multi Frame Caching");
 
             Divider(f, "Capture");
             Knob * limit_knob = Int_knob(f, &m_slimit, "limit_knob", "Limit");
@@ -633,6 +625,66 @@ class Aton: public Iop
             cmd = (boost::format("nuke.frame(%s)")%frame).str();
             script_command(cmd.c_str());
             script_unlock();
+        }
+    
+        int getFrameIndex(double currentFrame)
+        {
+            int f_index = 0;
+
+            if (!m_node->m_frames.empty())
+            {
+                int nearFIndex = INT_MIN;
+                int minFIndex = INT_MAX;
+                
+                for(std::vector<double>::iterator it = m_node->m_frames.begin();
+                    it != m_node->m_frames.end(); ++it)
+                {
+                    if (currentFrame == *it)
+                    {
+                        f_index = static_cast<int>(it - m_node->m_frames.begin());
+                        break;
+                    }
+                    else if (currentFrame > *it && nearFIndex < *it)
+                    {
+                        nearFIndex = *it;
+                        f_index = static_cast<int>(it - m_node->m_frames.begin());
+                        continue;
+                    }
+                    else if (*it < minFIndex && nearFIndex == INT_MIN)
+                    {
+                        minFIndex = *it;
+                        f_index = static_cast<int>(it - m_node->m_frames.begin());
+                    }
+                }
+            }
+
+            return f_index;
+        }
+    
+        int getBufferIndex(Channel z)
+        {
+            int b_index = 0;
+            std::string layer = getLayerName(z);
+            
+            // get the current buffer index
+            if (layer.compare(ChannelStr::rgb) != 0)
+            {
+                for(std::vector<std::string>::iterator it = m_node->m_aovs.begin(); it != m_node->m_aovs.end(); ++it)
+                {
+                    if (it->compare(layer) == 0)
+                    {
+                        b_index = static_cast<int>(it - m_node->m_aovs.begin());
+                        break;
+                    }
+                    else if ( it->compare(ChannelStr::Z) == 0 && layer.compare(ChannelStr::depth) == 0 )
+                    {
+                        b_index = static_cast<int>(it - m_node->m_aovs.begin());
+                        break;
+                    }
+                }
+            }
+            
+            return b_index;
         }
     
         char * getPath()
@@ -790,7 +842,7 @@ class Aton: public Iop
                 
                 if (m_date_filename)
                     timeFrameSuffix += "_" + getDateTime();
-                if (m_sync_current_frame)
+                if (m_multiframe_cache)
                     timeFrameSuffix += "_" + (boost::format("%04i")%currentFrame).str();
                 
                 timeFrameSuffix += ".";
@@ -958,6 +1010,16 @@ class Aton: public Iop
             }
         }
 
+        std::string getArnoldVersionStr(int version)
+        {
+            // Construct a string from the version number passed
+            int archV = (version%10000000)/1000000;
+            int majorV = (version%1000000)/10000;
+            int minorV = (version%10000)/100;
+            int fixV = version%100;
+            return (boost::format("%s.%s.%s.%s")%archV%majorV%minorV%fixV).str();
+        }
+    
         std::string setStatus(int progress=0,
                               unsigned long long ram=0,
                               unsigned long long p_ram=0,
@@ -1048,7 +1110,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         node->m_current_frame = _active_frame;
                     
                     // sync timeline
-                    if (node->m_sync_current_frame)
+                    if (node->m_multiframe_cache)
                     {
                         if (std::find(node->m_frames.begin(),
                                       node->m_frames.end(),
@@ -1065,50 +1127,19 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                             node->m_frames.push_back(_active_frame);
                             node->m_framebuffers.push_back(buffers);
                         }
-
-                        if (node->m_frames.size() > 1)
+                        else if (node->m_frames.size() > 1)
                         {
                             node->m_frames.resize(1);
                             node->m_framebuffers.resize(1);
                         }
                     }
                     node->m_mutex.unlock();
-                    
-                    // set the nuke display format
-                    if (node->m_formatExists == false)
-                    {
-                        node->m_fmt.set(0, 0, d.width(), d.height());
-                        node->m_fmt.width(d.width());
-                        node->m_fmt.height(d.height());
-                    }
-                    else
-                    {
-                        // if the format is already exist
-                        // we need to get its pointer
-                        Format *m_fmt_exist = NULL;
-                        for (int i=0; i < Format::size(); i++)
-                        {
-                            m_fmt_exist = Format::index(i);
-                            if (std::string(m_fmt_exist->name()).compare(node->m_node_name) == 0)
-                                break;
-                        }
-                        m_fmt_exist->set(0, 0, d.width(), d.height());
-                        m_fmt_exist->width(d.width());
-                        m_fmt_exist->height(d.height());
-                    }
 
                     // get image area to help calculate the progress percentage
                     if (d.width()*d.height() == d.rArea())
                         imageArea = d.width()*d.height();
                     else imageArea = d.rArea();
-
-                    // Construct a string from the version number passed
-                    int archV = (d.version()%10000000)/1000000;
-                    int majorV = (d.version()%1000000)/10000;
-                    int minorV = (d.version()%10000)/100;
-                    int fixV = d.version()%100;
-                    node->m_version = (boost::format("%s.%s.%s.%s")%archV%majorV%minorV%fixV).str();
-
+                    
                     // reset aovs
                     if (!active_aovs.empty() &&
                         !node->m_aovs.empty() && active_aovs!=node->m_aovs)
@@ -1139,6 +1170,9 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         }
                     }
                     
+                    // Set Arnold Core version
+                    node->m_version = node->getArnoldVersionStr(d.version());
+                    
                     // reset buffers
                     if (!node->m_framebuffers[f_index].empty() &&
                         node->m_framebuffers[f_index][0]._width != d.width() &&
@@ -1154,12 +1188,10 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     delta_time = active_time;
                     
                     // set current frame
-                    if (node->m_sync_current_frame &&
+                    if (node->m_multiframe_cache &&
                         node->outputContext().frame() != node->m_current_frame)
                         node->setCurrentFrame(node->m_current_frame);
-                    
-                    // automatically set the knob to the right format
-                    node->knob("formats_knob")->set_text(node->m_node_name);
+
                     break;
                 }
                 case 1: // image data
@@ -1169,7 +1201,6 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     int _h = node->m_buffer._height;
                     unsigned int _x, _x0, _y, _y0, _s, offset;
                     _x = _x0 = _y = _y0 = _s = 0;
-                    int f_index = 0;
 
                     int _xorigin = d.x();
                     int _yorigin = d.y();
@@ -1197,13 +1228,13 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                 active_aovs.resize(1);
                         }
                     }
-                    // lock buffer
-                    node->m_mutex.lock();
                     
-                    if (node->m_sync_current_frame)
+                    // get the frame index
+                    int f_index = 0;
+                    if (node->m_multiframe_cache)
                     {
                         for(std::vector<double>::iterator it = node->m_frames.begin();
-                                                          it != node->m_frames.end(); ++it)
+                            it != node->m_frames.end(); ++it)
                         {
                             if (*it == node->m_current_frame)
                             {
@@ -1211,6 +1242,9 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                             }
                         }
                     }
+                    
+                    // lock buffer
+                    node->m_mutex.lock();
                     
                     // get main aov names
                     if(!(std::find(node->m_aovs.begin(),
@@ -1221,6 +1255,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                             node->m_aovs.push_back(d.aovName());
                     }
                     
+                    // adding buffers
                     if (node->m_framebuffers[f_index].size() < node->m_aovs.size())
                     {
                         RenderBuffer buffer;
