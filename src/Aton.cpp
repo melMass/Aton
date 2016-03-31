@@ -302,9 +302,7 @@ class Aton: public Iop
             m_aovs.resize(0);
             
             delete[] m_path;
-            delete[] m_node_name;
             m_path = NULL;
-            m_node_name = NULL;
         }
 
         void flagForUpdate()
@@ -440,6 +438,7 @@ class Aton: public Iop
             // get the frame and set the format
             int f_index = getFrameIndex(outputContext().frame());
             
+            // set the format
             if (!m_node->m_framebuffers.empty())
                 if (!m_node->m_framebuffers[f_index].empty())
                     if (!m_node->m_framebuffers[f_index][0].empty())
