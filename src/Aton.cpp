@@ -435,7 +435,7 @@ class Aton: public Iop
             }
             
             // disable caching
-//            slowness(0);
+            slowness(0);
             
             // get the frame and set the format
             int f_index = getFrameIndex(outputContext().frame());
@@ -444,30 +444,33 @@ class Aton: public Iop
                 if (!m_node->m_framebuffers[f_index].empty())
                     if (!m_node->m_framebuffers[f_index][0].empty())
                     {
-                        if (!m_formatExists)
-                        {
-                            m_node->m_fmt.set(0, 0, m_node->m_framebuffers[f_index][0].width(),
-                                                    m_node->m_framebuffers[f_index][0].height());
-                            m_node->m_fmt.width(m_node->m_framebuffers[f_index][0].width());
-                            m_node->m_fmt.height(m_node->m_framebuffers[f_index][0].height());
-                        }
-                        else
-                        {
-                            // if the format is already exist we need to get its pointer
-                            Format *m_fmt_exist = NULL;
-                            for (int i=0; i < Format::size(); i++)
-                            {
-                                m_fmt_exist = Format::index(i);
-                                if (std::string(m_fmt_exist->name()).compare(m_node->m_node_name) == 0)
-                                    break;
-                            }
-                            m_fmt_exist->set(0, 0, m_node->m_framebuffers[f_index][0]._width,
-                                                   m_node->m_framebuffers[f_index][0]._height);
-                            m_fmt_exist->width(m_node->m_framebuffers[f_index][0]._width);
-                            m_fmt_exist->height(m_node->m_framebuffers[f_index][0]._height);
-                        }
+                        int width = m_node->m_framebuffers[f_index][0].width();
+                        int height = m_node->m_framebuffers[f_index][0].height();
                         
-                        knob("formats_knob")->set_text(m_node->m_node_name);
+                        if (m_fmt.width() != width || m_fmt.height() != height)
+                        {
+                            if (!m_formatExists)
+                            {
+                                m_node->m_fmt.set(0, 0, width, height);
+                                m_node->m_fmt.width(width);
+                                m_node->m_fmt.height(height);
+                            }
+                            else
+                            {
+                                // if the format is already exist we need to get its pointer
+                                Format *m_fmt_exist = NULL;
+                                for (int i=0; i < Format::size(); i++)
+                                {
+                                    m_fmt_exist = Format::index(i);
+                                    if (std::string(m_fmt_exist->name()).compare(m_node->m_node_name) == 0)
+                                        break;
+                                }
+                                m_fmt_exist->set(0, 0, width, height);
+                                m_fmt_exist->width(width);
+                                m_fmt_exist->height(height);
+                            }
+                            knob("formats_knob")->set_text(m_node->m_node_name);
+                        }
                     }
 
             // setup format etc
