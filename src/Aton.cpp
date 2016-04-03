@@ -42,6 +42,17 @@ static const char* const HELP =
     "Listens for renders coming from the Aton display driver. "
     "For more info go to http://sosoyan.github.io/Aton/";
 
+// channel strings
+namespace ChannelStr
+{
+    const std::string RGBA = "RGBA";
+    const std::string rgb = "rgb";
+    const std::string depth = "depth";
+    const std::string Z = "Z";
+    const std::string N = "N";
+    const std::string P = "P";
+};
+
 // our listener method
 static void atonListen(unsigned index, unsigned nthreads, void* data);
 
@@ -99,25 +110,25 @@ class RenderBuffer
             }
         }
 
-        RenderColour& get_colour(unsigned int x, unsigned int y)
+        RenderColour& getColour(unsigned int x, unsigned int y)
         {
             unsigned int index = (_width * y) + x;
             return _colour_data[index];
         }
 
-        const RenderColour& get_colour(unsigned int x, unsigned int y) const
+        const RenderColour& getColour(unsigned int x, unsigned int y) const
         {
             unsigned int index = (_width * y) + x;
             return _colour_data[index];
         }
 
-        RenderAlpha& get_alpha(unsigned int x, unsigned int y)
+        RenderAlpha& getAlpha(unsigned int x, unsigned int y)
         {
             unsigned int index = (_width * y) + x;
             return _alpha_data[index];
         }
 
-        const RenderAlpha& get_alpha(unsigned int x, unsigned int y) const
+        const RenderAlpha& getAlpha(unsigned int x, unsigned int y) const
         {
             unsigned int index = (_width * y) + x;
             return _alpha_data[index];
@@ -138,47 +149,211 @@ class RenderBuffer
         unsigned int _height;
 };
 
-// bucket redraw box parameters
-class Bucket
+class FrameBuffer
 {
     public:
-        Bucket(): x(0),y(0),r(1),t(1) {}
-
-        Box getBBox()
+        FrameBuffer(double currentFrame=0): _frame(0),
+                                            _bucket(0,0,1,1),
+                                            _progress(0),
+                                            _time(0),
+                                            _ram(0),
+                                            _pram(0),
+                                            _ready(false)
         {
-            Box bucket(x, y, r, t);
-            return bucket;
+            _frame = currentFrame;
         }
+    
+        // Add new buffer
+        void addBuffer(const char * aov=NULL,
+                       double frame=0,
+                       int spp=0,
+                       int w=0,
+                       int h=0)
+        {
+            RenderBuffer buffer;
+            
+            if (spp < 4)
+                buffer.init(w, h);
+            else
+                buffer.init(w, h, false, true);
+            
+            _buffers.push_back(buffer);
+            _aovs.push_back(aov);
+            _frame = frame;
+        }
+    
+        // Get buffer object
+        RenderBuffer& getBuffer(int index=0)
+        {
+            return _buffers[index];
+        }
+    
+        // Get buffer object
+        const RenderBuffer& getBuffer(int index=0) const
+        {
+            return _buffers[index];
+        }
+    
+        // Get the current buffer index
+        int getBufferIndex(Channel z)
+        {
+            int b_index = 0;
+            
+            if (!_aovs.empty())
+            {
+                std::string layer = getLayerName(z);
+                if (layer.compare(ChannelStr::rgb) != 0)
+                {
+                    for(std::vector<std::string>::iterator it = _aovs.begin(); it != _aovs.end(); ++it)
+                    {
+                        if (it->compare(layer) == 0)
+                        {
+                            b_index = static_cast<int>(it - _aovs.begin());
+                            break;
+                        }
+                        else if ( it->compare(ChannelStr::Z) == 0 && layer.compare(ChannelStr::depth) == 0 )
+                        {
+                            b_index = static_cast<int>(it - _aovs.begin());
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            return b_index;
+        }
+    
+        // Get the current buffer index
+        int getBufferIndex(const char * aovName)
+        {
+            int b_index = 0;
+            
+            if (!_aovs.empty())
+                for(std::vector<std::string>::iterator it = _aovs.begin(); it != _aovs.end(); ++it)
+                {
+                    if (it->compare(aovName) == 0)
+                    {
+                        b_index = static_cast<int>(it - _aovs.begin());
+                        break;
+                    }
+                }
+            
+            return b_index;
+        }
+    
+        // Get N buffer name aka AOV name
+        std::string getBufferName(size_t index=0)
+        {
+            std::string bufferName = "";
+            if (!_aovs.empty())
+                bufferName = _aovs[index];
+            return bufferName;
+        }
+    
+        // Get last buffer aka AOV name
+        std::string getLastBufferName()
+        {
+            std::string bufferName = "";
+            if (!_aovs.empty())
+                bufferName = _aovs.back();
+            return bufferName;
+        }
+    
+        // Compare buffers with given aov names and dimensoions
+        bool compareBuffers(int width, int height, std::vector<std::string> aovs)
+        {
+            return true ? (aovs == _aovs) &&
+                          (width==_buffers[0].width()) &&
+                          (height==_buffers[0].height()) : false;
+        }
+    
+        // Clear buffers and aovs
+        void clearBuffers()
+        {
+            _buffers.resize(0);
+            _aovs.resize(0);
+        }
+    
+        bool bufferNameExists(const char * aovName)
+        {
+            return std::find(_aovs.begin(),
+                             _aovs.end(),
+                             aovName) != _aovs.end();
+        }
+    
+        // Get width of the buffer
+        int getWidth() { return _buffers[0].width(); }
+    
+        // Get height of the buffer
+        int getHeight() { return _buffers[0].height(); }
 
-        int x;
-        int y;
-        int r;
-        int t;
-};
-
-// status bar parameters
-class Status
-{
-    public:
-        Status(): progress(0),
-                  ram(0),
-                  p_ram(0),
-                  time(0) {}
-        unsigned int progress;
-        unsigned long long ram;
-        unsigned long long p_ram;
-        unsigned int time;
-};
-
-// channel strings
-namespace ChannelStr
-{
-    std::string RGBA = "RGBA";
-    std::string rgb = "rgb";
-    std::string depth = "depth";
-    std::string Z = "Z";
-    std::string N = "N";
-    std::string P = "P";
+        // Get size of the buffers aka AOVs count
+        size_t size() { return _aovs.size(); }
+    
+        // Resize the buffers, useful for reseting
+        void resize(size_t s)
+        {
+            _buffers.resize(s);
+            _aovs.resize(s);
+        }
+    
+        // Set current bucket BBox for asapUpdate()
+        void setBucketBBox(int x=0, int y=0, int r=1, int t=1)
+        {
+            _bucket.set(x, y, r, t);
+        }
+    
+        // Get current bucket BBox for asapUpdate()
+        Box getBucketBBox() { return _bucket; }
+    
+        void setProgress(int progress=0) { _progress = progress; }
+        void setRAM(long long ram=0)
+        {
+            _pram = _ram < ram ? ram : _ram;
+            _ram = ram;
+        }
+        void setTime(int time=0) { _time = time; }
+    
+        int getProgress() { return _progress; }
+        long long getRAM() { return _ram; }
+        long long getPRAM() { return _pram; }
+        int getTime() { return _time; }
+    
+    
+        void setArnoldVersion(int version)
+        {
+            // Construct a string from the version number passed
+            int archV = (version%10000000)/1000000;
+            int majorV = (version%1000000)/10000;
+            int minorV = (version%10000)/100;
+            int fixV = version%100;
+            _version = (boost::format("%s.%s.%s.%s")%archV%majorV%minorV%fixV).str();
+        }
+    
+        std::string getArnoldVersion() { return _version; }
+    
+        double getFrame()
+        {
+            return _frame;
+        }
+    
+        bool empty() { return (_buffers.empty() && _aovs.empty()) ; }
+    
+        // To keep False while writing the buffer
+        void ready(bool ready) { _ready = ready; }
+        bool isReady() { return _ready; }
+    
+    private:
+        double _frame;
+        int _progress;
+        int _time;
+        long long _ram;
+        long long _pram;
+        Box _bucket;
+        bool _ready;
+        std::string _version;
+        std::vector<RenderBuffer> _buffers;
+        std::vector<std::string> _aovs;
 };
 
 // our nuke node
@@ -192,18 +367,15 @@ class Aton: public Iop
         int m_port; // the port we're listening on (knob)
         const char * m_path; // default path for Write node
         std::string m_status; // status bar text
-        Status m_stat; // object to hold status bar parameters
-        std::string m_version; // hold the arnold core version number
         bool m_multiframe_cache;
         bool m_date_filename;
         double m_current_frame;
-        Bucket m_bucket;
         const char * m_comment;
         bool m_stamp;
         bool m_enable_aovs;
         int m_stamp_size;
         int m_slimit; // The limit size
-        RenderBuffer m_buffer; // our pixel buffer
+        RenderBuffer m_buffer; // blank buffer
         Lock m_mutex; // mutex for locking the pixel buffer
         unsigned int hash_counter; // our refresh hash counter
         aton::Server m_server; // our aton::Server
@@ -211,9 +383,8 @@ class Aton: public Iop
         bool m_formatExists;
         bool m_capturing; // capturing signal
         std::vector<std::string> m_garbageList;
-        std::vector<std::string> m_aovs;
         std::vector<double> m_frames;
-        std::vector<std::vector<RenderBuffer>> m_framebuffers;
+        std::vector<FrameBuffer> m_framebuffers;
         std::string m_connectionError;
         ChannelSet m_channels;
         bool m_legit;
@@ -224,7 +395,6 @@ class Aton: public Iop
             m_port(getPort()),
             m_path(getPath()),
             m_status(""),
-            m_version(""),
             m_multiframe_cache(true),
             m_date_filename(true),
             m_current_frame(0),
@@ -299,19 +469,20 @@ class Aton: public Iop
             disconnect();
             m_frames.resize(0);
             m_framebuffers.resize(0);
-            m_aovs.resize(0);
             
             delete[] m_path;
             m_path = NULL;
         }
 
-        void flagForUpdate()
+        void flagForUpdate(int f_index)
         {
             if ( hash_counter==UINT_MAX )
                 hash_counter=0;
             else
                 hash_counter++;
-            asapUpdate(m_bucket.getBBox());
+            
+            // Update the image with current bucket first
+            asapUpdate(m_framebuffers[f_index].getBucketBBox());
         }
 
         // we can use this to change our tcp port
@@ -376,103 +547,110 @@ class Aton: public Iop
 
         void _validate(bool for_real)
         {
-            // do we need to open a port?
+            // Do we need to open a port?
             if ( m_server.isConnected()==false && !m_inError && m_legit )
                 changePort(m_port);
             
-            if (m_stat.progress > 0)
-                setStatus(m_node->m_stat.progress,
-                          m_node->m_stat.ram,
-                          m_node->m_stat.p_ram,
-                          m_node->m_stat.time);
-
-            // handle any connection error
+            // Handle any connection error
             if ( m_inError )
                 error(m_connectionError.c_str());
-
-            if ( !m_node->m_aovs.empty() )
+            
+            if (!m_framebuffers.empty())
             {
-                m_mutex.lock();
-                for(std::vector<std::string>::iterator it = m_node->m_aovs.begin(); it != m_node->m_aovs.end(); ++it)
+                // Get the frame and set the format
+                int f_index = getFrameIndex(outputContext().frame());
+                
+                FrameBuffer &frameBuffer = m_node->m_framebuffers[f_index];
+
+                if (!frameBuffer.empty())
                 {
-                    if (it->compare(ChannelStr::RGBA)==0)
+                    if (frameBuffer.getProgress() > 0)
+                        setStatus(frameBuffer.getProgress(),
+                                  frameBuffer.getRAM(),
+                                  frameBuffer.getPRAM(),
+                                  frameBuffer.getTime(),
+                                  frameBuffer.getArnoldVersion());
+                    
+                    // Set the format
+                    int width = frameBuffer.getWidth();
+                    int height = frameBuffer.getHeight();
+                    
+                    if (m_fmt.width() != width || m_fmt.height() != height)
                     {
-                        if (!m_channels.contains(Chan_Red))
+                        if (!m_formatExists)
                         {
-                            m_channels.insert(Chan_Red);
-                            m_channels.insert(Chan_Green);
-                            m_channels.insert(Chan_Blue);
-                            m_channels.insert(Chan_Alpha);
+                            m_node->m_fmt.set(0, 0, width, height);
+                            m_node->m_fmt.width(width);
+                            m_node->m_fmt.height(height);
                         }
-                    }
-                    else if (it->compare(ChannelStr::Z)==0)
-                    {
-                        if (!m_channels.contains(Chan_Z))
-                            m_channels.insert( Chan_Z );
-                    }
-                    else if (it->compare(ChannelStr::N)==0 || it->compare(ChannelStr::P)==0)
-                    {
-                        if (!m_channels.contains(channel((boost::format("%s.X")%it->c_str()).str().c_str())))
+                        else
                         {
-                            m_channels.insert(channel((boost::format("%s.X")%it->c_str()).str().c_str()));
-                            m_channels.insert(channel((boost::format("%s.Y")%it->c_str()).str().c_str()));
-                            m_channels.insert(channel((boost::format("%s.Z")%it->c_str()).str().c_str()));
+                            // If the format is already exist we need to get its pointer
+                            Format *m_fmt_exist = NULL;
+                            for (int i=0; i < Format::size(); i++)
+                            {
+                                m_fmt_exist = Format::index(i);
+                                if (std::string(m_fmt_exist->name()).compare(m_node->m_node_name) == 0)
+                                    break;
+                            }
+                            m_fmt_exist->set(0, 0, width, height);
+                            m_fmt_exist->width(width);
+                            m_fmt_exist->height(height);
                         }
+                        knob("formats_knob")->set_text(m_node->m_node_name);
                     }
-                    else
+
+                    size_t fb_size = frameBuffer.size();
+                    
+//                    if (m_channels.size() != fb_size)
+//                        m_channels.clear();
+
+                    for(int i=0; i<fb_size; ++i)
                     {
-                        if (!m_channels.contains(channel((boost::format("%s.red")%it->c_str()).str().c_str())))
+                        std::string bufferName = frameBuffer.getBufferName(i);
+                        
+                        if (bufferName.compare(ChannelStr::RGBA)==0)
                         {
-                            m_channels.insert(channel((boost::format("%s.red")%it->c_str()).str().c_str()));
-                            m_channels.insert(channel((boost::format("%s.blue")%it->c_str()).str().c_str()));
-                            m_channels.insert(channel((boost::format("%s.green")%it->c_str()).str().c_str()));
+                            if (!m_channels.contains(Chan_Red))
+                            {
+                                m_channels.insert(Chan_Red);
+                                m_channels.insert(Chan_Green);
+                                m_channels.insert(Chan_Blue);
+                                m_channels.insert(Chan_Alpha);
+                            }
+                        }
+                        else if (bufferName.compare(ChannelStr::Z)==0)
+                        {
+                            if (!m_channels.contains(Chan_Z))
+                                m_channels.insert( Chan_Z );
+                        }
+                        else if (bufferName.compare(ChannelStr::N)==0 ||
+                                 bufferName.compare(ChannelStr::P)==0)
+                        {
+                            if (!m_channels.contains(channel((boost::format("%s.X")%bufferName.c_str()).str().c_str())))
+                            {
+                                m_channels.insert(channel((boost::format("%s.X")%bufferName.c_str()).str().c_str()));
+                                m_channels.insert(channel((boost::format("%s.Y")%bufferName.c_str()).str().c_str()));
+                                m_channels.insert(channel((boost::format("%s.Z")%bufferName.c_str()).str().c_str()));
+                            }
+                        }
+                        else
+                        {
+                            if (!m_channels.contains(channel((boost::format("%s.red")%bufferName.c_str()).str().c_str())))
+                            {
+                                m_channels.insert(channel((boost::format("%s.red")%bufferName.c_str()).str().c_str()));
+                                m_channels.insert(channel((boost::format("%s.blue")%bufferName.c_str()).str().c_str()));
+                                m_channels.insert(channel((boost::format("%s.green")%bufferName.c_str()).str().c_str()));
+                            }
                         }
                     }
                 }
-                m_mutex.unlock();
             }
             
-            // disable caching
+            // Disable caching
             slowness(0);
             
-            // get the frame and set the format
-            int f_index = getFrameIndex(outputContext().frame());
-            
-            // set the format
-            if (!m_node->m_framebuffers.empty())
-                if (!m_node->m_framebuffers[f_index].empty())
-                    if (!m_node->m_framebuffers[f_index][0].empty())
-                    {
-                        int width = m_node->m_framebuffers[f_index][0].width();
-                        int height = m_node->m_framebuffers[f_index][0].height();
-                        
-                        if (m_fmt.width() != width || m_fmt.height() != height)
-                        {
-                            if (!m_formatExists)
-                            {
-                                m_node->m_fmt.set(0, 0, width, height);
-                                m_node->m_fmt.width(width);
-                                m_node->m_fmt.height(height);
-                            }
-                            else
-                            {
-                                // if the format is already exist we need to get its pointer
-                                Format *m_fmt_exist = NULL;
-                                for (int i=0; i < Format::size(); i++)
-                                {
-                                    m_fmt_exist = Format::index(i);
-                                    if (std::string(m_fmt_exist->name()).compare(m_node->m_node_name) == 0)
-                                        break;
-                                }
-                                m_fmt_exist->set(0, 0, width, height);
-                                m_fmt_exist->width(width);
-                                m_fmt_exist->height(height);
-                            }
-                            knob("formats_knob")->set_text(m_node->m_node_name);
-                        }
-                    }
-
-            // setup format etc
+            // Setup format etc
             info_.format(*m_fmtp.fullSizeFormat());
             info_.full_size_format(*m_fmtp.format());
             info_.channels( m_channels );
@@ -485,7 +663,9 @@ class Aton: public Iop
 
             foreach(z, channels)
             {
-                int b_index = getBufferIndex(z);
+                int b_index = 0;
+                if (!m_framebuffers.empty())
+                    b_index = m_node->m_framebuffers[f_index].getBufferIndex(z);
 
                 float *rOut = out.writable(brother (z, 0)) + xx;
                 float *gOut = out.writable(brother (z, 1)) + xx;
@@ -504,14 +684,15 @@ class Aton: public Iop
                     {
                         *rOut = *gOut = *bOut = *aOut = 0.f;
                     }
-                    else if (m_node->m_framebuffers[f_index].size() != m_node->m_aovs.size())
+                    else if (!m_node->m_framebuffers[f_index].isReady())
                         *rOut = *gOut = *bOut = *aOut = 0.f;
                     else
                     {
-                        *rOut = m_node->m_framebuffers[f_index][b_index].get_colour(xxx, yyy)[0];
-                        *gOut = m_node->m_framebuffers[f_index][b_index].get_colour(xxx, yyy)[1];
-                        *bOut = m_node->m_framebuffers[f_index][b_index].get_colour(xxx, yyy)[2];
-                        *aOut = m_node->m_framebuffers[f_index][0].get_alpha(xxx, yyy)[0];
+                        FrameBuffer& frameBuffer = m_node->m_framebuffers[f_index];
+                        *rOut = frameBuffer.getBuffer(b_index).getColour(xxx, yyy)[0];
+                        *gOut = frameBuffer.getBuffer(b_index).getColour(xxx, yyy)[1];
+                        *bOut = frameBuffer.getBuffer(b_index).getColour(xxx, yyy)[2];
+                        *aOut = frameBuffer.getBuffer(0).getAlpha(xxx, yyy)[0];
                     }
                     ++rOut;
                     ++gOut;
@@ -619,7 +800,7 @@ class Aton: public Iop
             return 0;
         }
     
-        void setCurrentFrame(float frame)
+        void setCurrentFrame(double frame)
         {
             std::string cmd; // Our python command buffer
             
@@ -633,7 +814,7 @@ class Aton: public Iop
         {
             int f_index = 0;
 
-            if (!m_node->m_frames.empty())
+            if (m_node->m_multiframe_cache && !m_node->m_frames.empty())
             {
                 int nearFIndex = INT_MIN;
                 int minFIndex = INT_MAX;
@@ -659,34 +840,7 @@ class Aton: public Iop
                     }
                 }
             }
-
             return f_index;
-        }
-    
-        int getBufferIndex(Channel z)
-        {
-            int b_index = 0;
-            std::string layer = getLayerName(z);
-            
-            // get the current buffer index
-            if (layer.compare(ChannelStr::rgb) != 0)
-            {
-                for(std::vector<std::string>::iterator it = m_node->m_aovs.begin(); it != m_node->m_aovs.end(); ++it)
-                {
-                    if (it->compare(layer) == 0)
-                    {
-                        b_index = static_cast<int>(it - m_node->m_aovs.begin());
-                        break;
-                    }
-                    else if ( it->compare(ChannelStr::Z) == 0 && layer.compare(ChannelStr::depth) == 0 )
-                    {
-                        b_index = static_cast<int>(it - m_node->m_aovs.begin());
-                        break;
-                    }
-                }
-            }
-            
-            return b_index;
         }
     
         char * getPath()
@@ -900,8 +1054,22 @@ class Aton: public Iop
                                                                                   %m_node_name).str();
                     script_command(cmd.c_str(), true, false);
                     script_unlock();
-
-                    std::string str_status = setStatus(m_stat.progress, m_stat.ram, m_stat.p_ram, m_stat.time);
+                    
+                    
+                    std::string str_status;
+                    if (!m_framebuffers.empty())
+                    {
+                        int f_index = getFrameIndex(outputContext().frame());
+                        FrameBuffer &frameBuffer = m_node->m_framebuffers[f_index];
+       
+                        str_status = setStatus(frameBuffer.getProgress(),
+                                               frameBuffer.getRAM(),
+                                               frameBuffer.getPRAM(),
+                                               frameBuffer.getTime(),
+                                               frameBuffer.getArnoldVersion());
+                    }
+                    else
+                        str_status = setStatus();
 
                     cmd = (boost::format("exec('''stamp = nuke.nodes.Text(message='%s | Comment: %s',"
                                                                          "yjustify='bottom', size=%s)\n"
@@ -975,7 +1143,6 @@ class Aton: public Iop
                 script_command(cmd.c_str(), true, false);
                 script_unlock();
             }
-
         }
 
         void importAllCmd()
@@ -1011,21 +1178,12 @@ class Aton: public Iop
                 }
             }
         }
-
-        std::string getArnoldVersionStr(int version)
-        {
-            // Construct a string from the version number passed
-            int archV = (version%10000000)/1000000;
-            int majorV = (version%1000000)/10000;
-            int minorV = (version%10000)/100;
-            int fixV = version%100;
-            return (boost::format("%s.%s.%s.%s")%archV%majorV%minorV%fixV).str();
-        }
     
         std::string setStatus(int progress=0,
-                              unsigned long long ram=0,
-                              unsigned long long p_ram=0,
-                              unsigned int time=0)
+                              long long ram=0,
+                              long long p_ram=0,
+                              int time=0,
+                              std::string version="")
         {
             ram /= 1024*1024;
             p_ram /= 1024*1024;
@@ -1041,7 +1199,7 @@ class Aton: public Iop
                                                     "Peak Memory: %sMB | "
                                                     "Time: %02ih:%02im:%02is | "
                                                     "Frame: %s | "
-                                                    "Progress: %s%%")%m_version%ram%p_ram
+                                                    "Progress: %s%%")%version%ram%p_ram
                                                                      %hour%minute%second
                                                                      %m_node->m_current_frame
                                                                      %progress).str();
@@ -1099,7 +1257,6 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
             {
                 case 0: // open a new image
                 {
-                    std::vector<RenderBuffer> buffers;
                     double _active_frame = static_cast<double>(d.currentFrame());
                     int f_index = 0;
                     
@@ -1118,16 +1275,18 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                       node->m_frames.end(),
                                       _active_frame) == node->m_frames.end())
                         {
+                            FrameBuffer frameBuffer;
                             node->m_frames.push_back(_active_frame);
-                            node->m_framebuffers.push_back(buffers);
+                            node->m_framebuffers.push_back(frameBuffer);
                         }
                     }
                     else
                     {
                         if (node->m_frames.empty())
                         {
+                            FrameBuffer frameBuffer;
                             node->m_frames.push_back(_active_frame);
-                            node->m_framebuffers.push_back(buffers);
+                            node->m_framebuffers.push_back(frameBuffer);
                         }
                         else if (node->m_frames.size() > 1)
                         {
@@ -1136,19 +1295,28 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         }
                     }
                     node->m_mutex.unlock();
-
-                    // get image area to help calculate the progress percentage
-                    if (d.width()*d.height() == d.rArea())
-                        imageArea = d.width()*d.height();
-                    else imageArea = d.rArea();
                     
-                    // reset aovs
-                    if (!active_aovs.empty() &&
-                        !node->m_aovs.empty() && active_aovs!=node->m_aovs)
+                    // Get frame index
+                    for(std::vector<double>::iterator it = node->m_frames.begin();
+                        it != node->m_frames.end(); ++it)
+                    {
+                        if (*it == _active_frame)
+                        {
+                            f_index = static_cast<int>(it - node->m_frames.begin());
+                        }
+                    }
+                    
+                    FrameBuffer &frameBuffer = node->m_framebuffers[f_index];
+                    
+                    // Reset Buffers anc Channels
+                    if (!active_aovs.empty() && !frameBuffer.empty() &&
+                        !frameBuffer.compareBuffers(d.width(),
+                                                    d.height(),
+                                                    active_aovs))
                     {
                         node->m_mutex.lock();
-                        node->m_aovs.clear();
-                        // reset channels before every render session
+                        frameBuffer.clearBuffers();
+                        frameBuffer.ready(false);
                         if (node->m_channels.size()>4)
                         {
                             node->m_channels.clear();
@@ -1159,41 +1327,28 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         }
                         node->m_mutex.unlock();
                     }
-
-                    if(!active_aovs.empty())
-                        active_aovs.clear();
                     
-                    for(std::vector<double>::iterator it = node->m_frames.begin();
-                        it != node->m_frames.end(); ++it)
-                    {
-                        if (*it == _active_frame)
-                        {
-                            f_index = static_cast<int>(it - node->m_frames.begin());
-                        }
-                    }
+                    // Get image area to calculate the progress
+                    if (d.width()*d.height() == d.rArea())
+                        imageArea = d.width()*d.height();
+                    else
+                        imageArea = d.rArea();
                     
-                    // Set Arnold Core version
-                    node->m_version = node->getArnoldVersionStr(d.version());
-                    
-                    // reset buffers
-                    if (!node->m_framebuffers[f_index].empty() &&
-                        node->m_framebuffers[f_index][0]._width != d.width() &&
-                        node->m_framebuffers[f_index][0]._height != d.height())
-                    {
-                        node->m_mutex.lock();
-                        node->m_framebuffers[f_index].clear();
-                        node->m_aovs.clear();
-                        node->m_mutex.unlock();
-                    }
-                    
-                    // get delta time per IPR iteration
+                    // Get delta time per IPR iteration
                     delta_time = active_time;
                     
-                    // set current frame
+                    // Set Arnold Core version
+                    frameBuffer.setArnoldVersion(d.version());
+                    
+                    // Set time to current frame
                     if (node->m_multiframe_cache &&
                         node->outputContext().frame() != node->m_current_frame)
                         node->setCurrentFrame(node->m_current_frame);
-
+                    
+                    // Reset active AOVs
+                    if(!active_aovs.empty())
+                        active_aovs.clear();
+                    
                     break;
                 }
                 case 1: // image data
@@ -1212,10 +1367,10 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     long long _ram = d.ram();
                     int _time = d.time();
                     
-                    // get active time
+                    // Get active time
                     active_time = d.time();
 
-                    // get active aov names
+                    // Get active aov names
                     if(!(std::find(active_aovs.begin(),
                                    active_aovs.end(),
                                    d.aovName()) != active_aovs.end()))
@@ -1231,7 +1386,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         }
                     }
                     
-                    // get the frame index
+                    // Get frame index
                     int f_index = 0;
                     if (node->m_multiframe_cache)
                     {
@@ -1245,104 +1400,84 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         }
                     }
                     
-                    // lock buffer
+                    FrameBuffer &frameBuffer = node->m_framebuffers[f_index];
+                    
+                    // Lock buffer
                     node->m_mutex.lock();
                     
-                    // get main aov names
-                    if(!(std::find(node->m_aovs.begin(),
-                                   node->m_aovs.end(),
-                                   d.aovName()) != node->m_aovs.end()))
+                    // Adding buffer
+                    if(!frameBuffer.bufferNameExists(d.aovName()))
                     {
-                        if (node->m_enable_aovs || node->m_aovs.size()==0)
-                            node->m_aovs.push_back(d.aovName());
+                        if (node->m_enable_aovs || frameBuffer.size()==0)
+                            frameBuffer.addBuffer(d.aovName(), node->m_current_frame, _spp, _w, _h);
                     }
+                    else
+                        frameBuffer.ready(true);
                     
-                    // adding buffers
-                    if (node->m_framebuffers[f_index].size() < node->m_aovs.size())
-                    {
-                        RenderBuffer buffer;
-                        if (_spp < 4)
-                            buffer.init(_w, _h);
-                        else
-                            buffer.init(_w, _h, false, true);
-                        node->m_framebuffers[f_index].push_back(buffer);
-                    }
-
-                    if (node->m_framebuffers[f_index].size() > node->m_aovs.size())
-                        node->m_framebuffers[f_index].resize(node->m_aovs.size());
-
-                    for(std::vector<std::string>::iterator it = node->m_aovs.begin();
-                                                           it != node->m_aovs.end(); ++it)
-                    {
-                        if (it->compare(d.aovName()) == 0)
+                    // Get buffer index
+                    int b_index = frameBuffer.getBufferIndex(d.aovName());
+                    
+                    // Writing to buffer
+                    const float* pixel_data = d.pixels();
+                    for (_x = 0; _x < _width; ++_x)
+                        for (_y = 0; _y < _height; ++_y)
                         {
-                            // writing to buffer
-                            const float* pixel_data = d.pixels();
-                            for (_x = 0; _x < _width; ++_x)
-                                for (_y = 0; _y < _height; ++_y)
-                                {
-                                    int b_index = static_cast<int>(it - node->m_aovs.begin());
-                                    offset = (_width * _y * _spp) + (_x * _spp);
+                            offset = (_width * _y * _spp) + (_x * _spp);
 
-                                    RenderColour &pix = node->m_framebuffers[f_index][b_index].get_colour(_x+ _xorigin, _h - (_y + _yorigin + 1));
-                                    for (_s = 0; _s < _spp; ++_s)
-                                        if (_s != 3)
-                                            pix[_s] = pixel_data[offset+_s];
-                                    if (_spp == 4)
-                                    {
-                                        RenderAlpha &alpha_pix = node->m_framebuffers[f_index][b_index].get_alpha(_x+ _xorigin, _h - (_y + _yorigin + 1));
-                                        alpha_pix[0] = pixel_data[offset+3];
-                                    }
-                                }
-                            break;
+                            RenderColour &pix = frameBuffer.getBuffer(b_index).getColour(_x+ _xorigin, _h - (_y + _yorigin + 1));
+                            for (_s = 0; _s < _spp; ++_s)
+                                if (_s != 3)
+                                    pix[_s] = pixel_data[offset+_s];
+                            if (_spp == 4)
+                            {
+                                RenderAlpha &alpha_pix = frameBuffer.getBuffer(b_index).getAlpha(_x+ _xorigin, _h - (_y + _yorigin + 1));
+                                alpha_pix[0] = pixel_data[offset+3];
+                            }
                         }
-                    }
 
-                    // release lock
+                    // Release lock
                     node->m_mutex.unlock();
 
-                    // skip while capturing
+                    // Skip while capturing
                     if (node->m_capturing)
                         continue;
 
-                    // update only on first aov
-                    if( node->m_aovs.front().compare(d.aovName()) == 0 )
+                    // Update only on first aov
+                    if(frameBuffer.getLastBufferName().compare(d.aovName()) == 0)
                     {
-                        // calculating the progress percentage
+                        // Calculating the progress percentage
                         imageArea -= (_width*_height);
                         progress = static_cast<int>(100 - (imageArea*100) / (_w * _h));
 
-                        // getting redraw bucket size
+                        // Getting redraw bucket size
                         node->m_mutex.lock();
-                        node->m_bucket.x = _xorigin;
-                        node->m_bucket.y = _h - _yorigin - _height;
-                        node->m_bucket.r = _xorigin + _width;
-                        node->m_bucket.t = _h - _yorigin;
+                        frameBuffer.setBucketBBox(_xorigin,
+                                                  _h - _yorigin - _height,
+                                                  _xorigin + _width,
+                                                  _h - _yorigin);
 
-                        // setting status parameters
-                        node->m_stat.progress = progress;
-                        node->m_stat.ram = _ram;
-                        node->m_stat.p_ram = _ram > node->m_stat.p_ram ? _ram : node->m_stat.p_ram;
+                        // Setting status parameters
+                        frameBuffer.setProgress(progress);
+                        frameBuffer.setRAM(_ram);
                         if (delta_time > _time)
-                            node->m_stat.time = _time;
+                            frameBuffer.setTime(_time);
                         else
-                            node->m_stat.time = _time - delta_time;
-                        
+                            frameBuffer.setTime(_time - delta_time);
                         node->m_mutex.unlock();
                         
-                        // update the image
-                        node->flagForUpdate();
+                        // Update the image
+                        node->flagForUpdate(f_index);
                     }
 
-                    // deallocate aov name
+                    // Deallocate aov name
                     d.clearAovName();
                     break;
                 }
-                case 2: // close image
+                case 2: // Close image
                 {
                     break;
                 }
-                case 9: // this is sent when the parent process want to kill
+                case 9: // This is sent when the parent process want to kill
                         // the listening thread
                 {
                     killThread = true;
