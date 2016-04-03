@@ -241,7 +241,7 @@ class FrameBuffer
             return b_index;
         }
     
-        // Get N buffer name aka AOV name
+        // Get N buffer/aov name name
         std::string getBufferName(size_t index=0)
         {
             std::string bufferName = "";
@@ -250,7 +250,7 @@ class FrameBuffer
             return bufferName;
         }
     
-        // Get last buffer aka AOV name
+        // Get last buffer/aov name
         std::string getLastBufferName()
         {
             std::string bufferName = "";
@@ -259,7 +259,7 @@ class FrameBuffer
             return bufferName;
         }
     
-        // Compare buffers with given aov names and dimensoions
+        // Compare buffers with given buffer/aov names and dimensoions
         bool compareBuffers(int width, int height, std::vector<std::string> aovs)
         {
             return true ? (aovs == _aovs) &&
@@ -274,6 +274,7 @@ class FrameBuffer
             _aovs.resize(0);
         }
     
+        // Check if the given buffer/aov name name is exist
         bool bufferNameExists(const char * aovName)
         {
             return std::find(_aovs.begin(),
@@ -306,6 +307,7 @@ class FrameBuffer
         // Get current bucket BBox for asapUpdate()
         Box getBucketBBox() { return _bucket; }
     
+        // Set status parameters
         void setProgress(int progress=0) { _progress = progress; }
         void setRAM(long long ram=0)
         {
@@ -314,12 +316,13 @@ class FrameBuffer
         }
         void setTime(int time=0) { _time = time; }
     
+        // Get status parameters
         int getProgress() { return _progress; }
         long long getRAM() { return _ram; }
         long long getPRAM() { return _pram; }
         int getTime() { return _time; }
     
-    
+        // Set Arnold core version
         void setArnoldVersion(int version)
         {
             // Construct a string from the version number passed
@@ -330,13 +333,13 @@ class FrameBuffer
             _version = (boost::format("%s.%s.%s.%s")%archV%majorV%minorV%fixV).str();
         }
     
+        // Get Arnold core version
         std::string getArnoldVersion() { return _version; }
     
-        double getFrame()
-        {
-            return _frame;
-        }
+        // Get the frame number of this framebuffer
+        double getFrame() { return _frame; }
     
+        // Check if this framebuffer is empty
         bool empty() { return (_buffers.empty() && _aovs.empty()) ; }
     
         // To keep False while writing the buffer
@@ -356,17 +359,17 @@ class FrameBuffer
         std::vector<std::string> _aovs;
 };
 
-// our nuke node
+// Nuke node
 class Aton: public Iop
 {
     public:
-        Aton * m_node;
-        const char * m_node_name;
-        FormatPair m_fmtp; // our buffer format (knob)
+        Aton * m_node; // First node pointer
+        const char * m_node_name; // Node name
+        FormatPair m_fmtp; // Buffer format (knob)
         Format m_fmt; // The nuke display format
-        int m_port; // the port we're listening on (knob)
-        const char * m_path; // default path for Write node
-        std::string m_status; // status bar text
+        int m_port; // Port we're listening on (knob)
+        const char * m_path; // Default path for Write node
+        std::string m_status; // Status bar text
         bool m_multiframe_cache;
         bool m_date_filename;
         double m_current_frame;
@@ -375,16 +378,16 @@ class Aton: public Iop
         bool m_enable_aovs;
         int m_stamp_size;
         int m_slimit; // The limit size
-        RenderBuffer m_buffer; // blank buffer
-        Lock m_mutex; // mutex for locking the pixel buffer
-        unsigned int hash_counter; // our refresh hash counter
-        aton::Server m_server; // our aton::Server
-        bool m_inError; // some error handling
+        RenderBuffer m_buffer; // Blank buffer
+        Lock m_mutex; // Mutex for locking the pixel buffer
+        unsigned int hash_counter; // Refresh hash counter
+        aton::Server m_server; // Aton::Server
+        bool m_inError; // Error handling
         bool m_formatExists;
-        bool m_capturing; // capturing signal
+        bool m_capturing; // Capturing signal
         std::vector<std::string> m_garbageList;
-        std::vector<double> m_frames;
-        std::vector<FrameBuffer> m_framebuffers;
+        std::vector<double> m_frames; // Frames holder
+        std::vector<FrameBuffer> m_framebuffers; // Framebuffers holder
         std::string m_connectionError;
         ChannelSet m_channels;
         bool m_legit;
