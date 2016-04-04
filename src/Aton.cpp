@@ -439,7 +439,7 @@ class Aton: public Iop
             setStatus();
 
             // We don't need to see these knobs
-            //knob("formats_knob")->hide();
+            knob("formats_knob")->hide();
             knob("capturing_knob")->hide();
 
             // Allocate node name in order to pass it to format
@@ -581,26 +581,21 @@ class Aton: public Iop
                     if (m_node->m_fmt.width() != width ||
                         m_node->m_fmt.height() != height)
                     {
-                        if (!m_formatExists)
-                        {
-                            m_node->m_fmt.set(0, 0, width, height);
-                            m_node->m_fmt.width(width);
-                            m_node->m_fmt.height(height);
-                        }
-                        else
+                        Format *m_fmt_exist = &m_node->m_fmt;
+                        if (m_node->m_formatExists)
                         {
                             // If the format is already exist we need to get its pointer
-                            Format *m_fmt_exist = NULL;
                             for (int i=0; i < Format::size(); i++)
                             {
                                 m_fmt_exist = Format::index(i);
                                 if (std::string(m_fmt_exist->name()).compare(m_node->m_node_name) == 0)
                                     break;
                             }
-                            m_fmt_exist->set(0, 0, width, height);
-                            m_fmt_exist->width(width);
-                            m_fmt_exist->height(height);
                         }
+                        
+                        m_fmt_exist->set(0, 0, width, height);
+                        m_fmt_exist->width(width);
+                        m_fmt_exist->height(height);
                         knob("formats_knob")->set_text(m_node->m_node_name);
                     }
 
