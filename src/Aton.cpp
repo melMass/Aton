@@ -179,7 +179,6 @@ class FrameBuffer
             
             _buffers.push_back(buffer);
             _aovs.push_back(aov);
-            _frame = frame;
         }
     
         // Get buffer object
@@ -440,7 +439,7 @@ class Aton: public Iop
             setStatus();
 
             // We don't need to see these knobs
-            knob("formats_knob")->hide();
+            //knob("formats_knob")->hide();
             knob("capturing_knob")->hide();
 
             // Allocate node name in order to pass it to format
@@ -572,13 +571,15 @@ class Aton: public Iop
                                   frameBuffer.getRAM(),
                                   frameBuffer.getPRAM(),
                                   frameBuffer.getTime(),
+                                  frameBuffer.getFrame(),
                                   frameBuffer.getArnoldVersion());
                     
                     // Set the format
                     int width = frameBuffer.getWidth();
                     int height = frameBuffer.getHeight();
                     
-                    if (m_fmt.width() != width || m_fmt.height() != height)
+                    if (m_node->m_fmt.width() != width ||
+                        m_node->m_fmt.height() != height)
                     {
                         if (!m_formatExists)
                         {
@@ -604,46 +605,47 @@ class Aton: public Iop
                     }
 
                     size_t fb_size = frameBuffer.size();
+                    ChannelSet& channels = m_node->m_channels;
                     
-//                    if (m_channels.size() != fb_size)
-//                        m_channels.clear();
+                    if (channels.size() != fb_size)
+                        channels.clear();
 
-                    for(int i=0; i<fb_size; ++i)
+                    for(int i = 0; i < fb_size; ++i)
                     {
                         std::string bufferName = frameBuffer.getBufferName(i);
                         
                         if (bufferName.compare(ChannelStr::RGBA)==0)
                         {
-                            if (!m_channels.contains(Chan_Red))
+                            if (!channels.contains(Chan_Red))
                             {
-                                m_channels.insert(Chan_Red);
-                                m_channels.insert(Chan_Green);
-                                m_channels.insert(Chan_Blue);
-                                m_channels.insert(Chan_Alpha);
+                                channels.insert(Chan_Red);
+                                channels.insert(Chan_Green);
+                                channels.insert(Chan_Blue);
+                                channels.insert(Chan_Alpha);
                             }
                         }
                         else if (bufferName.compare(ChannelStr::Z)==0)
                         {
-                            if (!m_channels.contains(Chan_Z))
-                                m_channels.insert( Chan_Z );
+                            if (!channels.contains(Chan_Z))
+                                channels.insert( Chan_Z );
                         }
                         else if (bufferName.compare(ChannelStr::N)==0 ||
                                  bufferName.compare(ChannelStr::P)==0)
                         {
-                            if (!m_channels.contains(channel((boost::format("%s.X")%bufferName.c_str()).str().c_str())))
+                            if (!channels.contains(channel((boost::format("%s.X")%bufferName.c_str()).str().c_str())))
                             {
-                                m_channels.insert(channel((boost::format("%s.X")%bufferName.c_str()).str().c_str()));
-                                m_channels.insert(channel((boost::format("%s.Y")%bufferName.c_str()).str().c_str()));
-                                m_channels.insert(channel((boost::format("%s.Z")%bufferName.c_str()).str().c_str()));
+                                channels.insert(channel((boost::format("%s.X")%bufferName.c_str()).str().c_str()));
+                                channels.insert(channel((boost::format("%s.Y")%bufferName.c_str()).str().c_str()));
+                                channels.insert(channel((boost::format("%s.Z")%bufferName.c_str()).str().c_str()));
                             }
                         }
                         else
                         {
-                            if (!m_channels.contains(channel((boost::format("%s.red")%bufferName.c_str()).str().c_str())))
+                            if (!channels.contains(channel((boost::format("%s.red")%bufferName.c_str()).str().c_str())))
                             {
-                                m_channels.insert(channel((boost::format("%s.red")%bufferName.c_str()).str().c_str()));
-                                m_channels.insert(channel((boost::format("%s.blue")%bufferName.c_str()).str().c_str()));
-                                m_channels.insert(channel((boost::format("%s.green")%bufferName.c_str()).str().c_str()));
+                                channels.insert(channel((boost::format("%s.red")%bufferName.c_str()).str().c_str()));
+                                channels.insert(channel((boost::format("%s.blue")%bufferName.c_str()).str().c_str()));
+                                channels.insert(channel((boost::format("%s.green")%bufferName.c_str()).str().c_str()));
                             }
                         }
                     }
@@ -651,7 +653,7 @@ class Aton: public Iop
             }
             
             // Disable caching
-            slowness(0);
+//            slowness(0);
             
             // Setup format etc
             info_.format(*m_fmtp.fullSizeFormat());
@@ -681,22 +683,25 @@ class Aton: public Iop
                 m_mutex.lock();
                 while (rOut < END)
                 {
-                    if (m_node->m_framebuffers.empty()||
-                        xxx >= m_node->m_buffer._width || yyy >= m_node->m_buffer._height ||
-                        (m_node->m_buffer._width==0 && m_node->m_buffer._height==0))
-                    {
-                        *rOut = *gOut = *bOut = *aOut = 0.f;
-                    }
-                    else if (!m_node->m_framebuffers[f_index].isReady())
-                        *rOut = *gOut = *bOut = *aOut = 0.f;
-                    else
+                    if (!m_node->m_framebuffers.empty() ||
+                        (m_node->m_buffer._width!=0 && m_node->m_buffer._height!=0))
                     {
                         FrameBuffer& frameBuffer = m_node->m_framebuffers[f_index];
-                        *rOut = frameBuffer.getBuffer(b_index).getColour(xxx, yyy)[0];
-                        *gOut = frameBuffer.getBuffer(b_index).getColour(xxx, yyy)[1];
-                        *bOut = frameBuffer.getBuffer(b_index).getColour(xxx, yyy)[2];
-                        *aOut = frameBuffer.getBuffer(0).getAlpha(xxx, yyy)[0];
+                        if (!frameBuffer.isReady() ||
+                            xxx >= frameBuffer.getWidth() || yyy >= frameBuffer.getHeight())
+                        {
+                            *rOut = *gOut = *bOut = *aOut = 0.f;
+                        }
+                        else
+                        {
+                            *rOut = frameBuffer.getBuffer(b_index).getColour(xxx, yyy)[0];
+                            *gOut = frameBuffer.getBuffer(b_index).getColour(xxx, yyy)[1];
+                            *bOut = frameBuffer.getBuffer(b_index).getColour(xxx, yyy)[2];
+                            *aOut = frameBuffer.getBuffer(0).getAlpha(xxx, yyy)[0];
+                        }
                     }
+                    else
+                        *rOut = *gOut = *bOut = *aOut = 0.f;
                     ++rOut;
                     ++gOut;
                     ++bOut;
@@ -1069,6 +1074,7 @@ class Aton: public Iop
                                                frameBuffer.getRAM(),
                                                frameBuffer.getPRAM(),
                                                frameBuffer.getTime(),
+                                               frameBuffer.getFrame(),
                                                frameBuffer.getArnoldVersion());
                     }
                     else
@@ -1186,6 +1192,7 @@ class Aton: public Iop
                               long long ram=0,
                               long long p_ram=0,
                               int time=0,
+                              double frame=0,
                               std::string version="")
         {
             ram /= 1024*1024;
@@ -1204,8 +1211,7 @@ class Aton: public Iop
                                                     "Frame: %s | "
                                                     "Progress: %s%%")%version%ram%p_ram
                                                                      %hour%minute%second
-                                                                     %m_node->m_current_frame
-                                                                     %progress).str();
+                                                                     %frame%progress).str();
             knob("status_knob")->set_text(str_status.c_str());
             return str_status;
         }
@@ -1278,7 +1284,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                       node->m_frames.end(),
                                       _active_frame) == node->m_frames.end())
                         {
-                            FrameBuffer frameBuffer;
+                            FrameBuffer frameBuffer(_active_frame);
                             node->m_frames.push_back(_active_frame);
                             node->m_framebuffers.push_back(frameBuffer);
                         }
@@ -1287,7 +1293,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     {
                         if (node->m_frames.empty())
                         {
-                            FrameBuffer frameBuffer;
+                            FrameBuffer frameBuffer(_active_frame);
                             node->m_frames.push_back(_active_frame);
                             node->m_framebuffers.push_back(frameBuffer);
                         }
