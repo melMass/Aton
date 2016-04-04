@@ -543,8 +543,8 @@ class Aton: public Iop
 
         void append(Hash& hash)
         {
-            hash.append(hash_counter);
-            hash.append(outputContext().frame());
+            hash.append(m_node->hash_counter);
+            hash.append(m_node->outputContext().frame());
         }
 
         void _validate(bool for_real)
@@ -556,7 +556,7 @@ class Aton: public Iop
             // Handle any connection error
             if ( m_inError )
                 error(m_connectionError.c_str());
-            
+
             if (!m_framebuffers.empty())
             {
                 // Get the frame and set the format
@@ -653,13 +653,13 @@ class Aton: public Iop
             }
             
             // Disable caching
-//            slowness(0);
+            slowness(0);
             
             // Setup format etc
-            info_.format(*m_fmtp.fullSizeFormat());
-            info_.full_size_format(*m_fmtp.format());
-            info_.channels( m_channels );
-            info_.set(info().format());
+            info_.format(*m_node->m_fmtp.fullSizeFormat());
+            info_.full_size_format(*m_node->m_fmtp.format());
+            info_.channels( m_node->m_channels );
+            info_.set(m_node->info().format());
         }
 
         void engine(int y, int xx, int r, ChannelMask channels, Row& out)
