@@ -124,11 +124,11 @@ class Aton(QtGui.QDialog):
 		portSlider.setMaximum(15)
 		portSlider.setValue(0)
 		self.timeChangeCB = 0
-		self.ForceRebuildCheckbox = QtGui.QCheckBox("Force Refresh on time change")
+		self.ForceRefreshCheckbox = QtGui.QCheckBox("Force Refresh")
 		portLayout.addWidget(portLabel)
 		portLayout.addWidget(self.portSpinBox)
 		portLayout.addWidget(portSlider)
-		portLayout.addWidget(self.ForceRebuildCheckbox)
+		portLayout.addWidget(self.ForceRefreshCheckbox)
 
 		# Camera Layout
 		cameraLayout = QtGui.QHBoxLayout()
@@ -315,7 +315,7 @@ class Aton(QtGui.QDialog):
 
 		cmds.setAttr("defaultArnoldDisplayDriver.port", port)
 
-		if (self.timeChangeCB == 0 and self.ForceRebuildCheckbox.isChecked()):
+		if (self.timeChangeCB == 0 and self.ForceRefreshCheckbox.isChecked()):
 			self.timeChangeCB = OM.MEventMessage.addEventCallback( "timeChanged", self.timeChangedCallback )
 
 		core.createOptions()
