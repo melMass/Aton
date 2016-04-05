@@ -95,6 +95,7 @@ class Aton(QtGui.QDialog):
 		self.setObjectName(self.windowName)
 		self.setWindowTitle("Aton %s"%__version__)
 		self.setWindowFlags(QtCore.Qt.Tool)
+		self.setAttribute(QtCore.Qt.WA_AlwaysShowToolTips)
 		self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 		self.setMinimumSize(400, 250)
 		self.setMaximumSize(400, 250)
@@ -125,6 +126,7 @@ class Aton(QtGui.QDialog):
 		portSlider.setValue(0)
 		self.timeChangeCB = 0
 		self.ForceRefreshCheckbox = QtGui.QCheckBox("Force Refresh")
+		self.ForceRefreshCheckbox.setToolTip("Force refresh during IPR when the time was changed.")
 		portLayout.addWidget(portLabel)
 		portLayout.addWidget(self.portSpinBox)
 		portLayout.addWidget(portSlider)
