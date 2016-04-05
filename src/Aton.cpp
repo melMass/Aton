@@ -648,7 +648,7 @@ class Aton: public Iop
             }
             
             // Disable caching
-            slowness(0);
+            m_node->slowness(0);
             
             // Setup format etc
             info_.format(*m_node->m_fmtp.fullSizeFormat());
@@ -675,28 +675,24 @@ class Aton: public Iop
                 unsigned int xxx = static_cast<unsigned int> (xx);
                 unsigned int yyy = static_cast<unsigned int> (y);
 
+                std::vector<FrameBuffer>& fbs  = m_node->m_framebuffers;
+                
                 m_mutex.lock();
                 while (rOut < END)
                 {
-                    if (!m_node->m_framebuffers.empty() ||
-                        (m_node->m_buffer._width!=0 && m_node->m_buffer._height!=0))
+                    if (fbs.empty() || !fbs[f_index].isReady() ||
+                        xxx >= fbs[f_index].getWidth() ||
+                        yyy >= fbs[f_index].getHeight())
                     {
-                        FrameBuffer& frameBuffer = m_node->m_framebuffers[f_index];
-                        if (!frameBuffer.isReady() ||
-                            xxx >= frameBuffer.getWidth() || yyy >= frameBuffer.getHeight())
-                        {
-                            *rOut = *gOut = *bOut = *aOut = 0.f;
-                        }
-                        else
-                        {
-                            *rOut = frameBuffer.getBuffer(b_index).getColour(xxx, yyy)[0];
-                            *gOut = frameBuffer.getBuffer(b_index).getColour(xxx, yyy)[1];
-                            *bOut = frameBuffer.getBuffer(b_index).getColour(xxx, yyy)[2];
-                            *aOut = frameBuffer.getBuffer(0).getAlpha(xxx, yyy)[0];
-                        }
+                        *rOut = *gOut = *bOut = *aOut = 0.f;
                     }
                     else
-                        *rOut = *gOut = *bOut = *aOut = 0.f;
+                    {
+                        *rOut = fbs[f_index].getBuffer(b_index).getColour(xxx, yyy)[0];
+                        *gOut = fbs[f_index].getBuffer(b_index).getColour(xxx, yyy)[1];
+                        *bOut = fbs[f_index].getBuffer(b_index).getColour(xxx, yyy)[2];
+                        *aOut = fbs[f_index].getBuffer(0).getAlpha(xxx, yyy)[0];
+                    }
                     ++rOut;
                     ++gOut;
                     ++bOut;
