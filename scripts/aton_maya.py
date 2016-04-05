@@ -5,6 +5,7 @@ __version__ = "v1.1.0"
 import sys
 import mtoa.core as core
 import maya.mel as mel
+import maya.OpenMaya as OM
 
 from arnold import *
 from maya import cmds, OpenMayaUI
@@ -22,7 +23,6 @@ class Aton(QtGui.QDialog):
 		super(Aton, self).__init__(parent)
 
 		self.windowName = "Aton"
-
 		if cmds.window(self.windowName, exists = True):
 			cmds.deleteUI(self.windowName, wnd = True)
 
@@ -123,9 +123,12 @@ class Aton(QtGui.QDialog):
 		portSlider.setMinimum(0)
 		portSlider.setMaximum(15)
 		portSlider.setValue(0)
+		self.timeChangeCB = 0
+		self.ForceRebuildCheckbox = QtGui.QCheckBox("Force Refresh on time change")
 		portLayout.addWidget(portLabel)
 		portLayout.addWidget(self.portSpinBox)
 		portLayout.addWidget(portSlider)
+		portLayout.addWidget(self.ForceRebuildCheckbox)
 
 		# Camera Layout
 		cameraLayout = QtGui.QHBoxLayout()
@@ -312,6 +315,9 @@ class Aton(QtGui.QDialog):
 
 		cmds.setAttr("defaultArnoldDisplayDriver.port", port)
 
+		if (self.timeChangeCB == 0 and self.ForceRebuildCheckbox.isChecked()):
+			self.timeChangeCB = OM.MEventMessage.addEventCallback( "timeChanged", self.timeChangedCallback )
+
 		core.createOptions()
 		cmds.arnoldIpr(cam=camera, width=width, height=height, mode='start')
 		nodeIter = AiUniverseGetNodeIterator(AI_NODE_ALL)
@@ -339,9 +345,14 @@ class Aton(QtGui.QDialog):
 	def stop(self):
 		try:
 			cmds.arnoldIpr(mode='stop')
+			OM.MEventMessage.removeCallback(self.timeChangeCB)
+			self.timeChangeCB = 0
 			sys.stdout.write("// Info: Aton - Render stopped.\n")
 		except RuntimeError:
 			pass
+
+	def timeChangedCallback(self, *args, **kwargs):
+		self.render()
 
 	def getNukeCropNode(self, *args):
 
