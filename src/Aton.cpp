@@ -53,10 +53,13 @@ namespace ChannelStr
     const std::string P = "P";
 };
 
-// our listener method
+// Our time change callback method
+static void timeChange(unsigned index, unsigned nthreads, void* data);
+
+// Our listener method
 static void atonListen(unsigned index, unsigned nthreads, void* data);
 
-// lightweight colour pixel class
+// Lightweight colour pixel class
 class RenderColour
 {
     public:
@@ -72,7 +75,7 @@ class RenderColour
         float _val[3];
 };
 
-// lightweight alpha pixel class
+// Lightweight alpha pixel class
 class RenderAlpha
 {
     public:
@@ -88,7 +91,7 @@ class RenderAlpha
         float _val;
 };
 
-// our image buffer class
+// Our image buffer class
 class RenderBuffer
 {
     public:
@@ -515,6 +518,7 @@ class Aton: public Iop
             if ( m_server.isConnected() )
             {
                 Thread::spawn(::atonListen, 1, this);
+                Thread::spawn(::timeChange, 1, this);
                 print_name( std::cout );
                 
                 // Update port in the UI
@@ -544,7 +548,6 @@ class Aton: public Iop
         void append(Hash& hash)
         {
             hash.append(m_node->hash_counter);
-            hash.append(m_node->outputContext().frame());
         }
 
         void _validate(bool for_real)
@@ -557,7 +560,7 @@ class Aton: public Iop
             if ( m_inError )
                 error(m_connectionError.c_str());
 
-            if (!m_framebuffers.empty())
+            if (!m_node->m_framebuffers.empty())
             {
                 // Get the frame and set the format
                 int f_index = getFrameIndex(outputContext().frame());
@@ -1213,6 +1216,26 @@ class Aton: public Iop
         const char* node_help() const { return HELP; }
         static const Iop::Description desc;
 };
+
+// Our time change callback method
+static void timeChange(unsigned index, unsigned nthreads, void* data)
+{
+    Aton * node = reinterpret_cast<Aton*> (data);
+    std::vector<FrameBuffer>& fbs  = node->m_node->m_framebuffers;
+
+    double prevFrame = 0;
+    
+    while (node->m_legit)
+    {
+        if (!fbs.empty())
+            if (prevFrame != node->uiContext().frame())
+            {
+                node->flagForUpdate(node->uiContext().frame());
+                prevFrame = node->uiContext().frame();
+            }
+    }
+}
+
 //=====
 //=====
 // @brief our listening thread method
