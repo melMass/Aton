@@ -472,8 +472,8 @@ class Aton: public Iop
             // called.
             m_legit = false;
             disconnect();
-            m_frames.resize(0);
-            m_framebuffers.resize(0);
+            m_node->m_frames.resize(0);
+            m_node->m_framebuffers.resize(0);
             
             delete[] m_path;
             m_path = NULL;
@@ -487,7 +487,7 @@ class Aton: public Iop
                 hash_counter++;
             
             // Update the image with current bucket first
-            asapUpdate(m_framebuffers[f_index].getBucketBBox());
+            asapUpdate(m_node->m_framebuffers[f_index].getBucketBBox());
         }
 
         // we can use this to change our tcp port
@@ -667,7 +667,7 @@ class Aton: public Iop
             foreach(z, channels)
             {
                 int b_index = 0;
-                if (!m_framebuffers.empty())
+                if (!m_node->m_framebuffers.empty())
                     b_index = m_node->m_framebuffers[f_index].getBufferIndex(z);
 
                 float *rOut = out.writable(brother (z, 0)) + xx;
@@ -1059,7 +1059,7 @@ class Aton: public Iop
                     
                     
                     std::string str_status;
-                    if (!m_framebuffers.empty())
+                    if (!m_node->m_framebuffers.empty())
                     {
                         int f_index = getFrameIndex(outputContext().frame());
                         FrameBuffer &frameBuffer = m_node->m_framebuffers[f_index];
