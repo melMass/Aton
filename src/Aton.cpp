@@ -170,7 +170,6 @@ class FrameBuffer
     
         // Add new buffer
         void addBuffer(const char * aov=NULL,
-                       double frame=0,
                        int spp=0,
                        int w=0,
                        int h=0)
@@ -565,7 +564,7 @@ class Aton: public Iop
             if (!m_node->m_framebuffers.empty())
             {
                 // Get the frame and set the format
-                int f_index = getFrameIndex(outputContext().frame());
+                int f_index = getFrameIndex(uiContext().frame());
                 
                 FrameBuffer &frameBuffer = m_node->m_framebuffers[f_index];
 
@@ -664,7 +663,7 @@ class Aton: public Iop
 
         void engine(int y, int xx, int r, ChannelMask channels, Row& out)
         {
-            int f_index = getFrameIndex(outputContext().frame());
+            int f_index = getFrameIndex(uiContext().frame());
 
             foreach(z, channels)
             {
@@ -1063,7 +1062,7 @@ class Aton: public Iop
                     std::string str_status;
                     if (!m_node->m_framebuffers.empty())
                     {
-                        int f_index = getFrameIndex(outputContext().frame());
+                        int f_index = getFrameIndex(uiContext().frame());
                         FrameBuffer &frameBuffer = m_node->m_framebuffers[f_index];
        
                         str_status = setStatus(frameBuffer.getProgress(),
@@ -1259,6 +1258,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
         // For progress percentage
         long long imageArea = 0;
         int progress = 0;
+        int f_index = 0;
         
         // For time to reset per every IPR iteration
         static int active_time = 0;
@@ -1282,12 +1282,11 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
             {
                 case 0: // Open a new image
                 {
-                    double _active_frame = static_cast<double>(d.currentFrame());
-                    int f_index = 0;
-                    
                     // Init blank buffer
                     node->m_mutex.lock();
                     node->m_buffer.init(d.width(), d.height(), true);
+                    
+                    double _active_frame = static_cast<double>(d.currentFrame());
                     
                     // Init current frame
                     if (node->m_current_frame != _active_frame)
@@ -1321,16 +1320,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     }
                     node->m_mutex.unlock();
                     
-                    // Get frame index
-                    for(std::vector<double>::iterator it = node->m_frames.begin();
-                        it != node->m_frames.end(); ++it)
-                    {
-                        if (*it == _active_frame)
-                        {
-                            f_index = static_cast<int>(it - node->m_frames.begin());
-                        }
-                    }
-                    
+                    // Get frame buffer
+                    f_index = node->getFrameIndex(_active_frame);
                     FrameBuffer &frameBuffer = node->m_framebuffers[f_index];
                     
                     // Reset Buffers anc Channels
@@ -1367,7 +1358,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     
                     // Set time to current frame
                     if (node->m_multiframe_cache &&
-                        node->outputContext().frame() != node->m_current_frame)
+                        node->uiContext().frame() != node->m_current_frame)
                         node->setCurrentFrame(node->m_current_frame);
                     
                     // Reset active AOVs
@@ -1411,20 +1402,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         }
                     }
                     
-                    // Get frame index
-                    int f_index = 0;
-                    if (node->m_multiframe_cache)
-                    {
-                        for(std::vector<double>::iterator it = node->m_frames.begin();
-                            it != node->m_frames.end(); ++it)
-                        {
-                            if (*it == node->m_current_frame)
-                            {
-                                f_index = static_cast<int>(it - node->m_frames.begin());
-                            }
-                        }
-                    }
-                    
+                    // Get frame buffer
                     FrameBuffer &frameBuffer = node->m_framebuffers[f_index];
                     
                     // Lock buffer
@@ -1434,7 +1412,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     if(!frameBuffer.bufferNameExists(d.aovName()))
                     {
                         if (node->m_enable_aovs || frameBuffer.size()==0)
-                            frameBuffer.addBuffer(d.aovName(), node->m_current_frame, _spp, _w, _h);
+                            frameBuffer.addBuffer(d.aovName(), _spp, _w, _h);
                     }
                     else
                         frameBuffer.ready(true);
