@@ -30,6 +30,8 @@ using namespace DD::Image;
 #include "boost/filesystem.hpp"
 #include "boost/lexical_cast.hpp"
 #include "boost/algorithm/string.hpp"
+#include <boost/thread/thread.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 // class name
 static const char* const CLASS = "Aton";
@@ -1202,7 +1204,7 @@ class Aton: public Iop
                                                     "Used Memory: %sMB | "
                                                     "Peak Memory: %sMB | "
                                                     "Time: %02ih:%02im:%02is | "
-                                                    "Frame: %s | "
+                                                    "Frame: %04i | "
                                                     "Progress: %s%%")%version%ram%p_ram
                                                                      %hour%minute%second
                                                                      %frame%progress).str();
@@ -1217,13 +1219,14 @@ class Aton: public Iop
         static const Iop::Description desc;
 };
 
-// Our time change callback method
+// Time change thread method
 static void timeChange(unsigned index, unsigned nthreads, void* data)
 {
     Aton * node = reinterpret_cast<Aton*> (data);
     std::vector<FrameBuffer>& fbs  = node->m_node->m_framebuffers;
 
     double prevFrame = 0;
+    int milliseconds = 10;
     
     while (node->m_legit)
     {
@@ -1233,12 +1236,11 @@ static void timeChange(unsigned index, unsigned nthreads, void* data)
                 node->flagForUpdate(node->uiContext().frame());
                 prevFrame = node->uiContext().frame();
             }
+        boost::this_thread::sleep(boost::posix_time::millisec(milliseconds));
     }
 }
 
-//=====
-//=====
-// @brief our listening thread method
+// Listening thread method
 static void atonListen(unsigned index, unsigned nthreads, void* data)
 {
     bool killThread = false;
@@ -1248,24 +1250,24 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
 
     while (!killThread)
     {
-        // accept incoming connections!
+        // Accept incoming connections!
         node->m_server.accept();
 
-        // our incoming data object
+        // Our incoming data object
         aton::Data d;
 
-        // for progress percentage
+        // For progress percentage
         long long imageArea = 0;
         int progress = 0;
         
-        // for time to reset per every IPR iteration
+        // For time to reset per every IPR iteration
         static int active_time = 0;
         static int delta_time = 0;
 
-        // loop over incoming data
+        // Loop over incoming data
         while ((d.type()==2||d.type()==9)==false)
         {
-            // listen for some data
+            // Listen for some data
             try
             {
                 d = node->m_server.listen();
@@ -1275,23 +1277,23 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                 break;
             }
 
-            // handle the data we received
+            // Handle the data we received
             switch (d.type())
             {
-                case 0: // open a new image
+                case 0: // Open a new image
                 {
                     double _active_frame = static_cast<double>(d.currentFrame());
                     int f_index = 0;
                     
-                    // init blank buffer
+                    // Init blank buffer
                     node->m_mutex.lock();
                     node->m_buffer.init(d.width(), d.height(), true);
                     
-                    // init current frame
+                    // Init current frame
                     if (node->m_current_frame != _active_frame)
                         node->m_current_frame = _active_frame;
                     
-                    // sync timeline
+                    // Sync timeline
                     if (node->m_multiframe_cache)
                     {
                         if (std::find(node->m_frames.begin(),
