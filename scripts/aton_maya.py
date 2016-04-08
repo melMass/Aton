@@ -3,12 +3,17 @@ __copyright__ = "2016 All rights reserved. See Copyright.txt for more details."
 __version__ = "v1.1.0"
 
 import sys
-import mtoa.core as core
 import maya.mel as mel
 import maya.OpenMaya as OM
-
-from arnold import *
+import pymel.core as pm
 from maya import cmds, OpenMayaUI
+
+try:
+    from arnold import *
+    import mtoa.core as core
+except ImportError:
+    cmds.warning("MtoA was not found.")
+
 from PySide import QtCore
 from PySide import QtGui
 from shiboken import wrapInstance
@@ -284,22 +289,29 @@ class Aton(QtGui.QDialog):
 		self.setLayout(mainLayout)
 
 	def render(self):
-
+		
 		if self.cameraComboBox.currentIndex() == 0:
 			camera = self.getSceneOptions()["camera"]
 		else:
-			camera = cmds.listRelatives(self.cameraComboBoxDict[self.cameraComboBox.currentIndex()], s=1)[0]
+			try:
+				camera = cmds.listRelatives(self.cameraComboBoxDict[self.cameraComboBox.currentIndex()], s=1)[0]
+			except TypeError:
+				camera = self.cameraComboBoxDict[self.cameraComboBox.currentIndex()]
 
 		if camera == None:
 			cmds.warning("Camera is not selected!")
+			return
+
+		try:	
+			defaultTranslator = cmds.getAttr("defaultArnoldDisplayDriver.aiTranslator")
+		except:
+			cmds.warning("MtoA was not found.")
 			return
 
 		try:
 			cmds.arnoldIpr(mode='stop')
 		except RuntimeError:
 			pass
-
-		defaultTranslator = cmds.getAttr("defaultArnoldDisplayDriver.aiTranslator")
 
 		try:
 			cmds.setAttr("defaultArnoldDisplayDriver.aiTranslator", "aton", type="string")
