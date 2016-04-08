@@ -336,9 +336,12 @@ class Aton(QtGui.QDialog):
 
         cmds.setAttr("defaultArnoldDisplayDriver.port", port)
 
-        # Add a time changed callback
+        # Adding time changed callback
         if (self.timeChange == None and
             self.ForceRefreshCheckbox.isChecked() and motionBlur):
+            time = cmds.currentTime(q=1)
+            cmds.currentTime(time+1, e=1)
+            cmds.currentTime(time, e=1)
             self.timeChange = OM.MEventMessage.addEventCallback( "timeChanged", self.render )
 
         core.createOptions()
@@ -366,9 +369,10 @@ class Aton(QtGui.QDialog):
         sys.stdout.write("// Info: Aton - Render started.\n")
 
     def stop(self):
-        try:
+        if self.ForceRefreshCheckbox.isChecked() and self.timeChange != None:
             OM.MEventMessage.removeCallback(self.timeChange)
             self.timeChange = None
+        try:
             cmds.arnoldIpr(mode='stop')
             sys.stdout.write("// Info: Aton - Render stopped.\n")
         except RuntimeError:

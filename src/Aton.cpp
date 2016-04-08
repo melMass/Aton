@@ -737,7 +737,7 @@ class Aton: public Iop
                                                   "date_filename_knob",
                                                   "Date in Filename");
             Newline(f);
-            Knob * use_stamp_knob = Bool_knob(f, &m_stamp, "use_stamp_knob", "Use Stamp");
+            Knob * use_stamp_knob = Bool_knob(f, &m_stamp, "use_stamp_knob", "Frame Stamp");
             Knob * stamp_size_knob = Int_knob(f, &m_stamp_size, "stamp_size_knob", "Size");
             Knob * comment_knob = String_knob(f, &m_comment, "comment_knob", "Comment");
             Newline(f);
