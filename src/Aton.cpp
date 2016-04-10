@@ -395,27 +395,26 @@ class Aton: public Iop
         ChannelSet m_channels;
         bool m_legit;
 
-        Aton(Node* node) :
-            Iop(node),
-            m_node(firstNode()),
-            m_port(getPort()),
-            m_path(getPath()),
-            m_status(""),
-            m_multiframe_cache(true),
-            m_all_frames(false),
-            m_current_frame(0),
-            m_comment(""),
-            m_stamp(true),
-            m_enable_aovs(true),
-            m_stamp_size(15),
-            m_slimit(20),
-            m_fmt(Format(0, 0, 1.0)),
-            m_inError(false),
-            m_formatExists(false),
-            m_capturing(false),
-            m_connectionError(""),
-            m_channels(Mask_RGBA),
-            m_legit(false)
+        Aton(Node* node): Iop(node),
+                          m_node(firstNode()),
+                          m_port(getPort()),
+                          m_path(getPath()),
+                          m_status(""),
+                          m_multiframe_cache(true),
+                          m_all_frames(false),
+                          m_current_frame(0),
+                          m_comment(""),
+                          m_stamp(true),
+                          m_enable_aovs(true),
+                          m_stamp_size(15),
+                          m_slimit(20),
+                          m_fmt(Format(0, 0, 1.0)),
+                          m_inError(false),
+                          m_formatExists(false),
+                          m_capturing(false),
+                          m_connectionError(""),
+                          m_channels(Mask_RGBA),
+                          m_legit(false)
         {
             inputs(0);
         }
