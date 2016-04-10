@@ -373,7 +373,7 @@ class Aton: public Iop
         int m_port; // Port we're listening on (knob)
         const char * m_path; // Default path for Write node
         std::string m_status; // Status bar text
-        bool m_multiframe_cache;
+        bool m_multiframes;
         bool m_all_frames;
         double m_current_frame;
         const char * m_comment;
@@ -400,7 +400,7 @@ class Aton: public Iop
                           m_port(getPort()),
                           m_path(getPath()),
                           m_status(""),
-                          m_multiframe_cache(true),
+                          m_multiframes(true),
                           m_all_frames(false),
                           m_current_frame(0),
                           m_comment(""),
@@ -724,16 +724,16 @@ class Aton: public Iop
                                                 "enable_aovs_knob",
                                                 "Enable AOVs");
             Newline(f);
-            Knob * sync_current_frame_knob = Bool_knob(f, &m_multiframe_cache,
-                                                       "multi_frame_cache_knob",
-                                                       "Multi Frame Caching");
+            Knob * multi_frame_knob = Bool_knob(f, &m_multiframes,
+                                                "multi_frame_knob",
+                                                "Enable Multiple Frames");
 
             Divider(f, "Capture");
             Knob * limit_knob = Int_knob(f, &m_slimit, "limit_knob", "Limit");
             Newline(f);
             Knob * all_frames_knob = Bool_knob(f, &m_all_frames,
                                                "all_frames_knob",
-                                               "Capture all frames");
+                                               "Capture All Frames");
             Knob * path_knob = File_knob(f, &m_path, "path_knob", "Path");
 
             Newline(f);
@@ -752,7 +752,7 @@ class Aton: public Iop
 
             // Set Flags
             enable_aovs_knob->set_flag(Knob::NO_RERENDER, true);
-            sync_current_frame_knob->set_flag(Knob::NO_RERENDER, true);
+            multi_frame_knob->set_flag(Knob::NO_RERENDER, true);
             limit_knob->set_flag(Knob::NO_RERENDER, true);
             path_knob->set_flag(Knob::NO_RERENDER, true);
             all_frames_knob->set_flag(Knob::NO_RERENDER, true);
@@ -818,7 +818,7 @@ class Aton: public Iop
         {
             int f_index = 0;
 
-            if (m_node->m_multiframe_cache && !m_node->m_frames.empty())
+            if (m_multiframes && !m_node->m_frames.empty())
             {
                 int nearFIndex = INT_MIN;
                 int minFIndex = INT_MAX;
@@ -1007,7 +1007,7 @@ class Aton: public Iop
                     std::vector<double> sortedFrames = m_node->m_frames;
                     std::stable_sort(sortedFrames.begin(), sortedFrames.end());
 
-                    if (m_multiframe_cache && m_all_frames)
+                    if (m_multiframes && m_all_frames)
                     {
                         timeFrameSuffix += "_" + std::string("####");
                         startFrame = sortedFrames.front();
@@ -1068,7 +1068,7 @@ class Aton: public Iop
                                          "rect['area'].setValue([0,0,%s,%s]);"
                                          "rect.setInput(0, nuke.toNode('%s'))")%RectNodeName
                                                                                %(m_node->m_fmt.width()+1000)
-                                                                               %(m_node->m_stamp_size+7)
+                                                                               %(m_stamp_size+7)
                                                                                %m_node->m_node_name).str();
                     script_command(cmd.c_str(), true, false);
                     script_unlock();
@@ -1083,8 +1083,8 @@ class Aton: public Iop
                                          "stamp['color'].setValue(0.5);"
                                          "stamp['translate'].setValue([5, 2.5]);"
                                          "stamp.setInput(0, nuke.toNode('%s'));"
-                                         "nuke.toNode('%s').setInput(0, stamp)")%m_node->m_node_name%m_node->m_comment
-                                                                                %m_node->m_stamp_size%RectNodeName
+                                         "nuke.toNode('%s').setInput(0, stamp)")%m_node->m_node_name%m_comment
+                                                                                %m_stamp_size%RectNodeName
                                                                                 %writeNodeName ).str();
                     script_command(cmd.c_str(), true, false);
                     script_unlock();
@@ -1289,7 +1289,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         node->m_current_frame = _active_frame;
                     
                     // Sync timeline
-                    if (node->m_multiframe_cache)
+                    if (node->m_multiframes)
                     {
                         if (std::find(node->m_frames.begin(),
                                       node->m_frames.end(),
@@ -1353,7 +1353,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     frameBuffer.setArnoldVersion(d.version());
                     
                     // Set time to current frame
-                    if (node->m_multiframe_cache &&
+                    if (node->m_multiframes &&
                         node->uiContext().frame() != node->m_current_frame)
                         node->setCurrentFrame(node->m_current_frame);
                     
