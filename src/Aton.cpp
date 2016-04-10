@@ -1016,7 +1016,7 @@ class Aton: public Iop
                         for(std::vector<double>::iterator it = sortedFrames.begin();
                                                           it != sortedFrames.end(); ++it)
                             frames += (boost::format("%s,")%*it).str();
-                        frames.resize(frames.size () - 1);
+                        frames.resize(frames.size() - 1);
                     }
                     else
                     {
@@ -1054,7 +1054,7 @@ class Aton: public Iop
                                                                                                                  %endFrame).str();
                 script_command(cmd.c_str(), true, false);
                 script_unlock();
-
+                
                 if (m_stamp)
                 {
                     // Create a rectangle node and return it's name
@@ -1064,9 +1064,9 @@ class Aton: public Iop
                     script_unlock();
 
                     // Set the rectangle size
-                    cmd = (boost::format("rect = nuke.toNode('%s')\n"
-                                         "rect['output'].setValue('rgb')\n"
-                                         "rect['area'].setValue([0,0,%s,%s])\n"
+                    cmd = (boost::format("rect = nuke.toNode('%s');"
+                                         "rect['output'].setValue('rgb');"
+                                         "rect['area'].setValue([0,0,%s,%s]);"
                                          "rect.setInput(0, nuke.toNode('%s'))")%RectNodeName
                                                                                %(m_node->m_fmt.width()+1000)
                                                                                %(m_node->m_stamp_size+7)
@@ -1075,31 +1075,18 @@ class Aton: public Iop
                     script_unlock();
 
                     // Add text node in between to put a stamp on the capture
-                    std::string str_status;
-                    if (!m_node->m_framebuffers.empty())
-                    {
-                        int f_index = getFrameIndex(uiContext().frame());
-                        FrameBuffer &frameBuffer = m_node->m_framebuffers[f_index];
-
-                        str_status = setStatus(frameBuffer.getProgress(),
-                                               frameBuffer.getRAM(),
-                                               frameBuffer.getPRAM(),
-                                               frameBuffer.getTime(),
-                                               frameBuffer.getFrame(),
-                                               frameBuffer.getArnoldVersion());
-                    }
-                    else
-                        str_status = setStatus();
-
-                    cmd = (boost::format("exec('''stamp = nuke.nodes.Text(message='%s | Comment: %s', yjustify='bottom', size=%s)\n"
-                                                 "stamp['output'].setValue('rgb')\n"
-                                                 "stamp['font'].setValue(nuke.defaultFontPathname())\n"
-                                                 "stamp['color'].setValue(0.5)\n"
-                                                 "stamp['translate'].setValue([5, 2.5])\n"
-                                                 "stamp.setInput(0, nuke.toNode('%s'))\n"
-                                                 "nuke.toNode('%s').setInput(0, stamp)''')")%str_status%m_node->m_comment
-                                                                                            %m_node->m_stamp_size%RectNodeName
-                                                                                            %writeNodeName ).str();
+                    cmd = (boost::format("stamp = nuke.nodes.Text();"
+                                         "stamp['message'].setValue('''[python {nuke.toNode('%s')['status_knob'].value()}] | Comment: %s''');"
+                                         "stamp['yjustify'].setValue('bottom');"
+                                         "stamp['size'].setValue(%s);"
+                                         "stamp['output'].setValue('rgb');"
+                                         "stamp['font'].setValue(nuke.defaultFontPathname());"
+                                         "stamp['color'].setValue(0.5);"
+                                         "stamp['translate'].setValue([5, 2.5]);"
+                                         "stamp.setInput(0, nuke.toNode('%s'));"
+                                         "nuke.toNode('%s').setInput(0, stamp)")%m_node->m_node_name%m_node->m_comment
+                                                                                %m_node->m_stamp_size%RectNodeName
+                                                                                %writeNodeName ).str();
                     script_command(cmd.c_str(), true, false);
                     script_unlock();
                 }
