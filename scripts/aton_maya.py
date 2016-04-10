@@ -33,6 +33,10 @@ class Aton(QtGui.QDialog):
 
         self.setupUi()
 
+    def closeEvent(self, event):
+        if self.timeChange != None:
+            OM.MEventMessage.removeCallback(self.timeChange)
+
     def getSceneOptions(self):
         sceneOptions = {}
         if cmds.getAttr("defaultRenderGlobals.ren") == "arnold":
