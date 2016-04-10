@@ -374,7 +374,7 @@ class Aton: public Iop
         const char * m_path; // Default path for Write node
         std::string m_status; // Status bar text
         bool m_multiframe_cache;
-        bool m_date_filename;
+        bool m_all_frames;
         double m_current_frame;
         const char * m_comment;
         bool m_stamp;
@@ -402,7 +402,7 @@ class Aton: public Iop
             m_path(getPath()),
             m_status(""),
             m_multiframe_cache(true),
-            m_date_filename(true),
+            m_all_frames(false),
             m_current_frame(0),
             m_comment(""),
             m_stamp(true),
@@ -549,6 +549,8 @@ class Aton: public Iop
         void append(Hash& hash)
         {
             hash.append(m_node->hash_counter);
+            hash.append(m_node->outputContext().frame());
+            hash.append(m_node->uiContext().frame());
         }
 
         void _validate(bool for_real)
@@ -712,7 +714,7 @@ class Aton: public Iop
             // Hidden knobs
             Format_knob(f, &m_fmtp, "formats_knob", "format");
             Bool_knob(f, &m_capturing, "capturing_knob");
-            
+
             // Main knobs
             Int_knob(f, &m_port, "port_number", "Port");
             Spacer(f, 10000);
@@ -730,13 +732,13 @@ class Aton: public Iop
             Divider(f, "Capture");
             Knob * limit_knob = Int_knob(f, &m_slimit, "limit_knob", "Limit");
             Newline(f);
+            Knob * all_frames_knob = Bool_knob(f, &m_all_frames,
+                                               "all_frames_knob",
+                                               "Capture all frames");
             Knob * path_knob = File_knob(f, &m_path, "path_knob", "Path");
+
             Newline(f);
-            Knob * date_filename_knob = Bool_knob(f, &m_date_filename,
-                                                  "date_filename_knob",
-                                                  "Date in Filename");
-            Newline(f);
-            Knob * use_stamp_knob = Bool_knob(f, &m_stamp, "use_stamp_knob", "Frame Stamp");
+            Knob * stamp_knob = Bool_knob(f, &m_stamp, "stamp_knob", "Frame Stamp");
             Knob * stamp_size_knob = Int_knob(f, &m_stamp_size, "stamp_size_knob", "Size");
             Knob * comment_knob = String_knob(f, &m_comment, "comment_knob", "Comment");
             Newline(f);
@@ -748,17 +750,17 @@ class Aton: public Iop
             BeginToolbar(f, "status_bar");
             Knob * statusKnob = String_knob(f, &m_status, "status_knob", "");
             EndToolbar(f);
-            
+
             // Set Flags
             enable_aovs_knob->set_flag(Knob::NO_RERENDER, true);
             sync_current_frame_knob->set_flag(Knob::NO_RERENDER, true);
             limit_knob->set_flag(Knob::NO_RERENDER, true);
             path_knob->set_flag(Knob::NO_RERENDER, true);
-            date_filename_knob->set_flag(Knob::NO_RERENDER, true);
-            use_stamp_knob->set_flag(Knob::NO_RERENDER, true);
+            all_frames_knob->set_flag(Knob::NO_RERENDER, true);
+            stamp_knob->set_flag(Knob::NO_RERENDER, true);
             stamp_size_knob->set_flag(Knob::NO_RERENDER, true);
             comment_knob->set_flag(Knob::NO_RERENDER, true);
-            
+
             statusKnob->set_flag(Knob::NO_RERENDER, true);
             statusKnob->set_flag(Knob::DISABLED, true);
             statusKnob->set_flag(Knob::OUTPUT_ONLY, true);
@@ -997,13 +999,35 @@ class Aton: public Iop
                 std::string key (".");
                 std::string path = std::string(m_path);
                 std::string timeFrameSuffix;
-                double currentFrame = uiContext().frame();
-                
-                if (m_date_filename)
-                    timeFrameSuffix += "_" + getDateTime();
-                if (m_multiframe_cache)
-                    timeFrameSuffix += "_" + (boost::format("%04i")%currentFrame).str();
-                
+                std::string frames;
+                double startFrame;
+                double endFrame;
+
+                if (m_node->m_frames.size() > 0)
+                {
+                    std::vector<double> sortedFrames = m_node->m_frames;
+                    std::stable_sort(sortedFrames.begin(), sortedFrames.end());
+
+                    if (m_multiframe_cache && m_all_frames)
+                    {
+                        timeFrameSuffix += "_" + std::string("####");
+                        startFrame = sortedFrames.front();
+                        endFrame = sortedFrames.back();
+                        for(std::vector<double>::iterator it = sortedFrames.begin();
+                                                          it != sortedFrames.end(); ++it)
+                            frames += (boost::format("%s,")%*it).str();
+                        frames.resize(frames.size () - 1);
+                    }
+                    else
+                    {
+                        timeFrameSuffix += "_" + getDateTime();
+                        startFrame = endFrame = uiContext().frame();
+                        frames = (boost::format("%s")%uiContext().frame()).str();
+                    }
+                }
+                else
+                    return;
+
                 timeFrameSuffix += ".";
                 std::size_t found = path.rfind(key);
                 if (found!=std::string::npos)
@@ -1019,52 +1043,44 @@ class Aton: public Iop
 
                 // Connect to Write node
                 cmd = (boost::format("nuke.toNode('%s').setInput(0, nuke.toNode('%s'));"
-                                     "nuke.toNode('%s')['channels'].setValue('all')")%writeNodeName
-                                                                                     %m_node_name
-                                                                                     %writeNodeName).str();
+                                     "nuke.toNode('%s')['channels'].setValue('all');"
+                                     "nuke.toNode('%s')['afterRender']."
+                                     "setValue('''nuke.nodes.Read(file='%s', first=%s, last=%s, on_error=3)''')")%writeNodeName
+                                                                                                                 %m_node->m_node_name
+                                                                                                                 %writeNodeName
+                                                                                                                 %writeNodeName
+                                                                                                                 %path.c_str()
+                                                                                                                 %startFrame
+                                                                                                                 %endFrame).str();
                 script_command(cmd.c_str(), true, false);
                 script_unlock();
 
-                // Add text node in between to put a stamp on the capture
                 if (m_stamp)
                 {
-                    // Adding after render script to create a Read node and remove the Write and Text nodes
-                    cmd = (boost::format("nuke.toNode('%s')['afterRender']."
-                                         "setValue( '''nuke.nodes.Read(file='%s');"
-                                         "nuke.delete(nuke.toNode('%s').input(0).input(0));"
-                                         "nuke.delete(nuke.toNode('%s').input(0));"
-                                         "nuke.delete(nuke.toNode('%s'))''' )")%writeNodeName
-                                                                               %path.c_str()
-                                                                               %writeNodeName
-                                                                               %writeNodeName
-                                                                               %writeNodeName).str();
-                    script_command(cmd.c_str(), true, false);
-                    script_unlock();
-
                     // Create a rectangle node and return it's name
-                    cmd = (boost::format("nuke.nodes.Rectangle(opacity=0.95, color = 0.05).name()")).str();
+                    cmd = (boost::format("nuke.nodes.Rectangle(opacity=0.95, color=0.05).name()")).str();
                     script_command(cmd.c_str());
                     std::string RectNodeName = script_result();
                     script_unlock();
 
                     // Set the rectangle size
-                    cmd = (boost::format(    "rect = nuke.toNode('%s')\n"
-                                            "rect['output'].setValue('rgb')\n"
-                                            "rect['area'].setValue([0,0,%s,%s])\n"
-                                            "rect.setInput(0, nuke.toNode('%s'))")%RectNodeName
-                                                                                  %m_fmt.width()
-                                                                                  %(m_stamp_size+7)
-                                                                                  %m_node_name).str();
+                    cmd = (boost::format("rect = nuke.toNode('%s')\n"
+                                         "rect['output'].setValue('rgb')\n"
+                                         "rect['area'].setValue([0,0,%s,%s])\n"
+                                         "rect.setInput(0, nuke.toNode('%s'))")%RectNodeName
+                                                                               %(m_node->m_fmt.width()+1000)
+                                                                               %(m_node->m_stamp_size+7)
+                                                                               %m_node->m_node_name).str();
                     script_command(cmd.c_str(), true, false);
                     script_unlock();
-                    
-                    
+
+                    // Add text node in between to put a stamp on the capture
                     std::string str_status;
                     if (!m_node->m_framebuffers.empty())
                     {
                         int f_index = getFrameIndex(uiContext().frame());
                         FrameBuffer &frameBuffer = m_node->m_framebuffers[f_index];
-       
+
                         str_status = setStatus(frameBuffer.getProgress(),
                                                frameBuffer.getRAM(),
                                                frameBuffer.getPRAM(),
@@ -1075,44 +1091,39 @@ class Aton: public Iop
                     else
                         str_status = setStatus();
 
-                    cmd = (boost::format("exec('''stamp = nuke.nodes.Text(message='%s | Comment: %s',"
-                                                                         "yjustify='bottom', size=%s)\n"
+                    cmd = (boost::format("exec('''stamp = nuke.nodes.Text(message='%s | Comment: %s', yjustify='bottom', size=%s)\n"
                                                  "stamp['output'].setValue('rgb')\n"
                                                  "stamp['font'].setValue(nuke.defaultFontPathname())\n"
                                                  "stamp['color'].setValue(0.5)\n"
                                                  "stamp['translate'].setValue([5, 2.5])\n"
                                                  "stamp.setInput(0, nuke.toNode('%s'))\n"
-                                                 "nuke.toNode('%s').setInput(0, stamp)''')")%str_status%m_comment
-                                                                                            %m_stamp_size%RectNodeName
+                                                 "nuke.toNode('%s').setInput(0, stamp)''')")%str_status%m_node->m_comment
+                                                                                            %m_node->m_stamp_size%RectNodeName
                                                                                             %writeNodeName ).str();
                     script_command(cmd.c_str(), true, false);
                     script_unlock();
                 }
-                else
-                {
-                    // Adding after render script to create a Read node and remove the Write node
-                    cmd = (boost::format("nuke.toNode('%s')['afterRender']."
-                                         "setValue( '''nuke.nodes.Read(file='%s');"
-                                         "nuke.delete(nuke.toNode('%s'))''' )")%writeNodeName
-                                                                               %path.c_str()
-                                                                               %writeNodeName).str();
-                    script_command(cmd.c_str(), true, false);
-                    script_unlock();
-                }
-                
+
                 // Execute the Write node
                 cmd = (boost::format("exec('''import thread\n"
                                              "def writer():\n\t"
-                                                 "def status(b): nuke.toNode('%s')['capturing_knob'].setValue(b)\n\t"
+                                                 "def status(b):\n\t\t"
+                                                     "nuke.toNode('%s')['capturing_knob'].setValue(b)\n\t\t"
+                                                     "if not b:\n\t\t\t"
+                                                         "if %s:\n\t\t\t\t"
+                                                            "nuke.delete(nuke.toNode('%s').input(0).input(0))\n\t\t\t\t"
+                                                            "nuke.delete(nuke.toNode('%s').input(0))\n\t\t\t"
+                                                         "nuke.delete(nuke.toNode('%s'))\n\t"
                                                  "nuke.executeInMainThread(status, args=True)\n\t"
-                                                 "nuke.executeInMainThread(nuke.execute,"
-                                                                           "args='%s',"
-                                                                           "kwargs={'start':%s, 'end':%s})\n\t"
+                                                 "nuke.executeInMainThread(nuke.execute, args=('%s', nuke.FrameRanges([%s])))\n\t"
                                                  "nuke.executeInMainThread(status, args=False)\n"
-                                              "thread.start_new_thread(writer,())''')")%m_node_name
-                                                                                       %writeNodeName
-                                                                                       %currentFrame
-                                                                                       %currentFrame).str();
+                                             "thread.start_new_thread(writer,())''')")%m_node->m_node_name
+                                                                                      %m_stamp
+                                                                                      %writeNodeName
+                                                                                      %writeNodeName
+                                                                                      %writeNodeName
+                                                                                      %writeNodeName
+                                                                                      %frames).str();
                 script_command(cmd.c_str(), true, false);
                 script_unlock();
             }
@@ -1226,15 +1237,14 @@ static void timeChange(unsigned index, unsigned nthreads, void* data)
 
     double prevFrame = 0;
     int milliseconds = 10;
-    
+
     while (node->m_legit)
     {
-        if (!fbs.empty())
-            if (prevFrame != node->uiContext().frame())
-            {
-                node->flagForUpdate(node->uiContext().frame());
-                prevFrame = node->uiContext().frame();
-            }
+        if (!fbs.empty() && prevFrame != node->uiContext().frame())
+        {
+            node->flagForUpdate(node->uiContext().frame());
+            prevFrame = node->uiContext().frame();
+        }
         boost::this_thread::sleep(boost::posix_time::millisec(milliseconds));
     }
 }
