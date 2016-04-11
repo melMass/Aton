@@ -669,7 +669,7 @@ class Aton: public Iop
             foreach(z, channels)
             {
                 int b_index = 0;
-                if (!m_node->m_framebuffers.empty())
+                if (m_enable_aovs && !m_node->m_framebuffers.empty())
                     b_index = m_node->m_framebuffers[f_index].getBufferIndex(z);
 
                 float *rOut = out.writable(brother (z, 0)) + xx;
@@ -720,13 +720,9 @@ class Aton: public Iop
             Text_knob(f, (boost::format("Aton v%s")%VERSION).str().c_str());
 
             Divider(f, "General");
-            Knob * enable_aovs_knob = Bool_knob(f, &m_enable_aovs,
-                                                "enable_aovs_knob",
-                                                "Enable AOVs");
+            Bool_knob(f, &m_enable_aovs, "enable_aovs_knob", "Enable AOVs");
             Newline(f);
-            Knob * multi_frame_knob = Bool_knob(f, &m_multiframes,
-                                                "multi_frame_knob",
-                                                "Enable Multiple Frames");
+            Bool_knob(f, &m_multiframes, "multi_frame_knob", "Enable Multiple Frames");
 
             Divider(f, "Capture");
             Knob * limit_knob = Int_knob(f, &m_slimit, "limit_knob", "Limit");
@@ -751,8 +747,6 @@ class Aton: public Iop
             EndToolbar(f);
 
             // Set Flags
-            enable_aovs_knob->set_flag(Knob::NO_RERENDER, true);
-            multi_frame_knob->set_flag(Knob::NO_RERENDER, true);
             limit_knob->set_flag(Knob::NO_RERENDER, true);
             path_knob->set_flag(Knob::NO_RERENDER, true);
             all_frames_knob->set_flag(Knob::NO_RERENDER, true);
@@ -1187,6 +1181,8 @@ class Aton: public Iop
                               double frame=0,
                               std::string version="")
         {
+            int f_count = static_cast<int>(m_node->m_framebuffers.size());
+        
             ram /= 1024*1024;
             p_ram /= 1024*1024;
 
@@ -1200,10 +1196,10 @@ class Aton: public Iop
                                                     "Used Memory: %sMB | "
                                                     "Peak Memory: %sMB | "
                                                     "Time: %02ih:%02im:%02is | "
-                                                    "Frame: %04i | "
+                                                    "Frame: %04i (%s) | "
                                                     "Progress: %s%%")%version%ram%p_ram
                                                                      %hour%minute%second
-                                                                     %frame%progress).str();
+                                                                     %frame%f_count%progress).str();
             knob("status_knob")->set_text(str_status.c_str());
             return str_status;
         }
@@ -1397,6 +1393,10 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                 active_aovs.resize(1);
                         }
                     }
+                    
+                    // Skip non RGBA buckets if AOVs are disabled
+                    if (!node->m_enable_aovs && active_aovs[0]!= d.aovName())
+                        continue;
                     
                     // Get frame buffer
                     FrameBuffer &frameBuffer = node->m_framebuffers[f_index];
