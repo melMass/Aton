@@ -254,24 +254,35 @@ class FrameBuffer
         }
     
         // Get last buffer/aov name
-        std::string getLastBufferName()
+        std::string getFirstBufferName()
         {
             std::string bufferName = "";
             if (!_aovs.empty())
-                bufferName = _aovs.back();
+                bufferName = _aovs.front();
             return bufferName;
         }
     
         // Compare buffers with given buffer/aov names and dimensoions
-        bool compareBuffers(int width, int height, std::vector<std::string> aovs)
+        int compareAll(int width, int height, std::vector<std::string> aovs)
         {
-            return true ? (aovs == _aovs) &&
-                          (width==_buffers[0].width()) &&
-                          (height==_buffers[0].height()) : false;
+            if (!_buffers.empty() && !_aovs.empty())
+            {
+                if (aovs == _aovs &&
+                    width ==_buffers[0].width() &&
+                    height ==_buffers[0].height())
+                    return 0;
+                else if (width == _buffers[0].width() &&
+                         height == _buffers[0].height())
+                    return 1;
+                else
+                    return 2;
+            }
+            else
+                return -1;
         }
     
         // Clear buffers and aovs
-        void clearBuffers()
+        void clearAll()
         {
             _buffers.resize(0);
             _aovs.resize(0);
@@ -294,7 +305,7 @@ class FrameBuffer
         // Get size of the buffers aka AOVs count
         size_t size() { return _aovs.size(); }
     
-        // Resize the buffers, useful for reseting
+        // Resize the buffers
         void resize(size_t s)
         {
             _buffers.resize(s);
@@ -1316,24 +1327,40 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     f_index = node->getFrameIndex(_active_frame);
                     FrameBuffer &frameBuffer = node->m_framebuffers[f_index];
                     
-                    // Reset Buffers anc Channels
-                    if (!active_aovs.empty() && !frameBuffer.empty() &&
-                        !frameBuffer.compareBuffers(d.width(),
-                                                    d.height(),
-                                                    active_aovs))
+                    // Reset Buffers and Channels
+                    if (!active_aovs.empty() && !frameBuffer.empty())
                     {
-                        node->m_mutex.lock();
-                        frameBuffer.clearBuffers();
-                        frameBuffer.ready(false);
-                        if (node->m_channels.size()>4)
+                        int fbCompare = frameBuffer.compareAll(d.width(),
+                                                               d.height(),
+                                                               active_aovs);
+                        switch (fbCompare)
                         {
+                            case 0:
+                                break;
+                            case 1:
+                            {
+                                node->m_mutex.lock();
+                                frameBuffer.resize(1);
+                                break;
+                            }
+                            case 2:
+                            {
+                                node->m_mutex.lock();                                        
+                                frameBuffer.clearAll();
+                                break;
+                            }
+                        }
+
+                        if (fbCompare > 0)
+                        {
+                            frameBuffer.ready(false);
                             node->m_channels.clear();
                             node->m_channels.insert(Chan_Red);
                             node->m_channels.insert(Chan_Green);
                             node->m_channels.insert(Chan_Blue);
                             node->m_channels.insert(Chan_Alpha);
+                            node->m_mutex.unlock();
                         }
-                        node->m_mutex.unlock();
                     }
                     
                     // Get image area to calculate the progress
@@ -1395,7 +1422,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     }
                     
                     // Skip non RGBA buckets if AOVs are disabled
-                    if (!node->m_enable_aovs && active_aovs[0]!= d.aovName())
+                    if (!node->m_enable_aovs && active_aovs[0] != d.aovName())
                         continue;
                     
                     // Get frame buffer
@@ -1442,7 +1469,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         continue;
 
                     // Update only on first aov
-                    if(frameBuffer.getLastBufferName().compare(d.aovName()) == 0)
+                    if(frameBuffer.getFirstBufferName().compare(d.aovName()) == 0)
                     {
                         // Calculating the progress percentage
                         imageArea -= (_width*_height);
