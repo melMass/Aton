@@ -504,29 +504,29 @@ class Aton: public Iop
         // we can use this to change our tcp port
         void changePort( int port )
         {
-            m_inError = false;
-            m_connectionError = "";
+            m_node->m_inError = false;
+            m_node->m_connectionError = "";
             
             // try to reconnect
             disconnect();
 
             try
             {
-                m_server.connect(port, true);
+                m_node->m_server.connect(port, true);
             }
             catch ( ... )
             {
                 std::stringstream ss;
                 ss << "Could not connect to port: " << port;
-                m_connectionError = ss.str();
-                m_inError = true;
+                m_node->m_connectionError = ss.str();
+                m_node->m_inError = true;
                 print_name( std::cerr );
                 std::cerr << ": " << ss.str() << std::endl;
                 return;
             }
 
             // success
-            if ( m_server.isConnected() )
+            if ( m_node->m_server.isConnected() )
             {
                 Thread::spawn(::atonListen, 1, this);
                 Thread::spawn(::timeChange, 1, this);
@@ -539,20 +539,20 @@ class Aton: public Iop
                 script_command(cmd.c_str());
                 script_unlock();
                 
-                std::cout << ": Connected to port " << m_server.getPort() << std::endl;
+                std::cout << ": Connected to port " << m_node->m_server.getPort() << std::endl;
             }
         }
 
         // disconnect the server for it's port
         void disconnect()
         {
-            if ( m_server.isConnected() )
+            if ( m_node->m_server.isConnected() )
             {
-                m_server.quit();
+                m_node->m_server.quit();
                 Thread::wait(this);
 
                 print_name( std::cout );
-                std::cout << ": Disconnected from port " << m_server.getPort() << std::endl;
+                std::cout << ": Disconnected from port " << m_node->m_server.getPort() << std::endl;
             }
         }
 

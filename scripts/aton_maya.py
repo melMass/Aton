@@ -341,30 +341,29 @@ class Aton(QtGui.QDialog):
         cmds.setAttr("defaultArnoldDisplayDriver.port", port)
 
         # Adding time changed callback
-        if (self.timeChange == None and
-            self.ForceRefreshCheckbox.isChecked() and motionBlur):
+        if (self.timeChange == None and \
+            self.ForceRefreshCheckbox.isChecked() and \
+            not self.motionBlurCheckBox.isChecked()):
             time = cmds.currentTime(q=1)
             cmds.currentTime(time+1, e=1)
             cmds.currentTime(time, e=1)
             self.timeChange = OM.MEventMessage.addEventCallback( "timeChanged", self.render )
 
-        core.createOptions()
         cmds.arnoldIpr(cam=camera, width=width, height=height, mode='start')
-        nodeIter = AiUniverseGetNodeIterator(AI_NODE_ALL)
 
-        while not AiNodeIteratorFinished(nodeIter):
-            node = AiNodeIteratorGetNext(nodeIter)
-            AiNodeSetInt(node, "AA_samples", AASamples)
-            if rMinX >= 0 and rMinY>=0 and rMaxX<=width and rMaxY<=height:
-                AiNodeSetInt(node, "region_min_x", rMinX)
-                AiNodeSetInt(node, "region_min_y", rMinY)
-                AiNodeSetInt(node, "region_max_x", rMaxX)
-                AiNodeSetInt(node, "region_max_y", rMaxY)
-            AiNodeSetBool(node, "ignore_motion_blur", motionBlur)
-            AiNodeSetBool(node, "ignore_subdivision", subdivs)
-            AiNodeSetBool(node, "ignore_displacement ", displace)
-            AiNodeSetBool(node, "ignore_bump", bump)
-            AiNodeSetBool(node, "ignore_sss", sss)
+        options = AiUniverseGetOptions()
+        
+        AiNodeSetInt(options, "AA_samples", AASamples)
+        if rMinX >= 0 and rMinY>=0 and rMaxX<=width and rMaxY<=height:
+            AiNodeSetInt(options, "region_min_x", rMinX)
+            AiNodeSetInt(options, "region_min_y", rMinY)
+            AiNodeSetInt(options, "region_max_x", rMaxX)
+            AiNodeSetInt(options, "region_max_y", rMaxY)
+        AiNodeSetBool(options, "ignore_motion_blur", motionBlur)
+        AiNodeSetBool(options, "ignore_subdivision", subdivs)
+        AiNodeSetBool(options, "ignore_displacement ", displace)
+        AiNodeSetBool(options, "ignore_bump", bump)
+        AiNodeSetBool(options, "ignore_sss", sss)
 
         # Temp trigger in order to start IPR immediately
         cmds.setAttr("%s.bestFitClippingPlanes"%camera, True)
