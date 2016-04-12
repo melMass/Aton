@@ -142,6 +142,8 @@ class Aton(QtGui.QDialog):
         self.ForceRefreshCheckbox.setToolTip("Force refresh during IPR when the time was changed.")
         if (not self.getSceneOptions()["motionBlur"]):
             self.ForceRefreshCheckbox.setEnabled(False)
+        else:
+            self.ForceRefreshCheckbox.setChecked(True)
         portLayout.addWidget(portLabel)
         portLayout.addWidget(self.portSpinBox)
         portLayout.addWidget(portSlider)
@@ -352,7 +354,7 @@ class Aton(QtGui.QDialog):
         cmds.arnoldIpr(cam=camera, width=width, height=height, mode='start')
 
         options = AiUniverseGetOptions()
-        
+
         AiNodeSetInt(options, "AA_samples", AASamples)
         if rMinX >= 0 and rMinY>=0 and rMaxX<=width and rMaxY<=height:
             AiNodeSetInt(options, "region_min_x", rMinX)
