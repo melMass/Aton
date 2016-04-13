@@ -23,6 +23,9 @@ using namespace DD::Image;
 
 #include "Data.h"
 #include "Server.h"
+#include "FrameBuffer.h"
+
+using namespace aton;
 
 #include "boost/format.hpp"
 #include "boost/foreach.hpp"
@@ -44,334 +47,11 @@ static const char* const HELP =
     "Listens for renders coming from the Aton display driver. "
     "For more info go to http://sosoyan.github.io/Aton/";
 
-// channel strings
-namespace ChannelStr
-{
-    const std::string RGBA = "RGBA";
-    const std::string rgb = "rgb";
-    const std::string depth = "depth";
-    const std::string Z = "Z";
-    const std::string N = "N";
-    const std::string P = "P";
-};
-
 // Our time change callback method
 static void timeChange(unsigned index, unsigned nthreads, void* data);
 
 // Our listener method
 static void atonListen(unsigned index, unsigned nthreads, void* data);
-
-// Lightweight colour pixel class
-class RenderColour
-{
-    public:
-        RenderColour()
-        {
-            _val[0] = _val[1] = _val[2] = 0.f;
-        }
-
-        float& operator[](int i){ return _val[i]; }
-        const float& operator[](int i) const { return _val[i]; }
-
-        // data
-        float _val[3];
-};
-
-// Lightweight alpha pixel class
-class RenderAlpha
-{
-    public:
-        RenderAlpha()
-        {
-            _val = 1.f;
-        }
-
-        float& operator[](int i){ return _val; }
-        const float& operator[](int i) const { return _val; }
-
-        // data
-        float _val;
-};
-
-// Our image buffer class
-class RenderBuffer
-{
-    public:
-        RenderBuffer() :
-            _width(0),
-            _height(0)
-        {
-        }
-
-        void init(const unsigned int width, const unsigned int height, const bool empty = false, const bool alpha=false)
-        {
-            _width = width;
-            _height = height;
-            if (!empty)
-            {
-                _colour_data.resize(_width * _height);
-                if (alpha)
-                    _alpha_data.resize(_width * _height);
-            }
-        }
-
-        RenderColour& getColour(unsigned int x, unsigned int y)
-        {
-            unsigned int index = (_width * y) + x;
-            return _colour_data[index];
-        }
-
-        const RenderColour& getColour(unsigned int x, unsigned int y) const
-        {
-            unsigned int index = (_width * y) + x;
-            return _colour_data[index];
-        }
-
-        RenderAlpha& getAlpha(unsigned int x, unsigned int y)
-        {
-            unsigned int index = (_width * y) + x;
-            return _alpha_data[index];
-        }
-
-        const RenderAlpha& getAlpha(unsigned int x, unsigned int y) const
-        {
-            unsigned int index = (_width * y) + x;
-            return _alpha_data[index];
-        }
-    
-        unsigned int width() { return _width; }
-        unsigned int height() { return _height; }
-    
-        bool empty()
-        {
-            return _colour_data.empty();
-        }
-
-        // data
-        std::vector<RenderColour> _colour_data;
-        std::vector<RenderAlpha> _alpha_data;
-        unsigned int _width;
-        unsigned int _height;
-};
-
-class FrameBuffer
-{
-    public:
-        FrameBuffer(double currentFrame=0): _frame(0),
-                                            _bucket(0,0,1,1),
-                                            _progress(0),
-                                            _time(0),
-                                            _ram(0),
-                                            _pram(0),
-                                            _ready(false)
-        {
-            _frame = currentFrame;
-        }
-    
-        // Add new buffer
-        void addBuffer(const char * aov=NULL,
-                       int spp=0,
-                       int w=0,
-                       int h=0)
-        {
-            RenderBuffer buffer;
-            
-            if (spp < 4)
-                buffer.init(w, h);
-            else
-                buffer.init(w, h, false, true);
-            
-            _buffers.push_back(buffer);
-            _aovs.push_back(aov);
-        }
-    
-        // Get buffer object
-        RenderBuffer& getBuffer(int index=0)
-        {
-            return _buffers[index];
-        }
-    
-        // Get buffer object
-        const RenderBuffer& getBuffer(int index=0) const
-        {
-            return _buffers[index];
-        }
-    
-        // Get the current buffer index
-        int getBufferIndex(Channel z)
-        {
-            int b_index = 0;
-            
-            if (!_aovs.empty())
-            {
-                std::string layer = getLayerName(z);
-                if (layer.compare(ChannelStr::rgb) != 0)
-                {
-                    for(std::vector<std::string>::iterator it = _aovs.begin(); it != _aovs.end(); ++it)
-                    {
-                        if (it->compare(layer) == 0)
-                        {
-                            b_index = static_cast<int>(it - _aovs.begin());
-                            break;
-                        }
-                        else if ( it->compare(ChannelStr::Z) == 0 && layer.compare(ChannelStr::depth) == 0 )
-                        {
-                            b_index = static_cast<int>(it - _aovs.begin());
-                            break;
-                        }
-                    }
-                }
-            }
-            
-            return b_index;
-        }
-    
-        // Get the current buffer index
-        int getBufferIndex(const char * aovName)
-        {
-            int b_index = 0;
-            
-            if (!_aovs.empty())
-                for(std::vector<std::string>::iterator it = _aovs.begin(); it != _aovs.end(); ++it)
-                {
-                    if (it->compare(aovName) == 0)
-                    {
-                        b_index = static_cast<int>(it - _aovs.begin());
-                        break;
-                    }
-                }
-            
-            return b_index;
-        }
-    
-        // Get N buffer/aov name name
-        std::string getBufferName(size_t index=0)
-        {
-            std::string bufferName = "";
-            if (!_aovs.empty())
-                bufferName = _aovs[index];
-            return bufferName;
-        }
-    
-        // Get last buffer/aov name
-        std::string getFirstBufferName()
-        {
-            std::string bufferName = "";
-            if (!_aovs.empty())
-                bufferName = _aovs.front();
-            return bufferName;
-        }
-    
-        // Compare buffers with given buffer/aov names and dimensoions
-        int compareAll(int width, int height, std::vector<std::string> aovs)
-        {
-            if (!_buffers.empty() && !_aovs.empty())
-            {
-                if (aovs == _aovs &&
-                    width ==_buffers[0].width() &&
-                    height ==_buffers[0].height())
-                    return 0;
-                else if (width == _buffers[0].width() &&
-                         height == _buffers[0].height())
-                    return 1;
-                else
-                    return 2;
-            }
-            else
-                return -1;
-        }
-    
-        // Clear buffers and aovs
-        void clearAll()
-        {
-            _buffers.resize(0);
-            _aovs.resize(0);
-        }
-    
-        // Check if the given buffer/aov name name is exist
-        bool bufferNameExists(const char * aovName)
-        {
-            return std::find(_aovs.begin(),
-                             _aovs.end(),
-                             aovName) != _aovs.end();
-        }
-    
-        // Get width of the buffer
-        int getWidth() { return _buffers[0].width(); }
-    
-        // Get height of the buffer
-        int getHeight() { return _buffers[0].height(); }
-
-        // Get size of the buffers aka AOVs count
-        size_t size() { return _aovs.size(); }
-    
-        // Resize the buffers
-        void resize(size_t s)
-        {
-            _buffers.resize(s);
-            _aovs.resize(s);
-        }
-    
-        // Set current bucket BBox for asapUpdate()
-        void setBucketBBox(int x=0, int y=0, int r=1, int t=1)
-        {
-            _bucket.set(x, y, r, t);
-        }
-    
-        // Get current bucket BBox for asapUpdate()
-        Box getBucketBBox() { return _bucket; }
-    
-        // Set status parameters
-        void setProgress(int progress=0) { _progress = progress; }
-        void setRAM(long long ram=0)
-        {
-            _pram = _ram < ram ? ram : _ram;
-            _ram = ram;
-        }
-        void setTime(int time=0) { _time = time; }
-    
-        // Get status parameters
-        int getProgress() { return _progress; }
-        long long getRAM() { return _ram; }
-        long long getPRAM() { return _pram; }
-        int getTime() { return _time; }
-    
-        // Set Arnold core version
-        void setArnoldVersion(int version)
-        {
-            // Construct a string from the version number passed
-            int archV = (version%10000000)/1000000;
-            int majorV = (version%1000000)/10000;
-            int minorV = (version%10000)/100;
-            int fixV = version%100;
-            _version = (boost::format("%s.%s.%s.%s")%archV%majorV%minorV%fixV).str();
-        }
-    
-        // Get Arnold core version
-        std::string getArnoldVersion() { return _version; }
-    
-        // Get the frame number of this framebuffer
-        double getFrame() { return _frame; }
-    
-        // Check if this framebuffer is empty
-        bool empty() { return (_buffers.empty() && _aovs.empty()) ; }
-    
-        // To keep False while writing the buffer
-        void ready(bool ready) { _ready = ready; }
-        bool isReady() { return _ready; }
-    
-    private:
-        double _frame;
-        int _progress;
-        int _time;
-        long long _ram;
-        long long _pram;
-        Box _bucket;
-        bool _ready;
-        std::string _version;
-        std::vector<RenderBuffer> _buffers;
-        std::vector<std::string> _aovs;
-};
 
 // Nuke node
 class Aton: public Iop
@@ -392,7 +72,6 @@ class Aton: public Iop
         bool m_enable_aovs;
         int m_stamp_size;
         int m_slimit; // The limit size
-        RenderBuffer m_buffer; // Blank buffer
         Lock m_mutex; // Mutex for locking the pixel buffer
         unsigned int hash_counter; // Refresh hash counter
         aton::Server m_server; // Aton::Server
@@ -1285,13 +964,10 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
             {
                 case 0: // Open a new image
                 {
-                    // Init blank buffer
-                    node->m_mutex.lock();
-                    node->m_buffer.init(d.width(), d.height(), true);
-                    
+                    // Init current frame
                     double _active_frame = static_cast<double>(d.currentFrame());
                     
-                    // Init current frame
+                    node->m_mutex.lock();
                     if (node->m_current_frame != _active_frame)
                         node->m_current_frame = _active_frame;
                     
@@ -1302,7 +978,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                       node->m_frames.end(),
                                       _active_frame) == node->m_frames.end())
                         {
-                            FrameBuffer frameBuffer(_active_frame);
+                            FrameBuffer frameBuffer(_active_frame, d.width(), d.height());
                             node->m_frames.push_back(_active_frame);
                             node->m_framebuffers.push_back(frameBuffer);
                         }
@@ -1311,7 +987,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     {
                         if (node->m_frames.empty())
                         {
-                            FrameBuffer frameBuffer(_active_frame);
+                            FrameBuffer frameBuffer(_active_frame, d.width(), d.height());
                             node->m_frames.push_back(_active_frame);
                             node->m_framebuffers.push_back(frameBuffer);
                         }
@@ -1388,9 +1064,12 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                 }
                 case 1: // image data
                 {
-                    // copy data from d into node->m_buffer
-                    int _w = node->m_buffer._width;
-                    int _h = node->m_buffer._height;
+                    // Get frame buffer
+                    FrameBuffer &frameBuffer = node->m_framebuffers[f_index];
+                
+                    // Copy data from d
+                    int _w = frameBuffer.getWidth();
+                    int _h = frameBuffer.getHeight();
                     unsigned int _x, _x0, _y, _y0, _s, offset;
                     _x = _x0 = _y = _y0 = _s = 0;
 
@@ -1425,9 +1104,6 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     if (!node->m_enable_aovs && active_aovs[0] != d.aovName())
                         continue;
                     
-                    // Get frame buffer
-                    FrameBuffer &frameBuffer = node->m_framebuffers[f_index];
-                    
                     // Lock buffer
                     node->m_mutex.lock();
                     
@@ -1435,7 +1111,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     if(!frameBuffer.bufferNameExists(d.aovName()))
                     {
                         if (node->m_enable_aovs || frameBuffer.size()==0)
-                            frameBuffer.addBuffer(d.aovName(), _spp, _w, _h);
+                            frameBuffer.addBuffer(d.aovName(), _spp);
                     }
                     else
                         frameBuffer.ready(true);
