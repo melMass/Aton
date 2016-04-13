@@ -333,8 +333,6 @@ class Aton(QtGui.QDialog):
 
         # Adding time changed callback
         if self.timeChange == None:
-            time = cmds.currentTime(q=1)
-            cmds.currentTime(time, e=1)
             self.timeChange = OM.MEventMessage.addEventCallback( "timeChanged", self.updateFrame )
 
         cmds.arnoldIpr(cam=camera, width=width, height=height, mode='start')
@@ -353,8 +351,10 @@ class Aton(QtGui.QDialog):
         AiNodeSetBool(options, "ignore_bump", bump)
         AiNodeSetBool(options, "ignore_sss", sss)
 
-        # Temp trigger in order to start IPR immediately
-        cmds.arnoldIpr(mode='refresh')
+        # Temp trigger in order to start IPR
+        time = cmds.currentTime(q=1)
+        cmds.currentTime(time, e=1)
+        
         cmds.setAttr("defaultArnoldDisplayDriver.aiTranslator", defaultTranslator, type="string")
         cmds.setAttr("defaultArnoldDisplayDriver.port", self.defaultPort)
         sys.stdout.write("// Info: Aton - Render started.\n")
