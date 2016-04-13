@@ -157,7 +157,7 @@ class Aton: public Iop
 
         void detach()
         {
-            // even though a node still exists once removed from a scene (in the
+            // Even though a node still exists once removed from a scene (in the
             // undo stack) we should close the port and reopen if attach() gets
             // called.
             m_legit = false;
@@ -180,13 +180,13 @@ class Aton: public Iop
             asapUpdate(m_node->m_framebuffers[f_index].getBucketBBox());
         }
 
-        // we can use this to change our tcp port
+        // We can use this to change our tcp port
         void changePort( int port )
         {
             m_inError = false;
             m_connectionError = "";
             
-            // try to reconnect
+            // Try to reconnect
             disconnect();
 
             try
@@ -204,7 +204,7 @@ class Aton: public Iop
                 return;
             }
 
-            // success
+            // Success
             if ( m_server.isConnected() )
             {
                 Thread::spawn(::atonListen, 1, this);
@@ -222,7 +222,7 @@ class Aton: public Iop
             }
         }
 
-        // disconnect the server for it's port
+        // Disconnect the server for it's port
         void disconnect()
         {
             if ( m_server.isConnected() )
