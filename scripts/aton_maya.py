@@ -36,6 +36,7 @@ class Aton(QtGui.QDialog):
     def closeEvent(self, event):
         if self.timeChange != None:
             OM.MEventMessage.removeCallback(self.timeChange)
+            self.timeChange = None
 
     def getSceneOptions(self):
         sceneOptions = {}
@@ -76,10 +77,6 @@ class Aton(QtGui.QDialog):
             self.portSpinBox.setValue(portSlider.value()+self.defaultPort)
             self.resolutionSpinBox.setValue(resolutionSlider.value()*5)
             self.cameraAaSpinBox.setValue(cameraAaSlider.value())
-            if (self.motionBlurCheckBox.isChecked()):
-                self.ForceRefreshCheckbox.setEnabled(False)
-            else:
-                self.ForceRefreshCheckbox.setEnabled(True)
 
         def regionUpdateUi():
             self.renderRegionRSpinBox.setValue(self.getSceneOptions()["width"] *
@@ -138,16 +135,9 @@ class Aton(QtGui.QDialog):
         portSlider.setMaximum(15)
         portSlider.setValue(0)
         self.timeChange = None
-        self.ForceRefreshCheckbox = QtGui.QCheckBox("Force Refresh")
-        self.ForceRefreshCheckbox.setToolTip("Force refresh during IPR when the time was changed.")
-        if (not self.getSceneOptions()["motionBlur"]):
-            self.ForceRefreshCheckbox.setEnabled(False)
-        else:
-            self.ForceRefreshCheckbox.setChecked(True)
         portLayout.addWidget(portLabel)
         portLayout.addWidget(self.portSpinBox)
         portLayout.addWidget(portSlider)
-        portLayout.addWidget(self.ForceRefreshCheckbox)
 
         # Camera Layout
         cameraLayout = QtGui.QHBoxLayout()
@@ -286,7 +276,6 @@ class Aton(QtGui.QDialog):
         mainLayout.addLayout(mainButtonslayout)
 
         self.connect(portSlider, QtCore.SIGNAL("valueChanged(int)"), updateUi)
-        self.connect(self.motionBlurCheckBox, QtCore.SIGNAL("toggled(bool)"), updateUi)
         self.connect(resolutionSlider, QtCore.SIGNAL("valueChanged(int)"), updateUi)
         self.connect(self.resolutionSpinBox, QtCore.SIGNAL("valueChanged(int)"), regionUpdateUi)
         self.connect(self.resolutionSpinBox, QtCore.SIGNAL("editingFinished()"), regionUpdateUi)
@@ -343,13 +332,10 @@ class Aton(QtGui.QDialog):
         cmds.setAttr("defaultArnoldDisplayDriver.port", port)
 
         # Adding time changed callback
-        if (self.timeChange == None and \
-            self.ForceRefreshCheckbox.isChecked() and \
-            not self.motionBlurCheckBox.isChecked()):
+        if self.timeChange == None:
             time = cmds.currentTime(q=1)
-            cmds.currentTime(time+1, e=1)
             cmds.currentTime(time, e=1)
-            self.timeChange = OM.MEventMessage.addEventCallback( "timeChanged", self.render )
+            self.timeChange = OM.MEventMessage.addEventCallback( "timeChanged", self.updateFrame )
 
         cmds.arnoldIpr(cam=camera, width=width, height=height, mode='start')
 
@@ -368,13 +354,13 @@ class Aton(QtGui.QDialog):
         AiNodeSetBool(options, "ignore_sss", sss)
 
         # Temp trigger in order to start IPR immediately
-        cmds.setAttr("%s.bestFitClippingPlanes"%camera, True)
+        cmds.arnoldIpr(mode='refresh')
         cmds.setAttr("defaultArnoldDisplayDriver.aiTranslator", defaultTranslator, type="string")
-
+        cmds.setAttr("defaultArnoldDisplayDriver.port", self.defaultPort)
         sys.stdout.write("// Info: Aton - Render started.\n")
 
     def stop(self):
-        if self.ForceRefreshCheckbox.isChecked() and self.timeChange != None:
+        if self.timeChange != None:
             OM.MEventMessage.removeCallback(self.timeChange)
             self.timeChange = None
         try:
@@ -382,6 +368,11 @@ class Aton(QtGui.QDialog):
             sys.stdout.write("// Info: Aton - Render stopped.\n")
         except RuntimeError:
             pass
+
+    def updateFrame(self, *args, **kwargs):
+        options = AiUniverseGetOptions()
+        time = cmds.currentTime(q=1)
+        AiNodeSetFlt(options, "frame", time)
 
     def getNukeCropNode(self, *args):
 
