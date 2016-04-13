@@ -29,6 +29,7 @@ include_directories(
 add_library( nuke_plugin 
   SHARED
   ${CMAKE_SOURCE_DIR}/src/Aton.cpp 
+  ${CMAKE_SOURCE_DIR}/src/FrameBuffer.cpp
   ${CMAKE_SOURCE_DIR}/src/Server.cpp
   ${CMAKE_SOURCE_DIR}/src/Client.cpp
   ${CMAKE_SOURCE_DIR}/src/Data.cpp
