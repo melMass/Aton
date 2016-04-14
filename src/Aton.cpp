@@ -74,7 +74,7 @@ class Aton: public Iop
         int m_slimit; // The limit size
         Lock m_mutex; // Mutex for locking the pixel buffer
         unsigned int m_hash_count; // Refresh hash counter
-        aton::Server m_server; // Aton::Server
+        Server m_server; // Aton::Server
         bool m_inError; // Error handling
         bool m_formatExists;
         bool m_capturing; // Capturing signal
@@ -88,7 +88,7 @@ class Aton: public Iop
         Aton(Node* node): Iop(node),
                           m_node(firstNode()),
                           m_port(getPort()),
-                          m_path(getPath()),
+                          m_path(""),
                           m_status(""),
                           m_multiframes(true),
                           m_all_frames(false),
@@ -136,9 +136,17 @@ class Aton: public Iop
             knob("capturing_knob")->hide();
 
             // Allocate node name in order to pass it to format
-            char * format = new char[node_name().length() + 1];
-            strcpy(format, node_name().c_str());
-            m_node_name = format;
+            char * nodeName = new char[node_name().length() + 1];
+            strcpy(nodeName, node_name().c_str());
+            m_node_name = nodeName;
+            
+            // Construct the full path for Write node
+            boost::filesystem::path dir = getPath();
+            boost::filesystem::path file = (boost::format("%s.exr")%m_node_name).str();
+            boost::filesystem::path fullPath = dir / file;
+            std::string str_path = fullPath.string();
+            boost::replace_all(str_path, "\\", "/");
+            knob("path_knob")->set_text(str_path.c_str());
             
             // Running python code to check if we've already our format in the script
             std::string cmd; // Our python command buffer
@@ -293,51 +301,63 @@ class Aton: public Iop
                         m_fmt_exist->height(height);
                         knob("formats_knob")->set_text(m_node->m_node_name);
                     }
-
-                    size_t fb_size = frameBuffer.size();
-                    ChannelSet& channels = m_node->m_channels;
                     
-                    if (channels.size() != fb_size)
-                        channels.clear();
+                    ChannelSet& channels = m_node->m_channels;
 
-                    for(int i = 0; i < fb_size; ++i)
+                    if (m_enable_aovs)
                     {
-                        std::string bufferName = frameBuffer.getBufferName(i);
+                        size_t fb_size = frameBuffer.size();
                         
-                        if (bufferName.compare(ChannelStr::RGBA)==0)
+                        if (channels.size() != fb_size)
+                            channels.clear();
+
+                        for(int i = 0; i < fb_size; ++i)
                         {
-                            if (!channels.contains(Chan_Red))
+                            std::string bufferName = frameBuffer.getBufferName(i);
+                            
+                            if (bufferName.compare(ChannelStr::RGBA)==0)
                             {
-                                channels.insert(Chan_Red);
-                                channels.insert(Chan_Green);
-                                channels.insert(Chan_Blue);
-                                channels.insert(Chan_Alpha);
+                                if (!channels.contains(Chan_Red))
+                                {
+                                    channels.insert(Chan_Red);
+                                    channels.insert(Chan_Green);
+                                    channels.insert(Chan_Blue);
+                                    channels.insert(Chan_Alpha);
+                                }
+                            }
+                            else if (bufferName.compare(ChannelStr::Z)==0)
+                            {
+                                if (!channels.contains(Chan_Z))
+                                    channels.insert( Chan_Z );
+                            }
+                            else if (bufferName.compare(ChannelStr::N)==0 ||
+                                     bufferName.compare(ChannelStr::P)==0)
+                            {
+                                if (!channels.contains(channel((boost::format("%s.X")%bufferName.c_str()).str().c_str())))
+                                {
+                                    channels.insert(channel((boost::format("%s.X")%bufferName.c_str()).str().c_str()));
+                                    channels.insert(channel((boost::format("%s.Y")%bufferName.c_str()).str().c_str()));
+                                    channels.insert(channel((boost::format("%s.Z")%bufferName.c_str()).str().c_str()));
+                                }
+                            }
+                            else
+                            {
+                                if (!channels.contains(channel((boost::format("%s.red")%bufferName.c_str()).str().c_str())))
+                                {
+                                    channels.insert(channel((boost::format("%s.red")%bufferName.c_str()).str().c_str()));
+                                    channels.insert(channel((boost::format("%s.blue")%bufferName.c_str()).str().c_str()));
+                                    channels.insert(channel((boost::format("%s.green")%bufferName.c_str()).str().c_str()));
+                                }
                             }
                         }
-                        else if (bufferName.compare(ChannelStr::Z)==0)
-                        {
-                            if (!channels.contains(Chan_Z))
-                                channels.insert( Chan_Z );
-                        }
-                        else if (bufferName.compare(ChannelStr::N)==0 ||
-                                 bufferName.compare(ChannelStr::P)==0)
-                        {
-                            if (!channels.contains(channel((boost::format("%s.X")%bufferName.c_str()).str().c_str())))
-                            {
-                                channels.insert(channel((boost::format("%s.X")%bufferName.c_str()).str().c_str()));
-                                channels.insert(channel((boost::format("%s.Y")%bufferName.c_str()).str().c_str()));
-                                channels.insert(channel((boost::format("%s.Z")%bufferName.c_str()).str().c_str()));
-                            }
-                        }
-                        else
-                        {
-                            if (!channels.contains(channel((boost::format("%s.red")%bufferName.c_str()).str().c_str())))
-                            {
-                                channels.insert(channel((boost::format("%s.red")%bufferName.c_str()).str().c_str()));
-                                channels.insert(channel((boost::format("%s.blue")%bufferName.c_str()).str().c_str()));
-                                channels.insert(channel((boost::format("%s.green")%bufferName.c_str()).str().c_str()));
-                            }
-                        }
+                    }
+                    else if (channels.size() > 4)
+                    {
+                        channels.clear();
+                        channels.insert(Chan_Red);
+                        channels.insert(Chan_Green);
+                        channels.insert(Chan_Blue);
+                        channels.insert(Chan_Alpha);
                     }
                 }
             }
@@ -531,42 +551,25 @@ class Aton: public Iop
             return f_index;
         }
     
-        char * getPath()
+        std::string getPath()
         {
-            char * aton_path;
-            std::string def_path;
+            char * aton_path = getenv("ATON_CAPTURE_PATH");
+            
+            // Get OS specific tmp directory path
+            std::string def_path = boost::filesystem::temp_directory_path().string();
 
-            aton_path = getenv("ATON_CAPTURE_PATH");
-
-            if (aton_path == NULL)
-            {
-                // Get OS specific tmp directory path
-                def_path = boost::filesystem::temp_directory_path().string();
-            }
-            else def_path = aton_path;
-
+            if (aton_path != NULL)
+                def_path = aton_path;
+            
             boost::replace_all(def_path, "\\", "/");
 
-            // Construct the full path for Write node
-            boost::filesystem::path dir = def_path;
-            boost::filesystem::path file = "Aton.exr";
-            boost::filesystem::path fullPath = dir / file;
-
-            std::string str_path = fullPath.string();
-            boost::replace_all(str_path, "\\", "/");
-
-            char * full_path = new char[str_path.length()+1];
-            strcpy(full_path, str_path.c_str());
-
-            return full_path;
+            return def_path;
         }
     
         int getPort()
         {
-            char * aton_port;
+            char * aton_port = getenv("ATON_PORT");
             int def_port = 9201;
-            
-            aton_port = getenv("ATON_PORT");
             
             if (aton_port != NULL)
                 def_port = atoi(aton_port);
@@ -935,7 +938,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
         node->m_server.accept();
 
         // Our incoming data object
-        aton::Data d;
+        Data d;
 
         // For progress percentage
         long long imageArea = 0;
@@ -1021,7 +1024,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                             }
                             case 2:
                             {
-                                node->m_mutex.lock();                                        
+                                node->m_mutex.lock();
                                 frameBuffer.clearAll();
                                 break;
                             }
@@ -1029,12 +1032,16 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
 
                         if (fbCompare > 0)
                         {
+                            if (node->m_channels.size() > 4)
+                            {
+                                node->m_channels.clear();
+                                node->m_channels.insert(Chan_Red);
+                                node->m_channels.insert(Chan_Green);
+                                node->m_channels.insert(Chan_Blue);
+                                node->m_channels.insert(Chan_Alpha);
+                            }
+                            
                             frameBuffer.ready(false);
-                            node->m_channels.clear();
-                            node->m_channels.insert(Chan_Red);
-                            node->m_channels.insert(Chan_Green);
-                            node->m_channels.insert(Chan_Blue);
-                            node->m_channels.insert(Chan_Alpha);
                             node->m_mutex.unlock();
                         }
                     }
