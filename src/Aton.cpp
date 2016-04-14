@@ -96,7 +96,7 @@ class Aton: public Iop
                           m_comment(""),
                           m_stamp(true),
                           m_enable_aovs(true),
-                          m_stamp_size(15),
+                          m_stamp_size(12),
                           m_slimit(20),
                           m_fmt(Format(0, 0, 1.0)),
                           m_inError(false),
