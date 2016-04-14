@@ -20,23 +20,19 @@ RenderAlpha::RenderAlpha() { _val = 1.f; }
 float& RenderAlpha::operator[](int i){ return _val; }
 const float& RenderAlpha::operator[](int i) const { return _val; }
 
-
 // Our image buffer class
 RenderBuffer::RenderBuffer(): _width(0), _height(0) {}
 
 void RenderBuffer::initBuffer(const unsigned int width,
                               const unsigned int height,
-                              const bool empty,
                               const bool alpha)
 {
     _width = width;
     _height = height;
-    if (!empty)
-    {
-        _colour_data.resize(_width * _height);
-        if (alpha)
-            _alpha_data.resize(_width * _height);
-    }
+
+    _colour_data.resize(_width * _height);
+    if (alpha)
+        _alpha_data.resize(_width * _height);
 }
 
 RenderColour& RenderBuffer::getColour(unsigned int x, unsigned int y)
@@ -80,7 +76,7 @@ FrameBuffer::FrameBuffer(double currentFrame,
                                  _time(0),
                                  _ram(0),
                                  _pram(0),
-                                _ready(false)
+                                 _ready(false)
 {
     _frame = currentFrame;
     _width = w;
@@ -95,7 +91,7 @@ void FrameBuffer::addBuffer(const char * aov, int spp)
     if (spp < 4)
         buffer.initBuffer(_width, _height);
     else
-        buffer.initBuffer(_width, _height, false, true);
+        buffer.initBuffer(_width, _height, true);
     
     _buffers.push_back(buffer);
     _aovs.push_back(aov);
@@ -155,7 +151,6 @@ int FrameBuffer::getBufferIndex(const char * aovName)
                 break;
             }
         }
-    
     return b_index;
 }
 
