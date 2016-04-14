@@ -128,7 +128,7 @@ class Aton: public Iop
         {
             m_legit = true;
 
-            // default status bar
+            // Default status bar
             setStatus();
 
             // We don't need to see these knobs
@@ -140,7 +140,7 @@ class Aton: public Iop
             strcpy(nodeName, node_name().c_str());
             m_node_name = nodeName;
             
-            // Construct the full path for Write node
+            // Construct full path for capturing
             boost::filesystem::path dir = getPath();
             boost::filesystem::path file = (boost::format("%s.exr")%m_node_name).str();
             boost::filesystem::path fullPath = dir / file;
