@@ -118,6 +118,12 @@ namespace aton
             // Check if the given buffer/aov name name is exist
             bool bufferNameExists(const char * aovName);
         
+            // Set width of the buffer
+            void setWidth(int w);
+
+            // Set height of the buffer
+            void setHeight(int h);
+        
             // Get width of the buffer
             int getWidth();
         

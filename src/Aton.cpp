@@ -1026,6 +1026,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                             {
                                 node->m_mutex.lock();
                                 frameBuffer.clearAll();
+                                frameBuffer.setWidth(d.width());
+                                frameBuffer.setHeight(d.height());
                                 break;
                             }
                         }

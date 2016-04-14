@@ -206,6 +206,12 @@ bool FrameBuffer::bufferNameExists(const char * aovName)
                      aovName) != _aovs.end();
 }
 
+// Set width of the buffer
+void FrameBuffer::setWidth(int w) { _width = w; }
+
+// Set height of the buffer
+void FrameBuffer::setHeight(int h) { _height = h; }
+
 // Get width of the buffer
 int FrameBuffer::getWidth() { return _width; }
 
