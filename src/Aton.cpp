@@ -73,7 +73,7 @@ class Aton: public Iop
         int m_stamp_size;
         int m_slimit; // The limit size
         Lock m_mutex; // Mutex for locking the pixel buffer
-        unsigned int hash_counter; // Refresh hash counter
+        unsigned int m_hash_count; // Refresh hash counter
         aton::Server m_server; // Aton::Server
         bool m_inError; // Error handling
         bool m_formatExists;
@@ -171,10 +171,10 @@ class Aton: public Iop
 
         void flagForUpdate(int f_index)
         {
-            if ( hash_counter==UINT_MAX )
-                hash_counter=0;
+            if ( m_hash_count == UINT_MAX )
+                m_hash_count = 0;
             else
-                hash_counter++;
+                m_hash_count++;
             
             // Update the image with current bucket first
             asapUpdate(m_node->m_framebuffers[f_index].getBucketBBox());
@@ -237,7 +237,7 @@ class Aton: public Iop
 
         void append(Hash& hash)
         {
-            hash.append(m_node->hash_counter);
+            hash.append(m_node->m_hash_count);
             hash.append(m_node->outputContext().frame());
             hash.append(m_node->uiContext().frame());
         }
@@ -676,7 +676,7 @@ class Aton: public Iop
 
         void captureCmd()
         {
-            if  (m_slimit != 0)
+            if  (m_slimit > 0)
             {
                 // Get the path and add time date suffix to it
                 std::string key (".");
