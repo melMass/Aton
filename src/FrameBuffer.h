@@ -62,7 +62,6 @@ namespace aton
 
             void initBuffer(const unsigned int width,
                             const unsigned int height,
-                            const bool empty = false,
                             const bool alpha = false);
 
             RenderColour& getColour(unsigned int x, unsigned int y);
