@@ -107,15 +107,15 @@ class Aton(QtGui.QDialog):
         self.setWindowFlags(QtCore.Qt.Tool)
         self.setAttribute(QtCore.Qt.WA_AlwaysShowToolTips)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-        self.setMinimumSize(400, 250)
-        self.setMaximumSize(400, 250)
+        self.setMinimumSize(400, 300)
+        self.setMaximumSize(400, 300)
 
         mainLayout = QtGui.QVBoxLayout()
         mainLayout.setContentsMargins(5,5,5,5)
         mainLayout.setSpacing(2)
 
-        overridesGroupBox = QtGui.QGroupBox("Overrides")
-        overridesLayout = QtGui.QVBoxLayout(overridesGroupBox)
+        generalGroupBox = QtGui.QGroupBox("General")
+        generalLayout = QtGui.QVBoxLayout(generalGroupBox)
 
         # Port Layout
         portLayout = QtGui.QHBoxLayout()
@@ -153,6 +153,9 @@ class Aton(QtGui.QDialog):
             self.cameraComboBoxDict[cmds.listCameras().index(i)+1] = i
         cameraLayout.addWidget(cameraLabel)
         cameraLayout.addWidget(self.cameraComboBox)
+
+        overridesGroupBox = QtGui.QGroupBox("Overrides")
+        overridesLayout = QtGui.QVBoxLayout(overridesGroupBox)
 
         # Resolution Layout
         resolutionLayout = QtGui.QHBoxLayout()
@@ -232,6 +235,9 @@ class Aton(QtGui.QDialog):
         self.renderRegionRSpinBox.setValue(self.getSceneOptions()["width"])
         self.renderRegionTSpinBox.setValue(self.getSceneOptions()["height"])
 
+        ignoresGroupBox = QtGui.QGroupBox("Ignore")
+        ignoresLayout = QtGui.QVBoxLayout(ignoresGroupBox)
+
         # Ignore Layout
         ignoreLayout = QtGui.QHBoxLayout()
         ignoreLabel = QtGui.QLabel("Ignore:")
@@ -265,14 +271,16 @@ class Aton(QtGui.QDialog):
         mainButtonslayout.addWidget(resetButton)
 
         # Add Layouts to Main
-        overridesLayout.addLayout(portLayout)
-        overridesLayout.addLayout(cameraLayout)
+        generalLayout.addLayout(portLayout)
+        generalLayout.addLayout(cameraLayout)
         overridesLayout.addLayout(resolutionLayout)
         overridesLayout.addLayout(cameraAaLayout)
         overridesLayout.addLayout(renderRegionLayout)
-        overridesLayout.addLayout(ignoreLayout)
+        ignoresLayout.addLayout(ignoreLayout)
 
+        mainLayout.addWidget(generalGroupBox)
         mainLayout.addWidget(overridesGroupBox)
+        mainLayout.addWidget(ignoresGroupBox)
         mainLayout.addLayout(mainButtonslayout)
 
         self.connect(portSlider, QtCore.SIGNAL("valueChanged(int)"), updateUi)
@@ -354,7 +362,7 @@ class Aton(QtGui.QDialog):
         # Temp trigger in order to start IPR
         time = cmds.currentTime(q=1)
         cmds.currentTime(time, e=1)
-        
+
         cmds.setAttr("defaultArnoldDisplayDriver.aiTranslator", defaultTranslator, type="string")
         cmds.setAttr("defaultArnoldDisplayDriver.port", self.defaultPort)
         sys.stdout.write("// Info: Aton - Render started.\n")
