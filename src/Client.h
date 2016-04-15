@@ -31,7 +31,7 @@ namespace aton
          * Creates a new Client object and tell it to connect any messages to
          * the specified host/port.
          */
-        Client( std::string hostname, int port );
+        Client(std::string hostname, int port);
 
         //! Destructor
         ~Client();
@@ -41,7 +41,7 @@ namespace aton
          * The header parameter is used to tell the Server the size of image
          * buffer to allocate.
          */
-        void openImage( Data &header );
+        void openImage(Data& header);
         
         /*! \brief Sends a section of image data to the Server.
          *
@@ -50,7 +50,7 @@ namespace aton
          * specify the block position and dimensions as well as provide a
          * pointer to pixel data.
          */
-        void sendPixels( Data &data );
+        void sendPixels(Data& data);
 
         /*! \brief Sends a message to the Server that the Clients has finished
          *
@@ -60,7 +60,7 @@ namespace aton
         void closeImage();
         
     private:
-        void connect( std::string host, int port );
+        void connect(std::string host, int port);
         void disconnect();
         void quit();
 
