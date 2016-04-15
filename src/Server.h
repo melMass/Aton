@@ -33,14 +33,13 @@ namespace aton
          * Creates a new server and calls connect() with the specified port
          * number.
          */
-        Server( int port );
+        Server(int port);
         /*! \brief Destructor.
          *
          *  Shuts down the server, closing any open ports if the server is
          *  connected.
          */
         ~Server();
-        
         /*! \brief Connects the server to a port.
          *
          * If true is passed as the second parameter then the server will
@@ -48,12 +47,10 @@ namespace aton
          * available. To find out which port the server managed to connect to,
          * call getPort() afterwards.
          */
-        void connect( int port, bool search=false );
-
+        void connect(int port, bool search=false);
         /*! \brief Sets up the server to accept an incoming Client connections.
          */
         void accept();
-
         /*! \brief Listens for incoming messages from a Client.
          *
          * This function blocks (and so may be require running on a separate
@@ -63,7 +60,6 @@ namespace aton
          * passed back ready for handling by the parent application.
          */
         Data listen();
-
         /*! \brief Sends a 'quit' message to the server.
          *
          * This can be used to exit a listening loop running on a separate
@@ -72,16 +68,14 @@ namespace aton
         void quit();
 
         //! Returns whether or not the server is connected to a port.
-        bool isConnected(){ return mAcceptor.is_open(); }
+        bool isConnected() { return mAcceptor.is_open(); }
 
         //! Returns the port the server is currently connected to.
-        int getPort(){ return mPort; }
+        int getPort() { return mPort; }
 
     private:
-
         // the port we're listening to
         int mPort;
-
         // boost::asio tcp stuff
         boost::asio::io_service mIoService;
         boost::asio::ip::tcp::socket mSocket;
