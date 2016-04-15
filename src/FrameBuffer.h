@@ -4,8 +4,8 @@
  All rights reserved. See Copyright.txt for more details.
  */
 
-#ifndef FrameBuffer_hpp
-#define FrameBuffer_hpp
+#ifndef FrameBuffer_h
+#define FrameBuffer_h
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -89,7 +89,7 @@ namespace aton
             FrameBuffer(double currentFrame = 0, int w = 0, int h = 0);
         
             // Add new buffer
-            void addBuffer(const char * aov = NULL, int spp = 0);
+            void addBuffer(const char* aov = NULL, int spp = 0);
         
             // Get buffer object
             RenderBuffer& getBuffer(int index = 0);
@@ -116,7 +116,7 @@ namespace aton
             void clearAll();
         
             // Check if the given buffer/aov name name is exist
-            bool bufferNameExists(const char * aovName);
+            bool bufferNameExists(const char* aovName);
         
             // Set width of the buffer
             void setWidth(int w);
@@ -185,4 +185,4 @@ namespace aton
     };
 }
 
-#endif /* FrameBuffer_hpp */
+#endif /* FrameBuffer_h */
