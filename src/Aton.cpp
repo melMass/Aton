@@ -57,33 +57,33 @@ static void atonListen(unsigned index, unsigned nthreads, void* data);
 class Aton: public Iop
 {
     public:
-        Aton * m_node; // First node pointer
-        const char * m_node_name; // Node name
-        FormatPair m_fmtp; // Buffer format (knob)
-        Format m_fmt; // The nuke display format
-        int m_port; // Port we're listening on (knob)
-        const char * m_path; // Default path for Write node
-        std::string m_status; // Status bar text
-        bool m_multiframes;
-        bool m_all_frames;
-        double m_current_frame;
-        const char * m_comment;
-        bool m_stamp;
-        bool m_enable_aovs;
-        int m_stamp_size;
-        int m_slimit; // The limit size
-        Lock m_mutex; // Mutex for locking the pixel buffer
-        unsigned int m_hash_count; // Refresh hash counter
-        Server m_server; // Aton::Server
-        bool m_inError; // Error handling
-        bool m_formatExists;
-        bool m_capturing; // Capturing signal
-        std::vector<std::string> m_garbageList;
-        std::vector<double> m_frames; // Frames holder
-        std::vector<FrameBuffer> m_framebuffers; // Framebuffers holder
-        std::string m_connectionError;
-        ChannelSet m_channels;
-        bool m_legit;
+        Aton*                     m_node; // First node pointer
+        const char*               m_node_name; // Node name
+        FormatPair                m_fmtp; // Buffer format (knob)
+        Format                    m_fmt; // The nuke display format
+        int                       m_port; // Port we're listening on (knob)
+        const char*               m_path; // Default path for Write node
+        std::string               m_status; // Status bar text
+        bool                      m_multiframes;
+        bool                      m_all_frames;
+        double                    m_current_frame;
+        const char*               m_comment;
+        bool                      m_stamp;
+        bool                      m_enable_aovs;
+        int                       m_stamp_size;
+        int                       m_slimit; // The limit size
+        Lock                      m_mutex; // Mutex for locking the pixel buffer
+        unsigned int              m_hash_count; // Refresh hash counter
+        Server                    m_server; // Aton::Server
+        bool                      m_inError; // Error handling
+        bool                      m_formatExists;
+        bool                      m_capturing; // Capturing signal
+        std::vector<std::string>  m_garbageList;
+        std::vector<double>       m_frames; // Frames holder
+        std::vector<FrameBuffer>  m_framebuffers; // Framebuffers holder
+        std::string               m_connectionError;
+        ChannelSet                m_channels;
+        bool                      m_legit;
 
         Aton(Node* node): Iop(node),
                           m_node(firstNode()),
@@ -136,7 +136,7 @@ class Aton: public Iop
             knob("capturing_knob")->hide();
 
             // Allocate node name in order to pass it to format
-            char * nodeName = new char[node_name().length() + 1];
+            char* nodeName = new char[node_name().length() + 1];
             strcpy(nodeName, node_name().c_str());
             m_node_name = nodeName;
             
@@ -189,7 +189,7 @@ class Aton: public Iop
         }
 
         // We can use this to change our tcp port
-        void changePort( int port )
+        void changePort(int port)
         {
             m_inError = false;
             m_connectionError = "";
@@ -213,11 +213,11 @@ class Aton: public Iop
             }
 
             // Success
-            if ( m_server.isConnected() )
+            if (m_server.isConnected())
             {
                 Thread::spawn(::atonListen, 1, this);
                 Thread::spawn(::timeChange, 1, this);
-                print_name( std::cout );
+                print_name(std::cout);
                 
                 // Update port in the UI
                 std::string cmd; // Our python command buffer
@@ -233,12 +233,12 @@ class Aton: public Iop
         // Disconnect the server for it's port
         void disconnect()
         {
-            if ( m_server.isConnected() )
+            if (m_server.isConnected())
             {
                 m_server.quit();
                 Thread::wait(this);
 
-                print_name( std::cout );
+                print_name(std::cout);
                 std::cout << ": Disconnected from port " << m_server.getPort() << std::endl;
             }
         }
@@ -253,11 +253,11 @@ class Aton: public Iop
         void _validate(bool for_real)
         {
             // Do we need to open a port?
-            if ( m_server.isConnected()==false && !m_inError && m_legit )
+            if (m_server.isConnected() == false && !m_inError && m_legit)
                 changePort(m_port);
             
             // Handle any connection error
-            if ( m_inError )
+            if (m_inError)
                 error(m_connectionError.c_str());
 
             if (!m_node->m_framebuffers.empty())
@@ -284,7 +284,7 @@ class Aton: public Iop
                     if (m_node->m_fmt.width() != width ||
                         m_node->m_fmt.height() != height)
                     {
-                        Format *m_fmt_exist = &m_node->m_fmt;
+                        Format* m_fmt_exist = &m_node->m_fmt;
                         if (m_node->m_formatExists)
                         {
                             // If the format is already exist we need to get its pointer
@@ -315,7 +315,7 @@ class Aton: public Iop
                         {
                             std::string bufferName = frameBuffer.getBufferName(i);
                             
-                            if (bufferName.compare(ChannelStr::RGBA)==0)
+                            if (bufferName.compare(ChannelStr::RGBA) == 0)
                             {
                                 if (!channels.contains(Chan_Red))
                                 {
@@ -325,13 +325,13 @@ class Aton: public Iop
                                     channels.insert(Chan_Alpha);
                                 }
                             }
-                            else if (bufferName.compare(ChannelStr::Z)==0)
+                            else if (bufferName.compare(ChannelStr::Z) == 0)
                             {
                                 if (!channels.contains(Chan_Z))
                                     channels.insert( Chan_Z );
                             }
-                            else if (bufferName.compare(ChannelStr::N)==0 ||
-                                     bufferName.compare(ChannelStr::P)==0)
+                            else if (bufferName.compare(ChannelStr::N) == 0 ||
+                                     bufferName.compare(ChannelStr::P) == 0)
                             {
                                 if (!channels.contains(channel((boost::format("%s.X")%bufferName.c_str()).str().c_str())))
                                 {
@@ -382,13 +382,13 @@ class Aton: public Iop
                 if (m_enable_aovs && !m_node->m_framebuffers.empty())
                     b_index = m_node->m_framebuffers[f_index].getBufferIndex(z);
 
-                float *rOut = out.writable(brother (z, 0)) + xx;
-                float *gOut = out.writable(brother (z, 1)) + xx;
-                float *bOut = out.writable(brother (z, 2)) + xx;
-                float *aOut = out.writable(Chan_Alpha) + xx;
-                const float *END = rOut + (r - xx);
-                unsigned int xxx = static_cast<unsigned int> (xx);
-                unsigned int yyy = static_cast<unsigned int> (y);
+                float* rOut = out.writable(brother(z, 0)) + xx;
+                float* gOut = out.writable(brother(z, 1)) + xx;
+                float* bOut = out.writable(brother(z, 2)) + xx;
+                float* aOut = out.writable(Chan_Alpha) + xx;
+                const float* END = rOut + (r - xx);
+                unsigned int xxx = static_cast<unsigned int>(xx);
+                unsigned int yyy = static_cast<unsigned int>(y);
 
                 std::vector<FrameBuffer>& fbs  = m_node->m_framebuffers;
                 
@@ -399,7 +399,7 @@ class Aton: public Iop
                         xxx >= fbs[f_index].getWidth() ||
                         yyy >= fbs[f_index].getHeight())
                     {
-                        *rOut = *gOut = *bOut = *aOut = 0.f;
+                        *rOut = *gOut = *bOut = *aOut = 0.0f;
                     }
                     else
                     {
@@ -435,17 +435,17 @@ class Aton: public Iop
             Bool_knob(f, &m_multiframes, "multi_frame_knob", "Enable Multiple Frames");
 
             Divider(f, "Capture");
-            Knob * limit_knob = Int_knob(f, &m_slimit, "limit_knob", "Limit");
+            Knob* limit_knob = Int_knob(f, &m_slimit, "limit_knob", "Limit");
             Newline(f);
-            Knob * all_frames_knob = Bool_knob(f, &m_all_frames,
+            Knob* all_frames_knob = Bool_knob(f, &m_all_frames,
                                                "all_frames_knob",
                                                "Capture All Frames");
-            Knob * path_knob = File_knob(f, &m_path, "path_knob", "Path");
+            Knob* path_knob = File_knob(f, &m_path, "path_knob", "Path");
 
             Newline(f);
-            Knob * stamp_knob = Bool_knob(f, &m_stamp, "stamp_knob", "Frame Stamp");
-            Knob * stamp_size_knob = Int_knob(f, &m_stamp_size, "stamp_size_knob", "Size");
-            Knob * comment_knob = String_knob(f, &m_comment, "comment_knob", "Comment");
+            Knob* stamp_knob = Bool_knob(f, &m_stamp, "stamp_knob", "Frame Stamp");
+            Knob* stamp_size_knob = Int_knob(f, &m_stamp_size, "stamp_size_knob", "Size");
+            Knob* comment_knob = String_knob(f, &m_comment, "comment_knob", "Comment");
             Newline(f);
             Button(f, "capture_knob", "Capture");
             Button(f, "import_latest_knob", "Import latest");
@@ -453,7 +453,7 @@ class Aton: public Iop
 
             // Status Bar knobs
             BeginToolbar(f, "status_bar");
-            Knob * statusKnob = String_knob(f, &m_status, "status_knob", "");
+            Knob* statusKnob = String_knob(f, &m_status, "status_knob", "");
             EndToolbar(f);
 
             // Set Flags
@@ -521,30 +521,31 @@ class Aton: public Iop
         int getFrameIndex(double currentFrame)
         {
             int f_index = 0;
+            std::vector<double>& frames = m_node->m_frames;
 
-            if (m_multiframes && !m_node->m_frames.empty())
+            if (m_multiframes && !frames.empty())
             {
                 int nearFIndex = INT_MIN;
                 int minFIndex = INT_MAX;
                 
-                for(std::vector<double>::iterator it = m_node->m_frames.begin();
-                    it != m_node->m_frames.end(); ++it)
+                for(std::vector<double>::iterator it = frames.begin();
+                                                  it != frames.end(); ++it)
                 {
                     if (currentFrame == *it)
                     {
-                        f_index = static_cast<int>(it - m_node->m_frames.begin());
+                        f_index = static_cast<int>(it - frames.begin());
                         break;
                     }
                     else if (currentFrame > *it && nearFIndex < *it)
                     {
                         nearFIndex = *it;
-                        f_index = static_cast<int>(it - m_node->m_frames.begin());
+                        f_index = static_cast<int>(it - frames.begin());
                         continue;
                     }
                     else if (*it < minFIndex && nearFIndex == INT_MIN)
                     {
                         minFIndex = *it;
-                        f_index = static_cast<int>(it - m_node->m_frames.begin());
+                        f_index = static_cast<int>(it - frames.begin());
                     }
                 }
             }
@@ -553,7 +554,7 @@ class Aton: public Iop
     
         std::string getPath()
         {
-            char * aton_path = getenv("ATON_CAPTURE_PATH");
+            char* aton_path = getenv("ATON_CAPTURE_PATH");
             
             // Get OS specific tmp directory path
             std::string def_path = boost::filesystem::temp_directory_path().string();
@@ -568,7 +569,7 @@ class Aton: public Iop
     
         int getPort()
         {
-            char * aton_port = getenv("ATON_PORT");
+            char* aton_port = getenv("ATON_PORT");
             int def_port = 9201;
             
             if (aton_port != NULL)
@@ -581,11 +582,11 @@ class Aton: public Iop
         {
             // Returns date and time
             time_t rawtime;
-            struct tm * timeinfo;
+            struct tm* timeinfo;
             char time_buffer[20];
 
             time (&rawtime);
-            timeinfo = localtime (&rawtime);
+            timeinfo = localtime(&rawtime);
 
             // Setting up the Date and Time format style
             strftime(time_buffer, 20, "%Y-%m-%d_%H-%M-%S", timeinfo);
@@ -907,7 +908,7 @@ class Aton: public Iop
 // Time change thread method
 static void timeChange(unsigned index, unsigned nthreads, void* data)
 {
-    Aton * node = reinterpret_cast<Aton*> (data);
+    Aton* node = reinterpret_cast<Aton*> (data);
     std::vector<FrameBuffer>& fbs  = node->m_node->m_framebuffers;
 
     double prevFrame = 0;
@@ -930,7 +931,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
     bool killThread = false;
     std::vector<std::string> active_aovs;
 
-    Aton * node = reinterpret_cast<Aton*> (data);
+    Aton* node = reinterpret_cast<Aton*> (data);
 
     while (!killThread)
     {
@@ -1135,13 +1136,13 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         {
                             offset = (_width * _y * _spp) + (_x * _spp);
 
-                            RenderColour &pix = frameBuffer.getBuffer(b_index).getColour(_x+ _xorigin, _h - (_y + _yorigin + 1));
+                            RenderColour& pix = frameBuffer.getBuffer(b_index).getColour(_x+ _xorigin, _h - (_y + _yorigin + 1));
                             for (_s = 0; _s < _spp; ++_s)
                                 if (_s != 3)
                                     pix[_s] = pixel_data[offset+_s];
                             if (_spp == 4)
                             {
-                                RenderAlpha &alpha_pix = frameBuffer.getBuffer(b_index).getAlpha(_x+ _xorigin, _h - (_y + _yorigin + 1));
+                                RenderAlpha& alpha_pix = frameBuffer.getBuffer(b_index).getAlpha(_x+ _xorigin, _h - (_y + _yorigin + 1));
                                 alpha_pix[0] = pixel_data[offset+3];
                             }
                         }
