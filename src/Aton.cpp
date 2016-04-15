@@ -526,8 +526,8 @@ class Aton: public Iop
                 int nearFIndex = INT_MIN;
                 int minFIndex = INT_MAX;
                 
-                for(std::vector<double>::iterator it = frames.begin();
-                                                  it != frames.end(); ++it)
+                std::vector<double>::iterator it;
+                for( it = frames.begin(); it != frames.end(); ++it)
                 {
                     if (currentFrame == *it)
                     {
@@ -632,8 +632,8 @@ class Aton: public Iop
                 // in windows sometimes files can't be deleted due to lack of
                 // access so we collecting a garbage list and trying to remove
                 // them next time when user make a capture
-                for(std::vector<std::string>::iterator it = m_garbageList.begin();
-                    it != m_garbageList.end(); ++it)
+                std::vector<std::string>::iterator it;
+                for(it = m_garbageList.begin(); it != m_garbageList.end(); ++it)
                 {
                     std::remove(it->c_str());
                 }
@@ -697,9 +697,11 @@ class Aton: public Iop
                         timeFrameSuffix += "_" + std::string("####");
                         startFrame = sortedFrames.front();
                         endFrame = sortedFrames.back();
-                        for(std::vector<double>::iterator it = sortedFrames.begin();
-                                                          it != sortedFrames.end(); ++it)
+                        
+                        std::vector<double>::iterator it;
+                        for(it = sortedFrames.begin(); it != sortedFrames.end(); ++it)
                             frames += (boost::format("%s,")%*it).str();
+                        
                         frames.resize(frames.size() - 1);
                     }
                     else
