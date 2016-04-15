@@ -33,14 +33,14 @@ using namespace aton;
 #include "boost/filesystem.hpp"
 #include "boost/lexical_cast.hpp"
 #include "boost/algorithm/string.hpp"
-#include <boost/thread/thread.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
+#include "boost/thread/thread.hpp"
+#include "boost/date_time/posix_time/posix_time.hpp"
 
 // class name
 static const char* const CLASS = "Aton";
 
 // version
-static const char* const VERSION = "1.1.0b";
+static const char* const VERSION = "1.1.0";
 
 // help
 static const char* const HELP =
