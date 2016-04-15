@@ -40,12 +40,12 @@ AI_DRIVER_NODE_EXPORT_METHODS(AtonDriverMtd);
 
 struct ShaderData
 {
-   aton::Client *client;
+   aton::Client* client;
 };
 
-char * getHost()
+char* getHost()
 {
-    char * aton_host;
+    char* aton_host;
     std::string def_host;
     
     aton_host = getenv("ATON_HOST");
@@ -55,7 +55,7 @@ char * getHost()
     else
         def_host = aton_host;
     
-    char * host = new char[def_host.length()+1];
+    char* host = new char[def_host.length()+1];
     strcpy(host, def_host.c_str());
     
     return host;
@@ -63,7 +63,7 @@ char * getHost()
 
 int getPort()
 {
-    char * aton_port;
+    char* aton_port;
     int def_port;
     
     aton_port = getenv("ATON_PORT");
@@ -107,25 +107,22 @@ driver_extension
 
 driver_open
 {
-	//construct full version number into padded interger
-
-	string versionString = AiGetVersion(NULL, NULL, NULL, NULL);
-	vector<string> svec;
-	vector<int> ivec;
-
+    //construct full version number into padded interger
+    string versionString = AiGetVersion(0, 0, 0, 0);
+    vector<string> svec;
+    vector<int> ivec;
     boost::split(svec, versionString, boost::is_any_of("."));
-
+    
     BOOST_FOREACH(std::string item, svec)
     {
         int i = boost::lexical_cast<int>(item);
         ivec.push_back(i);
-	}
+    }
+    int version = ivec[3] + ivec[2]*100 + ivec[1]*10000 + ivec[0] * 1000000;
 
-	int version = ivec[3] + ivec[2]*100 + ivec[1]*10000 + ivec[0] * 1000000;
-
-    ShaderData *data = (ShaderData*)AiDriverGetLocalData(node);
+    ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
     
-    AtNode *options = AiUniverseGetOptions();
+    AtNode* options = AiUniverseGetOptions();
     float currentFrame = AiNodeGetFlt(options, "frame");
 
     const char* host = AiNodeGetStr(node, "host");
@@ -173,7 +170,7 @@ driver_process_bucket
 
 driver_write_bucket
 {
-    ShaderData *data = (ShaderData*)AiDriverGetLocalData(node);
+    ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
 
     int pixel_type;
     int spp = 0;
@@ -182,7 +179,7 @@ driver_write_bucket
 
     while (AiOutputIteratorGetNext(iterator, &aov_name, &pixel_type, &bucket_data))
     {
-        const float *ptr = reinterpret_cast<const float*> (bucket_data);
+        const float* ptr = reinterpret_cast<const float*> (bucket_data);
         unsigned long long ram = AiMsgUtilGetUsedMemory();
         unsigned int time = AiMsgUtilGetElapsedTime();
 
@@ -212,7 +209,7 @@ driver_close
 {
     AiMsgInfo("[Aton] driver close");
 
-    ShaderData *data = (ShaderData*)AiDriverGetLocalData(node);
+    ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
     try
     {
         data->client->closeImage();
@@ -226,9 +223,9 @@ driver_close
 node_finish
 {
     AiMsgInfo("[Aton] driver finish");
+   
     // release the driver
-
-    ShaderData *data = (ShaderData*)AiDriverGetLocalData(node);
+    ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
     delete data->client;
     delete[] getHost();
 
@@ -243,14 +240,13 @@ node_loader
     switch (i)
     {
         case 0:
-            node->methods      = (AtNodeMethods*) AtonDriverMtd;
-            node->output_type  = AI_TYPE_RGBA;
-            node->name         = "driver_aton";
-            node->node_type    = AI_NODE_DRIVER;
+            node->methods = (AtNodeMethods*) AtonDriverMtd;
+            node->output_type = AI_TYPE_RGBA;
+            node->name = "driver_aton";
+            node->node_type = AI_NODE_DRIVER;
             break;
         default:
         return false;
     }
     return true;
 }
-
