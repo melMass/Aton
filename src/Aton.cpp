@@ -57,33 +57,33 @@ static void atonListen(unsigned index, unsigned nthreads, void* data);
 class Aton: public Iop
 {
     public:
-        Aton*                     m_node; // First node pointer
-        const char*               m_node_name; // Node name
-        FormatPair                m_fmtp; // Buffer format (knob)
-        Format                    m_fmt; // The nuke display format
-        int                       m_port; // Port we're listening on (knob)
-        const char*               m_path; // Default path for Write node
-        std::string               m_status; // Status bar text
-        bool                      m_multiframes;
-        bool                      m_all_frames;
-        double                    m_current_frame;
-        const char*               m_comment;
-        bool                      m_stamp;
-        bool                      m_enable_aovs;
-        int                       m_stamp_size;
-        int                       m_slimit; // The limit size
-        Lock                      m_mutex; // Mutex for locking the pixel buffer
-        unsigned int              m_hash_count; // Refresh hash counter
-        Server                    m_server; // Aton::Server
-        bool                      m_inError; // Error handling
-        bool                      m_formatExists;
-        bool                      m_capturing; // Capturing signal
-        std::vector<std::string>  m_garbageList;
-        std::vector<double>       m_frames; // Frames holder
-        std::vector<FrameBuffer>  m_framebuffers; // Framebuffers holder
-        std::string               m_connectionError;
-        ChannelSet                m_channels;
-        bool                      m_legit;
+        Aton*                     m_node;             // First node pointer
+        const char*               m_node_name;        // Node name
+        FormatPair                m_fmtp;             // Buffer format (knob)
+        Format                    m_fmt;              // The nuke display format
+        int                       m_port;             // Port we're listening on (knob)
+        const char*               m_path;             // Default path for Write node
+        std::string               m_status;           // Status bar text
+        bool                      m_multiframes;      // Enable Multiple Frames toogle
+        bool                      m_all_frames;       // Capture All Frames toogle
+        double                    m_current_frame;    // Current Frame number holder
+        const char*               m_comment;          // Comment for the frame stamp
+        bool                      m_stamp;            // Enable Frame stamp toogle
+        bool                      m_enable_aovs;      // Enable AOVs toogle
+        int                       m_stamp_size;       // Frame stamp size
+        int                       m_slimit;           // The limit size
+        Lock                      m_mutex;            // Mutex for locking the pixel buffer
+        unsigned int              m_hash_count;       // Refresh hash counter
+        Server                    m_server;           // Aton::Server
+        bool                      m_inError;          // Error handling
+        bool                      m_formatExists;     // If the format was already exist
+        bool                      m_capturing;        // Capturing signal
+        std::vector<std::string>  m_garbageList;      // List of captured files to be deleted
+        std::vector<double>       m_frames;           // Frames holder
+        std::vector<FrameBuffer>  m_framebuffers;     // Framebuffers holder
+        std::string               m_connectionError;  // Connection error report
+        ChannelSet                m_channels;         // Channels aka AOVs object
+        bool                      m_legit;            // Used to throw the threads
 
         Aton(Node* node): Iop(node),
                           m_node(firstNode()),
@@ -150,7 +150,6 @@ class Aton: public Iop
             
             // Running python code to check if we've already our format in the script
             std::string cmd; // Our python command buffer
-            
             cmd = (boost::format("bool([i.name() for i in nuke.formats() if i.name()=='%s'])")%m_node_name).str();
             script_command(cmd.c_str());
             std::string result = script_result();
@@ -511,7 +510,6 @@ class Aton: public Iop
         void setCurrentFrame(double frame)
         {
             std::string cmd; // Our python command buffer
-            
             // Create a Write node and return it's name
             cmd = (boost::format("nuke.frame(%s)")%frame).str();
             script_command(cmd.c_str());
@@ -666,7 +664,6 @@ class Aton: public Iop
                             m_garbageList.push_back(str_path);
 
                         std::string cmd; // Our python command buffer
-
                         // Remove appropriate Read nodes as well
                         cmd = ( boost::format("exec('''for i in nuke.allNodes('Read'):\n\t"
                                                           "if '%s' == i['file'].value():\n\t\t"
@@ -721,7 +718,6 @@ class Aton: public Iop
                     path.replace(found, key.length(), timeFrameSuffix);
 
                 std::string cmd; // Our python command buffer
-
                 // Create a Write node and return it's name
                 cmd = (boost::format("nuke.nodes.Write(file='%s').name()")%path.c_str()).str();
                 script_command(cmd.c_str());
@@ -819,7 +815,6 @@ class Aton: public Iop
                 boost::replace_all(str_path, "\\", "/");
 
                 std::string cmd; // Our python command buffer
-
                 cmd = ( boost::format("exec('''readNodes = nuke.allNodes('Read')\n"
                                               "exist = False\n"
                                               "if len(readNodes)>0:\n\t"
@@ -852,7 +847,6 @@ class Aton: public Iop
                     boost::replace_all(str_path, "\\", "/");
 
                     std::string cmd; // Our python command buffer
-
                     cmd = ( boost::format("exec('''readNodes = nuke.allNodes('Read')\n"
                                                   "exist = False\n"
                                                   "if len(readNodes)>0:\n\t"
@@ -1069,7 +1063,6 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     // Reset active AOVs
                     if(!active_aovs.empty())
                         active_aovs.clear();
-                    
                     break;
                 }
                 case 1: // image data
