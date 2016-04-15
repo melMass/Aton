@@ -30,12 +30,20 @@ namespace aton
     friend class Server;
     public:
         //! Constructor
-        Data( int x=0, int y=0,
-              int width=0, int height=0, long long rArea=0, int version = 0, float currentFrame=0.f,
-              int spp=0, long long ram=0, int time=0, const char *aovName = 0, const float *data=0 );
+        Data(int x=0, 
+             int y=0,
+             int width=0, 
+             int height=0, 
+             long long rArea=0, 
+             int version = 0, 
+             float currentFrame=0.f,
+             int spp=0, 
+             long long ram=0, 
+             int time=0, 
+             const char *aovName = 0, 
+             const float *data=0 );
         //! Destructor
         ~Data();
-
         /*! \brief The 'type' of message this Data represents
          *
          * 0: image open
@@ -65,12 +73,12 @@ namespace aton
         //! Taken time while rendering
         int time() const { return mTime; }
         // Aov name
-        const char *aovName() const { return mAovName; }
+        const char* aovName() const { return mAovName; }
         void clearAovName();
         //! Pointer to pixel data owned by the display driver (client-side)
-        const float *data() const { return mpData; }
+        const float* data() const { return mpData; }
         //! Pointer to pixel data owned by this object (server-side)
-        const float *pixels() const { return &mPixelStore[0]; }
+        const float* pixels() const { return &mPixelStore[0]; }
 
     private:
         // what type of data is this?
