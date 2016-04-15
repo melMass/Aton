@@ -84,7 +84,7 @@ FrameBuffer::FrameBuffer(double currentFrame,
 }
 
 // Add new buffer
-void FrameBuffer::addBuffer(const char * aov, int spp)
+void FrameBuffer::addBuffer(const char* aov, int spp)
 {
     RenderBuffer buffer;
     
@@ -126,7 +126,7 @@ int FrameBuffer::getBufferIndex(Channel z)
                     b_index = static_cast<int>(it - _aovs.begin());
                     break;
                 }
-                else if ( it->compare(ChannelStr::Z) == 0 && layer.compare(ChannelStr::depth) == 0 )
+                else if (it->compare(ChannelStr::Z) == 0 && layer.compare(ChannelStr::depth) == 0)
                 {
                     b_index = static_cast<int>(it - _aovs.begin());
                     break;
@@ -138,7 +138,7 @@ int FrameBuffer::getBufferIndex(Channel z)
 }
 
 // Get the current buffer index
-int FrameBuffer::getBufferIndex(const char * aovName)
+int FrameBuffer::getBufferIndex(const char* aovName)
 {
     int b_index = 0;
     
@@ -173,7 +173,9 @@ std::string FrameBuffer::getFirstBufferName()
 }
 
 // Compare buffers with given buffer/aov names and dimensoions
-int FrameBuffer::compareAll(int width, int height, std::vector<std::string> aovs)
+int FrameBuffer::compareAll(int width, 
+                            int height, 
+                            std::vector<std::string> aovs)
 {
     if (!_buffers.empty() && !_aovs.empty())
     {
@@ -199,7 +201,7 @@ void FrameBuffer::clearAll()
 }
 
 // Check if the given buffer/aov name name is exist
-bool FrameBuffer::bufferNameExists(const char * aovName)
+bool FrameBuffer::bufferNameExists(const char* aovName)
 {
     return std::find(_aovs.begin(),
                      _aovs.end(),
