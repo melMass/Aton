@@ -186,6 +186,17 @@ class Aton: public Iop
             // Update the image with current bucket first
             asapUpdate(m_node->m_framebuffers[f_index].getBucketBBox());
         }
+    
+        void flagForUpdate()
+        {
+            if ( m_hash_count == UINT_MAX )
+                m_hash_count = 0;
+            else
+                m_hash_count++;
+            
+            // Update the image with current bucket first
+            asapUpdate();
+        }
 
         // We can use this to change our tcp port
         void changePort(int port)
@@ -425,6 +436,7 @@ class Aton: public Iop
 
             // Main knobs
             Int_knob(f, &m_port, "port_number", "Port");
+            Button(f, "clear_all_knob", "Clear All");
             Spacer(f, 10000);
             Text_knob(f, (boost::format("Aton v%s")%VERSION).str().c_str());
 
@@ -437,8 +449,8 @@ class Aton: public Iop
             Knob* limit_knob = Int_knob(f, &m_slimit, "limit_knob", "Limit");
             Newline(f);
             Knob* all_frames_knob = Bool_knob(f, &m_all_frames,
-                                               "all_frames_knob",
-                                               "Capture All Frames");
+                                              "all_frames_knob",
+                                              "Capture All Frames");
             Knob* path_knob = File_knob(f, &m_path, "path_knob", "Path");
 
             Newline(f);
@@ -473,6 +485,11 @@ class Aton: public Iop
             if (_knob->is("port_number"))
             {
                 changePort(m_port);
+                return 1;
+            }
+            if (_knob->is("clear_all_knob"))
+            {
+                clearAll();
                 return 1;
             }
             if (_knob->is("capture_knob"))
@@ -673,6 +690,17 @@ class Aton: public Iop
                     }
                 }
             }
+        }
+    
+        void clearAll()
+        {
+            m_legit = false;
+            disconnect();
+            m_node->m_frames.resize(0);
+            m_node->m_framebuffers.resize(0);
+            m_legit = true;
+            flagForUpdate();
+            setStatus();
         }
 
         void captureCmd()
