@@ -694,13 +694,19 @@ class Aton: public Iop
     
         void clearAll()
         {
-            m_legit = false;
-            disconnect();
-            m_node->m_frames.resize(0);
-            m_node->m_framebuffers.resize(0);
-            m_legit = true;
-            flagForUpdate();
-            setStatus();
+            if (m_node->m_frames.size() > 0 &&
+                m_node->m_framebuffers.size() > 0)
+            {
+                m_legit = false;
+                disconnect();
+                m_mutex.lock();
+                m_node->m_frames.resize(0);
+                m_node->m_framebuffers.resize(0);
+                m_mutex.unlock();
+                m_legit = true;
+                flagForUpdate();
+                setStatus();
+            }
         }
 
         void captureCmd()
