@@ -14,17 +14,15 @@
 using namespace aton;
 using boost::asio::ip::tcp;
 
-Server::Server() :
-        mPort(0),
-        mSocket(mIoService),
-        mAcceptor(mIoService)
+Server::Server(): mPort(0),
+                  mSocket(mIoService),
+                  mAcceptor(mIoService)
 {
 }
 
-Server::Server(int port) :
-        mPort(0),
-        mSocket(mIoService),
-        mAcceptor(mIoService)
+Server::Server(int port): mPort(0),
+                          mSocket(mIoService),
+                          mAcceptor(mIoService)
 {
     connect(port);
 }
@@ -47,7 +45,7 @@ void Server::connect(int port, bool search)
     {
         try
         {
-            tcp::endpoint endpoint( boost::asio::ip::tcp::v4(), port );
+            tcp::endpoint endpoint(boost::asio::ip::tcp::v4(), port);
             mAcceptor.open(endpoint.protocol());
             mAcceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(false));
             mAcceptor.bind(endpoint);
