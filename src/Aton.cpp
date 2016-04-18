@@ -938,7 +938,7 @@ class Aton: public Iop
 // Time change thread method
 static void timeChange(unsigned index, unsigned nthreads, void* data)
 {
-    Aton* node = reinterpret_cast<Aton*> (data);
+    Aton* node = reinterpret_cast<Aton*>(data);
     std::vector<FrameBuffer>& fbs  = node->m_node->m_framebuffers;
 
     double prevFrame = 0;
@@ -981,7 +981,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
         static int delta_time = 0;
 
         // Loop over incoming data
-        while ((d.type()==2||d.type()==9)==false)
+        while ((d.type()==2 || d.type()==9) == false)
         {
             // Listen for some data
             try
@@ -1104,7 +1104,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                 case 1: // image data
                 {
                     // Get frame buffer
-                    FrameBuffer &frameBuffer = node->m_framebuffers[f_index];
+                    FrameBuffer& frameBuffer = node->m_framebuffers[f_index];
                 
                     // Copy data from d
                     int _w = frameBuffer.getWidth();
@@ -1132,7 +1132,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                             active_aovs.push_back(d.aovName());
                         else
                         {
-                            if (active_aovs.size()==0)
+                            if (active_aovs.size() == 0)
                                 active_aovs.push_back(d.aovName());
                             else if (active_aovs.size() > 1)
                                 active_aovs.resize(1);
@@ -1168,7 +1168,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                             RenderColour& pix = frameBuffer.getBuffer(b_index).getColour(_x+ _xorigin, _h - (_y + _yorigin + 1));
                             for (_s = 0; _s < _spp; ++_s)
                                 if (_s != 3)
-                                    pix[_s] = pixel_data[offset+_s];
+                                    pix[_s] = pixel_data[offset + _s];
                             if (_spp == 4)
                             {
                                 RenderAlpha& alpha_pix = frameBuffer.getBuffer(b_index).getAlpha(_x+ _xorigin, _h - (_y + _yorigin + 1));
