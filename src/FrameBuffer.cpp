@@ -180,8 +180,8 @@ int FrameBuffer::compareAll(int width,
     if (!_buffers.empty() && !_aovs.empty())
     {
         if (aovs == _aovs &&
-            width ==_buffers[0].width() &&
-            height ==_buffers[0].height())
+            width == _buffers[0].width() &&
+            height == _buffers[0].height())
             return 0;
         else if (width == _buffers[0].width() &&
                  height == _buffers[0].height())
