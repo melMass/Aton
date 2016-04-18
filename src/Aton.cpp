@@ -553,13 +553,13 @@ class Aton: public Iop
                     }
                     else if (currentFrame > *it && nearFIndex < *it)
                     {
-                        nearFIndex = *it;
+                        nearFIndex = static_cast<int>(*it);
                         f_index = static_cast<int>(it - frames.begin());
                         continue;
                     }
                     else if (*it < minFIndex && nearFIndex == INT_MIN)
                     {
-                        minFIndex = *it;
+                        minFIndex = static_cast<int>(*it);
                         f_index = static_cast<int>(it - frames.begin());
                     }
                 }
@@ -948,7 +948,7 @@ static void timeChange(unsigned index, unsigned nthreads, void* data)
     {
         if (!fbs.empty() && prevFrame != node->uiContext().frame())
         {
-            node->flagForUpdate(node->uiContext().frame());
+            node->flagForUpdate();
             prevFrame = node->uiContext().frame();
         }
         boost::this_thread::sleep(boost::posix_time::millisec(milliseconds));
