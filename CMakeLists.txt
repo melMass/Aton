@@ -13,8 +13,10 @@ project( aton )
 
 #=====
 # General
+set( Boost_USE_STATIC_LIBS ON )
+set( CMAKE_CXX_COMPILER g++412 )
 set( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/config/cmake )
-find_package( Boost 1.54.0 COMPONENTS system REQUIRED )
+find_package( Boost 1.54.0 COMPONENTS thread regex filesystem system REQUIRED )
 find_package( Nuke REQUIRED )
 find_package( Doxygen )
 
