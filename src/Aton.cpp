@@ -178,7 +178,7 @@ class Aton: public Iop
 
         void flagForUpdate(int f_index)
         {
-            if ( m_hash_count == UINT_MAX )
+            if (m_hash_count == UINT_MAX)
                 m_hash_count = 0;
             else
                 m_hash_count++;
@@ -189,7 +189,7 @@ class Aton: public Iop
     
         void flagForUpdate()
         {
-            if ( m_hash_count == UINT_MAX )
+            if (m_hash_count == UINT_MAX)
                 m_hash_count = 0;
             else
                 m_hash_count++;
