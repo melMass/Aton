@@ -194,7 +194,7 @@ class Aton: public Iop
             else
                 m_hash_count++;
             
-            // Update the image with current bucket first
+            // Update the image
             asapUpdate();
         }
 
