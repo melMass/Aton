@@ -22,7 +22,6 @@ Client::Client(std::string hostname, int port) :
 
 void Client::connect(std::string hostname, int port)
 {
-    bool result = true;
     tcp::resolver resolver(mIoService);
     tcp::resolver::query query(hostname.c_str(), boost::lexical_cast<std::string>(port).c_str());
     tcp::resolver::iterator endpoint_iterator = resolver.resolve(query);
