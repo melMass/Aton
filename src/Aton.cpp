@@ -36,13 +36,13 @@ using namespace aton;
 #include "boost/thread/thread.hpp"
 #include "boost/date_time/posix_time/posix_time.hpp"
 
-// class name
+// Class name
 static const char* const CLASS = "Aton";
 
-// version
+// Version
 static const char* const VERSION = "1.1.0";
 
-// help
+// Help
 static const char* const HELP =
     "Listens for renders coming from the Aton display driver. "
     "For more info go to http://sosoyan.github.io/Aton/";
