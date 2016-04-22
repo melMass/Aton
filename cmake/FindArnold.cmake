@@ -51,7 +51,7 @@
 # variable) before calling FIND_PACKAGE.
 # 
 # E.g. 
-#   SET( Arnold_INSTALL_PATH "/usr/local/arnold-4.0.5.0" )
+#   SET( Arnold_INSTALL_PATH "/usr/local/arnold-4.2.8.0” )
 #   FIND_PACKAGE( Arnold REQUIRED )
 #
 #==========
