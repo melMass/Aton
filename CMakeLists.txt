@@ -13,6 +13,7 @@ project( aton )
 
 #=====
 # General
+set( CMAKE_BUILD_TYPE Release )
 set( Boost_USE_STATIC_LIBS ON )
 set( CMAKE_CXX_COMPILER g++ )
 set( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake )
