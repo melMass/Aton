@@ -790,6 +790,7 @@ class Aton: public Iop
                 {
                     int boxR = m_node->m_fmt.width() + 1000;
                     int boxT = m_stamp_size + 5;
+                    int fontSize = m_stamp_size * 0.01;
                     
                     // Create a rectangle node and return it's name
                     cmd = (boost::format("nuke.nodes.Rectangle(opacity=0.95, color=0.05).name()")).str();
@@ -816,7 +817,7 @@ class Aton: public Iop
                                          "stamp['color'].setValue(0.5);"
                                          "stamp.setInput(0, nuke.toNode('%s'));"
                                          "nuke.toNode('%s').setInput(0, stamp)")%m_node->m_node_name%m_comment
-                                                                                %(m_stamp_size * 0.01)
+                                                                                %fontSize
                                                                                 %RectNodeName
                                                                                 %writeNodeName ).str();
                     script_command(cmd.c_str(), true, false);
