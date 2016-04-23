@@ -616,26 +616,30 @@ class Aton: public Iop
         {
             // Our captured filenames list
             std::vector<std::string> results;
-
-            boost::filesystem::path filepath(m_path);
-            boost::filesystem::directory_iterator it(filepath.parent_path());
-            boost::filesystem::directory_iterator end;
-
-            // Regex expression to find captured files
-            std::string exp = ( boost::format("%s.+.%s")%filepath.stem().string()
-                                                        %filepath.extension().string() ).str();
-            const boost::regex filter(exp);
-
-            // Iterating through directory to find matching files
-            BOOST_FOREACH(boost::filesystem::path const &p, std::make_pair(it, end))
+            
+            // If the directory exist
+            if (isPathValid(m_path))
             {
-                if(boost::filesystem::is_regular_file(p))
+                boost::filesystem::path filepath(m_path);
+                boost::filesystem::directory_iterator it(filepath.parent_path());
+                boost::filesystem::directory_iterator end;
+
+                // Regex expression to find captured files
+                std::string exp = ( boost::format("%s.+.%s")%filepath.stem().string()
+                                                            %filepath.extension().string() ).str();
+                const boost::regex filter(exp);
+
+                // Iterating through directory to find matching files
+                BOOST_FOREACH(boost::filesystem::path const &p, std::make_pair(it, end))
                 {
-                    boost::match_results<std::string::const_iterator> what;
-                    if (boost::regex_search(it->path().filename().string(), what, filter, boost::match_default))
+                    if(boost::filesystem::is_regular_file(p))
                     {
-                        std::string res = p.filename().string();
-                        results.push_back(res);
+                        boost::match_results<std::string::const_iterator> what;
+                        if (boost::regex_search(it->path().filename().string(), what, filter, boost::match_default))
+                        {
+                            std::string res = p.filename().string();
+                            results.push_back(res);
+                        }
                     }
                 }
             }
@@ -708,14 +712,22 @@ class Aton: public Iop
                 setStatus();
             }
         }
+    
+        bool isPathValid(std::string path)
+        {
+            boost::filesystem::path filepath(path);
+            boost::filesystem::path dir = filepath.parent_path();
+            return boost::filesystem::exists(dir);
+        }
 
         void captureCmd()
         {
-            if  (m_slimit > 0)
+            std::string path = std::string(m_path);
+
+            if (isPathValid(path) && m_slimit > 0)
             {
-                // Get the path and add time date suffix to it
+                // Add date or frame suffix to the path
                 std::string key (".");
-                std::string path = std::string(m_path);
                 std::string timeFrameSuffix;
                 std::string frames;
                 double startFrame;
