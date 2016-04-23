@@ -354,7 +354,7 @@ class Aton(QtGui.QDialog):
             AiNodeSetInt(options, "region_max_y", rMaxY)
         AiNodeSetBool(options, "ignore_motion_blur", motionBlur)
         AiNodeSetBool(options, "ignore_subdivision", subdivs)
-        AiNodeSetBool(options, "ignore_displacement ", displace)
+        AiNodeSetBool(options, "ignore_displacement", displace)
         AiNodeSetBool(options, "ignore_bump", bump)
         AiNodeSetBool(options, "ignore_sss", sss)
 
