@@ -94,7 +94,7 @@ class Aton: public Iop
                           m_all_frames(false),
                           m_current_frame(0),
                           m_comment(""),
-                          m_stamp(true),
+                          m_stamp(isVersionValid()),
                           m_enable_aovs(true),
                           m_stamp_size(12),
                           m_slimit(20),
@@ -134,7 +134,14 @@ class Aton: public Iop
             // We don't need to see these knobs
             knob("formats_knob")->hide();
             knob("capturing_knob")->hide();
-
+            
+            if (!isVersionValid())
+            {
+                knob("stamp_knob")->enable(false);
+                knob("stamp_size_knob")->enable(false);
+                knob("comment_knob")->enable(false);
+            }
+            
             // Allocate node name in order to pass it to format
             char* nodeName = new char[node_name().length() + 1];
             strcpy(nodeName, node_name().c_str());
@@ -497,7 +504,7 @@ class Aton: public Iop
                 captureCmd();
                 return 1;
             }
-            if (_knob->is("use_stamp_knob"))
+            if (_knob->is("stamp_knob"))
             {
                 if(!m_stamp)
                 {
@@ -524,11 +531,28 @@ class Aton: public Iop
             return 0;
         }
     
+        bool isVersionValid()
+        {
+            // Check the Nuke version to be minimum 9.0v7
+            std::string cmd = "(nuke.NUKE_VERSION_MAJOR >= 9 and nuke.NUKE_VERSION_RELEASE >= 7)";
+            script_command(cmd.c_str());
+            std::string result = script_result();
+            script_unlock();
+                
+            return (result.compare("True") == 0);
+        }
+    
+        bool isPathValid(std::string path)
+        {
+            boost::filesystem::path filepath(path);
+            boost::filesystem::path dir = filepath.parent_path();
+            return boost::filesystem::exists(dir);
+        }
+    
         void setCurrentFrame(double frame)
         {
-            std::string cmd; // Our python command buffer
             // Create a Write node and return it's name
-            cmd = (boost::format("nuke.frame(%s)")%frame).str();
+            std::string cmd = (boost::format("nuke.frame(%s)")%frame).str();
             script_command(cmd.c_str());
             script_unlock();
         }
@@ -712,19 +736,12 @@ class Aton: public Iop
                 setStatus();
             }
         }
-    
-        bool isPathValid(std::string path)
-        {
-            boost::filesystem::path filepath(path);
-            boost::filesystem::path dir = filepath.parent_path();
-            return boost::filesystem::exists(dir);
-        }
 
         void captureCmd()
         {
             std::string path = std::string(m_path);
 
-            if (isPathValid(path) && m_slimit > 0)
+            if (m_node->m_frames.size() > 0 && isPathValid(path) && m_slimit > 0)
             {
                 // Add date or frame suffix to the path
                 std::string key (".");
@@ -732,33 +749,28 @@ class Aton: public Iop
                 std::string frames;
                 double startFrame;
                 double endFrame;
+                
+                std::vector<double> sortedFrames = m_node->m_frames;
+                std::stable_sort(sortedFrames.begin(), sortedFrames.end());
 
-                if (m_node->m_frames.size() > 0)
+                if (m_multiframes && m_all_frames)
                 {
-                    std::vector<double> sortedFrames = m_node->m_frames;
-                    std::stable_sort(sortedFrames.begin(), sortedFrames.end());
-
-                    if (m_multiframes && m_all_frames)
-                    {
-                        timeFrameSuffix += "_" + std::string("####");
-                        startFrame = sortedFrames.front();
-                        endFrame = sortedFrames.back();
-                        
-                        std::vector<double>::iterator it;
-                        for(it = sortedFrames.begin(); it != sortedFrames.end(); ++it)
-                            frames += (boost::format("%s,")%*it).str();
-                        
-                        frames.resize(frames.size() - 1);
-                    }
-                    else
-                    {
-                        timeFrameSuffix += "_" + getDateTime();
-                        startFrame = endFrame = uiContext().frame();
-                        frames = (boost::format("%s")%uiContext().frame()).str();
-                    }
+                    timeFrameSuffix += "_" + std::string("####");
+                    startFrame = sortedFrames.front();
+                    endFrame = sortedFrames.back();
+                    
+                    std::vector<double>::iterator it;
+                    for(it = sortedFrames.begin(); it != sortedFrames.end(); ++it)
+                        frames += (boost::format("%s,")%*it).str();
+                    
+                    frames.resize(frames.size() - 1);
                 }
                 else
-                    return;
+                {
+                    timeFrameSuffix += "_" + getDateTime();
+                    startFrame = endFrame = uiContext().frame();
+                    frames = (boost::format("%s")%uiContext().frame()).str();
+                }
 
                 timeFrameSuffix += ".";
                 std::size_t found = path.rfind(key);
@@ -788,26 +800,8 @@ class Aton: public Iop
                 
                 if (m_stamp)
                 {
-                    int boxR = m_node->m_fmt.width() + 1000;
-                    int boxT = m_stamp_size + 5;
                     float fontSize = m_stamp_size * 0.01f;
-                    
-                    // Create a rectangle node and return it's name
-                    cmd = (boost::format("nuke.nodes.Rectangle(opacity=0.95, color=0.05).name()")).str();
-                    script_command(cmd.c_str());
-                    std::string RectNodeName = script_result();
-                    script_unlock();
-
-                    // Set the rectangle size
-                    cmd = (boost::format("rect = nuke.toNode('%s');"
-                                         "rect['output'].setValue('rgb');"
-                                         "rect['area'].setValue([0,0,%s,%s]);"
-                                         "rect.setInput(0, nuke.toNode('%s'))")%RectNodeName
-                                                                               %boxR%boxT
-                                                                               %m_node->m_node_name).str();
-                    script_command(cmd.c_str(), true, false);
-                    script_unlock();
-
+                
                     // Add text node in between to put a stamp on the capture
                     cmd = (boost::format("stamp = nuke.nodes.Text2();"
                                          "stamp['message'].setValue('''[python {nuke.toNode('%s')['status_knob'].value()}] | Comment: %s''');"
@@ -815,10 +809,15 @@ class Aton: public Iop
                                          "stamp['yjustify'].setValue('bottom');"
                                          "stamp['output'].setValue('rgb');"
                                          "stamp['color'].setValue(0.5);"
+                                         "stamp['enable_background'].setValue(True);"
+                                         "stamp['background_color'].setValue([0.05, 0.05, 0.05, 1]);"
+                                         "stamp['background_opacity'].setValue(0.9);"
+                                         "stamp['background_border_x'].setValue(10000);"
                                          "stamp.setInput(0, nuke.toNode('%s'));"
-                                         "nuke.toNode('%s').setInput(0, stamp)")%m_node->m_node_name%m_comment
+                                         "nuke.toNode('%s').setInput(0, stamp)")%m_node->m_node_name
+                                                                                %m_comment
                                                                                 %fontSize
-                                                                                %RectNodeName
+                                                                                %m_node->m_node_name
                                                                                 %writeNodeName ).str();
                     script_command(cmd.c_str(), true, false);
                     script_unlock();
@@ -831,7 +830,6 @@ class Aton: public Iop
                                                      "nuke.toNode('%s')['capturing_knob'].setValue(b)\n\t\t"
                                                      "if not b:\n\t\t\t"
                                                          "if %s:\n\t\t\t\t"
-                                                            "nuke.delete(nuke.toNode('%s').input(0).input(0))\n\t\t\t\t"
                                                             "nuke.delete(nuke.toNode('%s').input(0))\n\t\t\t"
                                                          "nuke.delete(nuke.toNode('%s'))\n\t"
                                                  "nuke.executeInMainThread(status, args=True)\n\t"
@@ -839,7 +837,6 @@ class Aton: public Iop
                                                  "nuke.executeInMainThread(status, args=False)\n"
                                              "thread.start_new_thread(writer,())''')")%m_node->m_node_name
                                                                                       %m_stamp
-                                                                                      %writeNodeName
                                                                                       %writeNodeName
                                                                                       %writeNodeName
                                                                                       %writeNodeName
