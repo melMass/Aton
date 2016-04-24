@@ -10,26 +10,33 @@
 
 using namespace aton;
 
-Data::Data( int x, int y, 
-            int width, int height, long long rArea,
-            int spp, long long ram, int time, const char *aovName, const float *data ) :
-    mType(-1),
-    mX(x),
-    mY(y),
-    mWidth(width),
-    mHeight(height),
-    mRArea(rArea),
-    mSpp(spp),
-    mRam(ram),
-    mTime(time)
+Data::Data(int x, 
+	   int y, 
+           int width, 
+           int height, 
+           long long rArea, 
+           int version, 
+           float currentFrame,
+           int spp, 
+           long long ram, 
+           int time, 
+           const char* aovName, 
+           const float* data ): mType(-1),
+           			mX(x),
+    				mY(y),
+    				mWidth(width),
+    				mHeight(height),
+				mRArea(rArea),
+				mVersion(version),
+				mCurrentFrame(currentFrame),
+    				mSpp(spp),
+    				mRam(ram),
+    				mTime(time)
 {
-
-    if ( aovName!=0 )
-    {
+    if (aovName != 0)
         mAovName = const_cast<char*>(aovName);
-    }
 
-    if ( data!=0 )
+    if (data != 0)
         mpData = const_cast<float*>(data);
 }
 

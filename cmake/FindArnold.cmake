@@ -46,12 +46,12 @@
 #   FIND_PACKAGE( Arnold REQUIRED )
 #
 # Note:
-# You can tell the module where Nuke is installed by setting
+# You can tell the module where Arnold is installed by setting
 # the Arnold_INSTALL_PATH (or setting the ARNOLD_HOME environment
 # variable) before calling FIND_PACKAGE.
 # 
 # E.g. 
-#   SET( Arnold_INSTALL_PATH "/usr/local/arnold-4.0.5.0" )
+#   SET( Arnold_INSTALL_PATH "/usr/local/arnold-4.2.8.0” )
 #   FIND_PACKAGE( Arnold REQUIRED )
 #
 #==========

@@ -13,10 +13,12 @@ project( aton )
 
 #=====
 # General
-set( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/config/cmake )
-find_package( Boost 1.54.0 COMPONENTS system REQUIRED )
+set( CMAKE_BUILD_TYPE Release )
+set( Boost_USE_STATIC_LIBS ON )
+set( CMAKE_CXX_COMPILER g++ )
+set( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake )
+find_package( Boost 1.54.0 COMPONENTS thread regex filesystem system REQUIRED )
 find_package( Nuke REQUIRED )
-find_package( Doxygen )
 
 include_directories(
   ${CMAKE_SOURCE_DIR}/src
@@ -29,6 +31,7 @@ include_directories(
 add_library( nuke_plugin 
   SHARED
   ${CMAKE_SOURCE_DIR}/src/Aton.cpp 
+  ${CMAKE_SOURCE_DIR}/src/FrameBuffer.cpp
   ${CMAKE_SOURCE_DIR}/src/Server.cpp
   ${CMAKE_SOURCE_DIR}/src/Client.cpp
   ${CMAKE_SOURCE_DIR}/src/Data.cpp
@@ -72,14 +75,3 @@ if( ARNOLD_FOUND )
       ${Arnold_ai_LIBRARY}
       )
 endif( ARNOLD_FOUND )
-
-#=====
-# Build docs (after the nuke plugin is built)
-IF( DOXYGEN_FOUND )
-    ADD_CUSTOM_COMMAND( TARGET nuke_plugin
-        POST_BUILD
-        COMMAND ${DOXYGEN_EXECUTABLE} 
-        ${CMAKE_SOURCE_DIR}/"config/docs/doxygen.cfg" 
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    )
-ENDIF( DOXYGEN_FOUND )

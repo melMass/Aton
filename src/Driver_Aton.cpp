@@ -1,6 +1,6 @@
 /*
  Copyright (c) 2015,
- Dan Bethell, Johannes Saam, Vahan Sosoyan.
+ Dan Bethell, Johannes Saam, Vahan Sosoyan, Brian Scherbinski.
  All rights reserved. See Copyright.txt for more details.
  */
 
@@ -20,12 +20,16 @@
 #include <ai_render.h>
 #include <ai_universe.h>
 
+#include <boost/foreach.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/format.hpp>
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <iostream>
 #include <deque>
 
@@ -36,13 +40,46 @@ AI_DRIVER_NODE_EXPORT_METHODS(AtonDriverMtd);
 
 struct ShaderData
 {
-   aton::Client *client;
+   aton::Client* client;
 };
+
+char* getHost()
+{
+    char* aton_host;
+    std::string def_host;
+    
+    aton_host = getenv("ATON_HOST");
+    
+    if (aton_host == NULL)
+        def_host = "127.0.0.1";
+    else
+        def_host = aton_host;
+    
+    char* host = new char[def_host.length()+1];
+    strcpy(host, def_host.c_str());
+    
+    return host;
+}
+
+int getPort()
+{
+    char* aton_port;
+    int def_port;
+    
+    aton_port = getenv("ATON_PORT");
+    
+    if (aton_port == NULL)
+        def_port = 9201;
+    else
+        def_port = atoi(aton_port);
+    
+    return def_port;
+}
 
 node_parameters
 {
-    AiParameterSTR("host", "127.0.0.1");
-    AiParameterINT("port", 9201);
+    AiParameterSTR("host", getHost());
+    AiParameterINT("port", getPort());
     AiMetaDataSetStr(mds, NULL, "maya.translator", "aton");
     AiMetaDataSetStr(mds, NULL, "maya.attr_prefix", "");
     AiMetaDataSetBool(mds, NULL, "display_driver", true);
@@ -70,8 +107,23 @@ driver_extension
 
 driver_open
 {
+    //construct full version number into padded interger
+    string versionString = AiGetVersion(0, 0, 0, 0);
+    vector<string> svec;
+    vector<int> ivec;
+    boost::split(svec, versionString, boost::is_any_of("."));
+    
+    BOOST_FOREACH(std::string item, svec)
+    {
+        int i = boost::lexical_cast<int>(item);
+        ivec.push_back(i);
+    }
+    int version = ivec[3] + ivec[2]*100 + ivec[1]*10000 + ivec[0] * 1000000;
 
-    ShaderData *data = (ShaderData*)AiDriverGetLocalData(node);
+    ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
+    
+    AtNode* options = AiUniverseGetOptions();
+    float currentFrame = AiNodeGetFlt(options, "frame");
 
     const char* host = AiNodeGetStr(node, "host");
     int port = AiNodeGetInt(node, "port");
@@ -80,7 +132,6 @@ driver_open
 
     int rWidth = data_window.maxx - data_window.minx +1;
     int rHeight = data_window.maxy - data_window.miny +1;
-    
     long long rArea = rWidth * rHeight;
 
     // now we can connect to the server and start rendering
@@ -90,7 +141,7 @@ driver_open
        data->client = new aton::Client( host, port );
 
        // make image header & send to server
-       aton::Data header( 0, 0, width, height, rArea );
+       aton::Data header( 0, 0, width, height, rArea, version, currentFrame);
        data->client->openImage( header );
     }
     catch (const std::exception &e)
@@ -119,7 +170,7 @@ driver_process_bucket
 
 driver_write_bucket
 {
-    ShaderData *data = (ShaderData*)AiDriverGetLocalData(node);
+    ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
 
     int pixel_type;
     int spp = 0;
@@ -128,7 +179,7 @@ driver_write_bucket
 
     while (AiOutputIteratorGetNext(iterator, &aov_name, &pixel_type, &bucket_data))
     {
-        const float *ptr = reinterpret_cast<const float*> (bucket_data);
+        const float* ptr = reinterpret_cast<const float*> (bucket_data);
         unsigned long long ram = AiMsgUtilGetUsedMemory();
         unsigned int time = AiMsgUtilGetElapsedTime();
 
@@ -147,7 +198,7 @@ driver_write_bucket
         // create our data object
         aton::Data packet(bucket_xo, bucket_yo,
                           bucket_size_x, bucket_size_y,
-                          0, spp, ram, time, aov_name, ptr);
+                          0, 0, 0, spp, ram, time, aov_name, ptr);
 
         // send it to the server
         data->client->sendPixels(packet);
@@ -158,7 +209,7 @@ driver_close
 {
     AiMsgInfo("[Aton] driver close");
 
-    ShaderData *data = (ShaderData*)AiDriverGetLocalData(node);
+    ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
     try
     {
         data->client->closeImage();
@@ -172,10 +223,11 @@ driver_close
 node_finish
 {
     AiMsgInfo("[Aton] driver finish");
+   
     // release the driver
-
-    ShaderData *data = (ShaderData*)AiDriverGetLocalData(node);
+    ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
     delete data->client;
+    delete[] getHost();
 
     AiFree(data);
     AiDriverDestroy(node);
@@ -188,14 +240,13 @@ node_loader
     switch (i)
     {
         case 0:
-            node->methods      = (AtNodeMethods*) AtonDriverMtd;
-            node->output_type  = AI_TYPE_RGBA;
-            node->name         = "driver_aton";
-            node->node_type    = AI_NODE_DRIVER;
+            node->methods = (AtNodeMethods*) AtonDriverMtd;
+            node->output_type = AI_TYPE_RGBA;
+            node->name = "driver_aton";
+            node->node_type = AI_NODE_DRIVER;
             break;
         default:
         return false;
     }
     return true;
 }
-
