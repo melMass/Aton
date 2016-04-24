@@ -534,7 +534,9 @@ class Aton: public Iop
         bool isVersionValid()
         {
             // Check the Nuke version to be minimum 9.0v7
-            std::string cmd = "(nuke.NUKE_VERSION_MAJOR >= 9 and nuke.NUKE_VERSION_RELEASE >= 7)";
+            std::string cmd = "nuke.NUKE_VERSION_MAJOR * 100 + "
+                              "nuke.NUKE_VERSION_MINOR * 10 + "
+                              "nuke.NUKE_VERSION_RELEASE >= 907";
             script_command(cmd.c_str());
             std::string result = script_result();
             script_unlock();
