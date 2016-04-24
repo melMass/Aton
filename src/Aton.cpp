@@ -807,7 +807,6 @@ class Aton: public Iop
                                          "stamp['message'].setValue('''[python {nuke.toNode('%s')['status_knob'].value()}] | Comment: %s''');"
                                          "stamp['global_font_scale'].setValue(%s);"
                                          "stamp['yjustify'].setValue('bottom');"
-                                         "stamp['output'].setValue('rgb');"
                                          "stamp['color'].setValue(0.5);"
                                          "stamp['enable_background'].setValue(True);"
                                          "stamp['background_color'].setValue([0.05, 0.05, 0.05, 1]);"
