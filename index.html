@@ -66,8 +66,16 @@
 
 <ul>
 <li><strong>Multiple frames support:</strong> By default this is set to On, that means Aton is now taking into account the frame attribute supplied by MtoA and syncing Nuke's timeline accordingly, so you can have a sequence of rendered different frames cached in a single Aton node.</li>
-<h1></h1>
+
 <li><strong>Enable AOVs toggle:</strong> If you Disable AOVs, Aton will start to ignore and not cache them for you. This can come useful if you want to render multiple frames but at the same time keep the memory usage low.</li>
+
+<li><strong>Multiple nodes support:</strong> It's now possible to create a multiple Aton nodes either in the same Nuke script or in the separate instance, as well as run renders from a different instances of Maya simultaneously. In order to get this to work, make sure that your Aton node's Port number is matching with the one which has been added in the Aton for Maya GUI.</li>
+
+<li><strong>Frame Stamp enhancements:</strong> Arnold version and Frame numbers have been added in to the Status bar, and the Time is now resetting after every IPR iteration.</li>
+
+<li><strong>Capture All Frames:</strong> It's possible to capture all the rendered frames at once, as a sequence. In this mode the frame number will be inserted in the file names instead of the current date.</li>
+
+<li><strong>Increased Performance, Memory optimizations and bug fixes:</strong> White scan-lines are no longer visible during rendering, that means the buffer is now reading by a single thread which gives a better performance at IPR. All the cached buffers have only 3 channels instead of 4 while the Alpha is a special case for the RGBA channel only.</li>
 </ul>
 
 <h1>
