@@ -233,7 +233,7 @@ class Aton: public Iop
             if (m_server.isConnected())
             {
                 Thread::spawn(::atonListen, 1, this);
-                Thread::spawn(::timeChange, 1, this);
+//                Thread::spawn(::timeChange, 1, this);
                 print_name(std::cout);
                 
                 // Update port in the UI
@@ -264,7 +264,7 @@ class Aton: public Iop
         {
             hash.append(m_node->m_hash_count);
             hash.append(m_node->outputContext().frame());
-            hash.append(m_node->uiContext().frame());
+//            hash.append(m_node->uiContext().frame());
         }
 
         void _validate(bool for_real)
@@ -553,10 +553,15 @@ class Aton: public Iop
     
         void setCurrentFrame(double frame)
         {
-            // Create a Write node and return it's name
-            std::string cmd = (boost::format("nuke.frame(%s)")%frame).str();
-            script_command(cmd.c_str());
-            script_unlock();
+//            // Create a Write node and return it's name
+//            std::string cmd = (boost::format("nuke.frame(%s)")%frame).str();
+//            script_command(cmd.c_str());
+//            script_unlock();
+
+            OutputContext ctxt = outputContext();
+            ctxt.setFrame(frame);
+            setOutputContext(ctxt);
+            gotoContext(ctxt, true);
         }
     
         int getFrameIndex(double currentFrame)
