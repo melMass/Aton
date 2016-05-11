@@ -96,7 +96,7 @@ class Aton: public Iop
                           m_comment(""),
                           m_stamp(isVersionValid()),
                           m_enable_aovs(true),
-                          m_stamp_scale(1.0f),
+                          m_stamp_scale(1.0),
                           m_slimit(20),
                           m_fmt(Format(0, 0, 1.0)),
                           m_inError(false),
@@ -803,7 +803,7 @@ class Aton: public Iop
                 
                 if (m_stamp)
                 {
-                    float fontSize = m_stamp_scale * 0.12f;
+                    double fontSize = m_stamp_scale * 0.12;
                 
                     // Add text node in between to put a stamp on the capture
                     cmd = (boost::format("stamp = nuke.nodes.Text2();"
