@@ -884,7 +884,7 @@ class Aton: public Iop
             boost::filesystem::path filepath(m_path);
             boost::filesystem::path dir = filepath.parent_path();
 
-            if ( !captures.empty() )
+            if (!captures.empty())
             {
                 // Reverse iterating through vector
                 for(std::vector<std::string>::reverse_iterator it = captures.rbegin();
