@@ -70,7 +70,7 @@ class Aton: public Iop
         const char*               m_comment;          // Comment for the frame stamp
         bool                      m_stamp;            // Enable Frame stamp toogle
         bool                      m_enable_aovs;      // Enable AOVs toogle
-        double                    m_stamp_scale;       // Frame stamp size
+        double                    m_stamp_scale;      // Frame stamp size
         int                       m_slimit;           // The limit size
         Lock                      m_mutex;            // Mutex for locking the pixel buffer
         unsigned int              m_hash_count;       // Refresh hash counter
