@@ -553,7 +553,7 @@ class Aton: public Iop
     
         void setCurrentFrame(double frame)
         {
-            // Create a Write node and return it's name
+            // Set Current Frame and update the UI
             OutputContext ctxt = outputContext();
             ctxt.setFrame(frame);
             setOutputContext(ctxt);
