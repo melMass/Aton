@@ -255,9 +255,8 @@ class Aton: public Iop
         void append(Hash& hash)
         {
             hash.append(m_node->m_hash_count);
-            hash.append(outputContext().frame());
-            hash.append(m_fmt.width());
-            hash.append(m_fmt.height());
+            hash.append(m_node->outputContext().frame());
+            hash.append(m_node->uiContext().frame());
         }
 
         void _validate(bool for_real)
@@ -956,7 +955,7 @@ static void timeChange(unsigned index, unsigned nthreads, void* data)
         uiFrame = node->uiContext().frame();
         if (!fbs.empty() && prevFrame != uiFrame)
         {
-            node->setCurrentFrame(uiFrame);
+            node->flagForUpdate();
             prevFrame = node->uiContext().frame();
         }
         boost::this_thread::sleep(boost::posix_time::millisec(milliseconds));
