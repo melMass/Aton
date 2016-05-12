@@ -183,26 +183,18 @@ class Aton: public Iop
             m_path = NULL;
         }
 
-        void flagForUpdate(int f_index)
+        void flagForUpdate(int f_index = -1)
         {
             if (m_hash_count == UINT_MAX)
                 m_hash_count = 0;
             else
                 m_hash_count++;
             
-            // Update the image with current bucket first
-            asapUpdate(m_node->m_framebuffers[f_index].getBucketBBox());
-        }
-    
-        void flagForUpdate()
-        {
-            if (m_hash_count == UINT_MAX)
-                m_hash_count = 0;
+            // Update the image with current bucket if given
+            if (f_index >= 0)
+                asapUpdate(m_node->m_framebuffers[f_index].getBucketBBox());
             else
-                m_hash_count++;
-            
-            // Update the image
-            asapUpdate();
+                asapUpdate();
         }
 
         // We can use this to change our tcp port
