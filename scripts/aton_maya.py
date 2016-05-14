@@ -1,6 +1,6 @@
 __author__ = "Vahan Sosoyan"
 __copyright__ = "2016 All rights reserved. See Copyright.txt for more details."
-__version__ = "v1.1.0"
+__version__ = "v1.1.1"
 
 import sys
 import maya.mel as mel

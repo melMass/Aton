@@ -40,7 +40,7 @@ using namespace aton;
 static const char* const CLASS = "Aton";
 
 // Version
-static const char* const VERSION = "1.1.0";
+static const char* const VERSION = "1.1.1";
 
 // Help
 static const char* const HELP =
@@ -66,11 +66,10 @@ class Aton: public Iop
         std::string               m_status;           // Status bar text
         bool                      m_multiframes;      // Enable Multiple Frames toogle
         bool                      m_all_frames;       // Capture All Frames toogle
-        double                    m_current_frame;    // Current Frame number holder
         const char*               m_comment;          // Comment for the frame stamp
         bool                      m_stamp;            // Enable Frame stamp toogle
         bool                      m_enable_aovs;      // Enable AOVs toogle
-        int                       m_stamp_size;       // Frame stamp size
+        double                    m_stamp_scale;      // Frame stamp size
         int                       m_slimit;           // The limit size
         Lock                      m_mutex;            // Mutex for locking the pixel buffer
         unsigned int              m_hash_count;       // Refresh hash counter
@@ -92,11 +91,10 @@ class Aton: public Iop
                           m_status(""),
                           m_multiframes(true),
                           m_all_frames(false),
-                          m_current_frame(0),
                           m_comment(""),
                           m_stamp(isVersionValid()),
                           m_enable_aovs(true),
-                          m_stamp_size(12),
+                          m_stamp_scale(1.0),
                           m_slimit(20),
                           m_fmt(Format(0, 0, 1.0)),
                           m_inError(false),
@@ -138,7 +136,7 @@ class Aton: public Iop
             if (!isVersionValid())
             {
                 knob("stamp_knob")->enable(false);
-                knob("stamp_size_knob")->enable(false);
+                knob("stamp_scale_knob")->enable(false);
                 knob("comment_knob")->enable(false);
             }
             
@@ -183,26 +181,18 @@ class Aton: public Iop
             m_path = NULL;
         }
 
-        void flagForUpdate(int f_index)
+        void flagForUpdate(int f_index = -1)
         {
             if (m_hash_count == UINT_MAX)
                 m_hash_count = 0;
             else
                 m_hash_count++;
             
-            // Update the image with current bucket first
-            asapUpdate(m_node->m_framebuffers[f_index].getBucketBBox());
-        }
-    
-        void flagForUpdate()
-        {
-            if (m_hash_count == UINT_MAX)
-                m_hash_count = 0;
+            // Update the image with current bucket if given
+            if (f_index >= 0)
+                asapUpdate(m_node->m_framebuffers[f_index].getBucketBBox());
             else
-                m_hash_count++;
-            
-            // Update the image
-            asapUpdate();
+                asapUpdate();
         }
 
         // We can use this to change our tcp port
@@ -263,8 +253,7 @@ class Aton: public Iop
         void append(Hash& hash)
         {
             hash.append(m_node->m_hash_count);
-            hash.append(m_node->outputContext().frame());
-            hash.append(m_node->uiContext().frame());
+            hash.append(uiContext().frame());
         }
 
         void _validate(bool for_real)
@@ -391,11 +380,12 @@ class Aton: public Iop
 
         void engine(int y, int xx, int r, ChannelMask channels, Row& out)
         {
+            int b_index = 0;
             int f_index = getFrameIndex(uiContext().frame());
+            std::vector<FrameBuffer>& fbs  = m_node->m_framebuffers;
 
             foreach(z, channels)
             {
-                int b_index = 0;
                 if (m_enable_aovs && !m_node->m_framebuffers.empty())
                     b_index = m_node->m_framebuffers[f_index].getBufferIndex(z);
 
@@ -406,8 +396,6 @@ class Aton: public Iop
                 const float* END = rOut + (r - xx);
                 unsigned int xxx = static_cast<unsigned int>(xx);
                 unsigned int yyy = static_cast<unsigned int>(y);
-
-                std::vector<FrameBuffer>& fbs  = m_node->m_framebuffers;
                 
                 m_mutex.lock();
                 while (rOut < END)
@@ -462,7 +450,7 @@ class Aton: public Iop
 
             Newline(f);
             Knob* stamp_knob = Bool_knob(f, &m_stamp, "stamp_knob", "Frame Stamp");
-            Knob* stamp_size_knob = Int_knob(f, &m_stamp_size, "stamp_size_knob", "Size");
+            Knob* stamp_scale_knob = Float_knob(f, &m_stamp_scale, "stamp_scale_knob", "Scale");
             Knob* comment_knob = String_knob(f, &m_comment, "comment_knob", "Comment");
             Newline(f);
             Button(f, "capture_knob", "Capture");
@@ -479,7 +467,7 @@ class Aton: public Iop
             path_knob->set_flag(Knob::NO_RERENDER, true);
             all_frames_knob->set_flag(Knob::NO_RERENDER, true);
             stamp_knob->set_flag(Knob::NO_RERENDER, true);
-            stamp_size_knob->set_flag(Knob::NO_RERENDER, true);
+            stamp_scale_knob->set_flag(Knob::NO_RERENDER, true);
             comment_knob->set_flag(Knob::NO_RERENDER, true);
 
             statusKnob->set_flag(Knob::NO_RERENDER, true);
@@ -496,7 +484,7 @@ class Aton: public Iop
             }
             if (_knob->is("clear_all_knob"))
             {
-                clearAll();
+                clearAllCmd();
                 return 1;
             }
             if (_knob->is("capture_knob"))
@@ -508,12 +496,12 @@ class Aton: public Iop
             {
                 if(!m_stamp)
                 {
-                    knob("stamp_size_knob")->enable(false);
+                    knob("stamp_scale_knob")->enable(false);
                     knob("comment_knob")->enable(false);
                 }
                 else
                 {
-                    knob("stamp_size_knob")->enable(true);
+                    knob("stamp_scale_knob")->enable(true);
                     knob("comment_knob")->enable(true);
                 }
                 return 1;
@@ -553,10 +541,10 @@ class Aton: public Iop
     
         void setCurrentFrame(double frame)
         {
-            // Create a Write node and return it's name
-            std::string cmd = (boost::format("nuke.frame(%s)")%frame).str();
-            script_command(cmd.c_str());
-            script_unlock();
+            // Set Current Frame and update the UI
+            OutputContext ctxt = outputContext();
+            ctxt.setFrame(frame);
+            gotoContext(ctxt, true);
         }
     
         int getFrameIndex(double currentFrame)
@@ -722,7 +710,7 @@ class Aton: public Iop
             }
         }
     
-        void clearAll()
+        void clearAllCmd()
         {
             if (m_node->m_frames.size() > 0 &&
                 m_node->m_framebuffers.size() > 0)
@@ -802,7 +790,7 @@ class Aton: public Iop
                 
                 if (m_stamp)
                 {
-                    float fontSize = m_stamp_size * 0.01f;
+                    double fontSize = m_stamp_scale * 0.12;
                 
                     // Add text node in between to put a stamp on the capture
                     cmd = (boost::format("stamp = nuke.nodes.Text2();"
@@ -883,7 +871,7 @@ class Aton: public Iop
             boost::filesystem::path filepath(m_path);
             boost::filesystem::path dir = filepath.parent_path();
 
-            if ( !captures.empty() )
+            if (!captures.empty())
             {
                 // Reverse iterating through vector
                 for(std::vector<std::string>::reverse_iterator it = captures.rbegin();
@@ -952,16 +940,18 @@ static void timeChange(unsigned index, unsigned nthreads, void* data)
 {
     Aton* node = reinterpret_cast<Aton*>(data);
     std::vector<FrameBuffer>& fbs  = node->m_node->m_framebuffers;
-
+    
+    double uiFrame = 0;
     double prevFrame = 0;
     int milliseconds = 10;
 
     while (node->m_legit)
     {
-        if (!fbs.empty() && prevFrame != node->uiContext().frame())
+        uiFrame = node->uiContext().frame();
+        if (!fbs.empty() && prevFrame != uiFrame)
         {
             node->flagForUpdate();
-            prevFrame = node->uiContext().frame();
+            prevFrame = uiFrame;
         }
         boost::this_thread::sleep(boost::posix_time::millisec(milliseconds));
     }
@@ -987,6 +977,9 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
         long long imageArea = 0;
         int progress = 0;
         int f_index = 0;
+        
+        // Current Frame Number
+        double current_frame = 0;
         
         // For time to reset per every IPR iteration
         static int active_time = 0;
@@ -1014,8 +1007,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     double _active_frame = static_cast<double>(d.currentFrame());
                     
                     node->m_mutex.lock();
-                    if (node->m_current_frame != _active_frame)
-                        node->m_current_frame = _active_frame;
+                    if (current_frame != _active_frame)
+                        current_frame = _active_frame;
                     
                     // Sync timeline
                     if (node->m_multiframes)
@@ -1105,8 +1098,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     
                     // Set time to current frame
                     if (node->m_multiframes &&
-                        node->uiContext().frame() != node->m_current_frame)
-                        node->setCurrentFrame(node->m_current_frame);
+                        node->uiContext().frame() != current_frame)
+                        node->setCurrentFrame(current_frame);
                     
                     // Reset active AOVs
                     if(!active_aovs.empty())
@@ -1152,76 +1145,73 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     }
                     
                     // Skip non RGBA buckets if AOVs are disabled
-                    if (!node->m_enable_aovs && active_aovs[0] != d.aovName())
-                        continue;
-                    
-                    // Lock buffer
-                    node->m_mutex.lock();
-                    
-                    // Adding buffer
-                    if(!frameBuffer.bufferNameExists(d.aovName()))
+                    if (node->m_enable_aovs || active_aovs[0] == d.aovName())
                     {
-                        if (node->m_enable_aovs || frameBuffer.size()==0)
-                            frameBuffer.addBuffer(d.aovName(), _spp);
-                    }
-                    else
-                        frameBuffer.ready(true);
-                    
-                    // Get buffer index
-                    int b_index = frameBuffer.getBufferIndex(d.aovName());
-                    
-                    // Writing to buffer
-                    const float* pixel_data = d.pixels();
-                    for (_x = 0; _x < _width; ++_x)
-                        for (_y = 0; _y < _height; ++_y)
-                        {
-                            offset = (_width * _y * _spp) + (_x * _spp);
-
-                            RenderColour& pix = frameBuffer.getBuffer(b_index).getColour(_x+ _xorigin, _h - (_y + _yorigin + 1));
-                            for (_s = 0; _s < _spp; ++_s)
-                                if (_s != 3)
-                                    pix[_s] = pixel_data[offset + _s];
-                            if (_spp == 4)
-                            {
-                                RenderAlpha& alpha_pix = frameBuffer.getBuffer(b_index).getAlpha(_x+ _xorigin, _h - (_y + _yorigin + 1));
-                                alpha_pix[0] = pixel_data[offset+3];
-                            }
-                        }
-
-                    // Release lock
-                    node->m_mutex.unlock();
-
-                    // Skip while capturing
-                    if (node->m_capturing)
-                        continue;
-
-                    // Update only on first aov
-                    if(frameBuffer.getFirstBufferName().compare(d.aovName()) == 0)
-                    {
-                        // Calculating the progress percentage
-                        imageArea -= (_width*_height);
-                        progress = static_cast<int>(100 - (imageArea*100) / (_w * _h));
-
-                        // Getting redraw bucket size
+                        // Lock buffer
                         node->m_mutex.lock();
-                        frameBuffer.setBucketBBox(_xorigin,
-                                                  _h - _yorigin - _height,
-                                                  _xorigin + _width,
-                                                  _h - _yorigin);
-
-                        // Setting status parameters
-                        frameBuffer.setProgress(progress);
-                        frameBuffer.setRAM(_ram);
-                        if (delta_time > _time)
-                            frameBuffer.setTime(_time);
-                        else
-                            frameBuffer.setTime(_time - delta_time);
-                        node->m_mutex.unlock();
                         
-                        // Update the image
-                        node->flagForUpdate(f_index);
-                    }
+                        // Adding buffer
+                        if(!frameBuffer.bufferNameExists(d.aovName()))
+                        {
+                            if (node->m_enable_aovs || frameBuffer.size()==0)
+                                frameBuffer.addBuffer(d.aovName(), _spp);
+                        }
+                        else
+                            frameBuffer.ready(true);
+                        
+                        // Get buffer index
+                        int b_index = frameBuffer.getBufferIndex(d.aovName());
+                        
+                        // Writing to buffer
+                        const float* pixel_data = d.pixels();
+                        for (_x = 0; _x < _width; ++_x)
+                            for (_y = 0; _y < _height; ++_y)
+                            {
+                                offset = (_width * _y * _spp) + (_x * _spp);
 
+                                RenderColour& pix = frameBuffer.getBuffer(b_index).getColour(_x+ _xorigin, _h - (_y + _yorigin + 1));
+                                for (_s = 0; _s < _spp; ++_s)
+                                    if (_s != 3)
+                                        pix[_s] = pixel_data[offset + _s];
+                                if (_spp == 4)
+                                {
+                                    RenderAlpha& alpha_pix = frameBuffer.getBuffer(b_index).getAlpha(_x+ _xorigin, _h - (_y + _yorigin + 1));
+                                    alpha_pix[0] = pixel_data[offset+3];
+                                }
+                            }
+
+                        // Release lock
+                        node->m_mutex.unlock();
+
+                        // Update only on first aov
+                        if(!node->m_capturing &&
+                           frameBuffer.getFirstBufferName().compare(d.aovName()) == 0)
+                        {
+                            // Calculating the progress percentage
+                            imageArea -= (_width*_height);
+                            progress = static_cast<int>(100 - (imageArea*100) / (_w * _h));
+
+                            // Getting redraw bucket size
+                            node->m_mutex.lock();
+                            frameBuffer.setBucketBBox(_xorigin,
+                                                      _h - _yorigin - _height,
+                                                      _xorigin + _width,
+                                                      _h - _yorigin);
+
+                            // Setting status parameters
+                            frameBuffer.setProgress(progress);
+                            frameBuffer.setRAM(_ram);
+                            if (delta_time > _time)
+                                frameBuffer.setTime(_time);
+                            else
+                                frameBuffer.setTime(_time - delta_time);
+                            node->m_mutex.unlock();
+                            
+                            // Update the image
+                            node->flagForUpdate(f_index);
+                        }
+                    }
+                    
                     // Deallocate aov name
                     d.clearAovName();
                     break;
