@@ -61,7 +61,6 @@ class Aton: public Iop
         const char*               m_node_name;        // Node name
         FormatPair                m_fmtp;             // Buffer format (knob)
         Format                    m_fmt;              // The nuke display format
-        OutputContext             m_ctxt;             // Ouput Context object
         int                       m_port;             // Port we're listening on (knob)
         const char*               m_path;             // Default path for Write node
         std::string               m_status;           // Status bar text
@@ -87,7 +86,6 @@ class Aton: public Iop
 
         Aton(Node* node): Iop(node),
                           m_node(firstNode()),
-                          m_ctxt(outputContext()),
                           m_port(getPort()),
                           m_path(""),
                           m_status(""),
@@ -255,8 +253,7 @@ class Aton: public Iop
         void append(Hash& hash)
         {
             hash.append(m_node->m_hash_count);
-            hash.append(m_node->outputContext().frame());
-            hash.append(m_node->uiContext().frame());
+            hash.append(uiContext().frame());
         }
 
         void _validate(bool for_real)
@@ -546,8 +543,9 @@ class Aton: public Iop
         void setCurrentFrame(double frame)
         {
             // Set Current Frame and update the UI
-            m_ctxt.setFrame(frame);
-            gotoContext(m_ctxt, true);
+            OutputContext ctxt = outputContext();
+            ctxt.setFrame(frame);
+            gotoContext(ctxt, true);
         }
     
         int getFrameIndex(double currentFrame)
