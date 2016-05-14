@@ -61,12 +61,12 @@ class Aton: public Iop
         const char*               m_node_name;        // Node name
         FormatPair                m_fmtp;             // Buffer format (knob)
         Format                    m_fmt;              // The nuke display format
+        OutputContext             m_ctxt;             // Ouput Context object
         int                       m_port;             // Port we're listening on (knob)
         const char*               m_path;             // Default path for Write node
         std::string               m_status;           // Status bar text
         bool                      m_multiframes;      // Enable Multiple Frames toogle
         bool                      m_all_frames;       // Capture All Frames toogle
-        double                    m_current_frame;    // Current Frame number holder
         const char*               m_comment;          // Comment for the frame stamp
         bool                      m_stamp;            // Enable Frame stamp toogle
         bool                      m_enable_aovs;      // Enable AOVs toogle
@@ -87,12 +87,12 @@ class Aton: public Iop
 
         Aton(Node* node): Iop(node),
                           m_node(firstNode()),
+                          m_ctxt(outputContext()),
                           m_port(getPort()),
                           m_path(""),
                           m_status(""),
                           m_multiframes(true),
                           m_all_frames(false),
-                          m_current_frame(0),
                           m_comment(""),
                           m_stamp(isVersionValid()),
                           m_enable_aovs(true),
@@ -546,10 +546,8 @@ class Aton: public Iop
         void setCurrentFrame(double frame)
         {
             // Set Current Frame and update the UI
-            OutputContext ctxt = outputContext();
-            ctxt.setFrame(frame);
-            setOutputContext(ctxt);
-            gotoContext(ctxt, true);
+            m_ctxt.setFrame(frame);
+            gotoContext(m_ctxt, true);
         }
     
         int getFrameIndex(double currentFrame)
@@ -956,7 +954,7 @@ static void timeChange(unsigned index, unsigned nthreads, void* data)
         if (!fbs.empty() && prevFrame != uiFrame)
         {
             node->flagForUpdate();
-            prevFrame = node->uiContext().frame();
+            prevFrame = uiFrame;
         }
         boost::this_thread::sleep(boost::posix_time::millisec(milliseconds));
     }
@@ -982,6 +980,9 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
         long long imageArea = 0;
         int progress = 0;
         int f_index = 0;
+        
+        // Current Frame Number
+        double current_frame = 0;
         
         // For time to reset per every IPR iteration
         static int active_time = 0;
@@ -1009,8 +1010,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     double _active_frame = static_cast<double>(d.currentFrame());
                     
                     node->m_mutex.lock();
-                    if (node->m_current_frame != _active_frame)
-                        node->m_current_frame = _active_frame;
+                    if (current_frame != _active_frame)
+                        current_frame = _active_frame;
                     
                     // Sync timeline
                     if (node->m_multiframes)
@@ -1100,8 +1101,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     
                     // Set time to current frame
                     if (node->m_multiframes &&
-                        node->uiContext().frame() != node->m_current_frame)
-                        node->setCurrentFrame(node->m_current_frame);
+                        node->uiContext().frame() != current_frame)
+                        node->setCurrentFrame(current_frame);
                     
                     // Reset active AOVs
                     if(!active_aovs.empty())
