@@ -40,7 +40,7 @@ using namespace aton;
 static const char* const CLASS = "Aton";
 
 // Version
-static const char* const VERSION = "1.1.1";
+static const char* const VERSION = "1.1.2";
 
 // Help
 static const char* const HELP =
@@ -199,6 +199,7 @@ class Aton: public Iop
         void changePort(int port)
         {
             m_inError = false;
+            m_legit = false;
             m_connectionError = "";
             
             // Try to reconnect
@@ -207,6 +208,7 @@ class Aton: public Iop
             try
             {
                 m_server.connect(port, true);
+                m_legit = true;
             }
             catch ( ... )
             {
