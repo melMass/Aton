@@ -174,8 +174,8 @@ class Aton: public Iop
             // called.
             m_legit = false;
             disconnect();
-            m_node->m_frames.resize(0);
-            m_node->m_framebuffers.resize(0);
+            m_node->m_frames = std::vector<double>();
+            m_node->m_framebuffers = std::vector<FrameBuffer>();
             
             delete[] m_path;
             m_path = NULL;
@@ -714,15 +714,25 @@ class Aton: public Iop
     
         void clearAllCmd()
         {
-            if (m_node->m_frames.size() > 0 &&
-                m_node->m_framebuffers.size() > 0)
+            std::vector<FrameBuffer>& fbs  = m_node->m_framebuffers;
+            std::vector<double>& frames  = m_node->m_frames;
+        
+            if (!fbs.empty() && !frames.empty())
             {
+                std::vector<FrameBuffer>::iterator it;
+                for(it = fbs.begin(); it != fbs.end(); ++it)
+                {
+                    it->ready(false);
+                }
+                
                 m_legit = false;
                 disconnect();
+                
                 m_mutex.lock();
-                m_node->m_frames.resize(0);
-                m_node->m_framebuffers.resize(0);
+                fbs =  std::vector<FrameBuffer>();
+                frames = std::vector<double>();
                 m_mutex.unlock();
+               
                 m_legit = true;
                 flagForUpdate();
                 setStatus();
