@@ -273,7 +273,7 @@ class Aton: public Iop
                 // Get the frame and set the format
                 int f_index = getFrameIndex(uiContext().frame());
                 
-                FrameBuffer &frameBuffer = m_node->m_framebuffers[f_index];
+                FrameBuffer& frameBuffer = m_node->m_framebuffers[f_index];
 
                 if (!frameBuffer.empty())
                 {
@@ -368,6 +368,10 @@ class Aton: public Iop
                         channels.insert(Chan_Alpha);
                     }
                 }
+            }
+            else
+            {
+                
             }
             
             // Disable caching
@@ -725,15 +729,13 @@ class Aton: public Iop
                     it->ready(false);
                 }
                 
-                m_legit = false;
-                disconnect();
-                
-                m_mutex.lock();
+                m_node->m_legit = false;
+                m_node->disconnect();
+            
                 fbs =  std::vector<FrameBuffer>();
                 frames = std::vector<double>();
-                m_mutex.unlock();
                
-                m_legit = true;
+                m_node->m_legit = true;
                 flagForUpdate();
                 setStatus();
             }
@@ -1052,7 +1054,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     
                     // Get frame buffer
                     f_index = node->getFrameIndex(_active_frame);
-                    FrameBuffer &frameBuffer = node->m_framebuffers[f_index];
+                    FrameBuffer& frameBuffer = node->m_framebuffers[f_index];
                     
                     // Reset Buffers and Channels
                     if (!active_aovs.empty() && !frameBuffer.empty())

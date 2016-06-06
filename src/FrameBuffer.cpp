@@ -196,8 +196,8 @@ int FrameBuffer::compareAll(int width,
 // Clear buffers and aovs
 void FrameBuffer::clearAll()
 {
-    _buffers.resize(0);
-    _aovs.resize(0);
+    _buffers = std::vector<RenderBuffer>();
+    _aovs = std::vector<std::string>();
 }
 
 // Check if the given buffer/aov name name is exist
