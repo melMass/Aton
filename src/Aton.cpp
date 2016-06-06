@@ -365,11 +365,13 @@ class Aton: public Iop
             if (m_node->m_framebuffers.empty() || !m_enable_aovs)
             {
                 if (m_node->m_channels.size() > 4)
+                {
                     m_node->m_channels.clear();
                     m_node->m_channels.insert(Chan_Red);
                     m_node->m_channels.insert(Chan_Green);
                     m_node->m_channels.insert(Chan_Blue);
                     m_node->m_channels.insert(Chan_Alpha);
+                }
             }
             
             // Disable caching
