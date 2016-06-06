@@ -267,14 +267,27 @@ class Aton: public Iop
             // Handle any connection error
             if (m_inError)
                 error(m_connectionError.c_str());
+            
+            // Reseting channels
+            ChannelSet& channels = m_node->m_channels;
+            if (m_node->m_framebuffers.empty() || !m_enable_aovs)
+            {
+                if (m_node->m_channels.size() > 4)
+                {
+                    m_node->m_channels.clear();
+                    m_node->m_channels.insert(Chan_Red);
+                    m_node->m_channels.insert(Chan_Green);
+                    m_node->m_channels.insert(Chan_Blue);
+                    m_node->m_channels.insert(Chan_Alpha);
+                }
+            }
 
             if (!m_node->m_framebuffers.empty())
             {
                 // Get the frame and set the format
                 int f_index = getFrameIndex(uiContext().frame());
-                
                 FrameBuffer& frameBuffer = m_node->m_framebuffers[f_index];
-
+                
                 if (!frameBuffer.empty())
                 {
                     if (frameBuffer.getProgress() > 0)
@@ -310,8 +323,7 @@ class Aton: public Iop
                         knob("formats_knob")->set_text(m_node->m_node_name);
                     }
                     
-                    ChannelSet& channels = m_node->m_channels;
-
+                    // Adding channels
                     if (m_enable_aovs)
                     {
                         size_t fb_size = frameBuffer.size();
@@ -359,18 +371,6 @@ class Aton: public Iop
                             }
                         }
                     }
-                }
-            }
-            
-            if (m_node->m_framebuffers.empty() || !m_enable_aovs)
-            {
-                if (m_node->m_channels.size() > 4)
-                {
-                    m_node->m_channels.clear();
-                    m_node->m_channels.insert(Chan_Red);
-                    m_node->m_channels.insert(Chan_Green);
-                    m_node->m_channels.insert(Chan_Blue);
-                    m_node->m_channels.insert(Chan_Alpha);
                 }
             }
             
