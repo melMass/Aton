@@ -1,6 +1,6 @@
 #==========
 #
-# Copyright (c) 2015, Dan Bethell, Johannes Saam, Vahan Sosoyan.
+# Copyright (c) 2016, Dan Bethell, Johannes Saam, Vahan Sosoyan.
 # All rights reserved.
 #
 # For license information regarding redistribution and
