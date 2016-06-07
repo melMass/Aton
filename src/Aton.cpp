@@ -299,8 +299,8 @@ class Aton: public Iop
                                   frameBuffer.getArnoldVersion());
                     
                     // Set the format
-                    int width = frameBuffer.getWidth();
-                    int height = frameBuffer.getHeight();
+                    const int& width = frameBuffer.getWidth();
+                    const int& height = frameBuffer.getHeight();
                     
                     if (m_node->m_fmt.width() != width ||
                         m_node->m_fmt.height() != height)

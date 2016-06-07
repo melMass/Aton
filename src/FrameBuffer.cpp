@@ -155,21 +155,15 @@ int FrameBuffer::getBufferIndex(const char* aovName)
 }
 
 // Get N buffer/aov name name
-std::string FrameBuffer::getBufferName(size_t index)
+const std::string& FrameBuffer::getBufferName(size_t index)
 {
-    std::string bufferName = "";
-    if (!_aovs.empty())
-        bufferName = _aovs[index];
-    return bufferName;
+    return _aovs[index];
 }
 
 // Get last buffer/aov name
-std::string FrameBuffer::getFirstBufferName()
+const std::string& FrameBuffer::getFirstBufferName()
 {
-    std::string bufferName = "";
-    if (!_aovs.empty())
-        bufferName = _aovs.front();
-    return bufferName;
+    return _aovs.front();
 }
 
 // Compare buffers with given buffer/aov names and dimensoions
@@ -215,10 +209,10 @@ void FrameBuffer::setWidth(int w) { _width = w; }
 void FrameBuffer::setHeight(int h) { _height = h; }
 
 // Get width of the buffer
-int FrameBuffer::getWidth() { return _width; }
+const int& FrameBuffer::getWidth() { return _width; }
 
 // Get height of the buffer
-int FrameBuffer::getHeight() { return _height; }
+const int& FrameBuffer::getHeight() { return _height; }
 
 // Get size of the buffers aka AOVs count
 size_t FrameBuffer::size() { return _aovs.size(); }
@@ -237,7 +231,7 @@ void FrameBuffer::setBucketBBox(int x, int y, int r, int t)
 }
 
 // Get current bucket BBox for asapUpdate()
-Box FrameBuffer::getBucketBBox() { return _bucket; }
+const Box& FrameBuffer::getBucketBBox() { return _bucket; }
 
 // Set status parameters
 void FrameBuffer::setProgress(int progress) { _progress = progress; }
@@ -249,10 +243,10 @@ void FrameBuffer::setRAM(long long ram)
 void FrameBuffer::setTime(int time) { _time = time; }
 
 // Get status parameters
-int FrameBuffer::getProgress() { return _progress; }
-long long FrameBuffer::getRAM() { return _ram; }
-long long FrameBuffer::getPRAM() { return _pram; }
-int FrameBuffer::getTime() { return _time; }
+const int& FrameBuffer::getProgress() { return _progress; }
+const long long& FrameBuffer::getRAM() { return _ram; }
+const long long& FrameBuffer::getPRAM() { return _pram; }
+const int& FrameBuffer::getTime() { return _time; }
 
 // Set Arnold core version
 void FrameBuffer::setArnoldVersion(int version)
@@ -266,14 +260,14 @@ void FrameBuffer::setArnoldVersion(int version)
 }
 
 // Get Arnold core version
-std::string FrameBuffer::getArnoldVersion() { return _version; }
+const std::string& FrameBuffer::getArnoldVersion() { return _version; }
 
 // Get the frame number of this framebuffer
-double FrameBuffer::getFrame() { return _frame; }
+const double& FrameBuffer::getFrame() { return _frame; }
 
 // Check if this framebuffer is empty
 bool FrameBuffer::empty() { return (_buffers.empty() && _aovs.empty()) ; }
 
 // To keep False while writing the buffer
 void FrameBuffer::ready(bool ready) { _ready = ready; }
-bool FrameBuffer::isReady() { return _ready; }
+const bool& FrameBuffer::isReady() { return _ready; }

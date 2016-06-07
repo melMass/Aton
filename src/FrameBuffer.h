@@ -104,10 +104,10 @@ namespace aton
             int getBufferIndex(const char * aovName);
         
             // Get N buffer/aov name name
-            std::string getBufferName(size_t index = 0);
+            const std::string& getBufferName(size_t index = 0);
         
             // Get last buffer/aov name
-            std::string getFirstBufferName();
+            const std::string& getFirstBufferName();
         
             // Compare buffers with given buffer/aov names and dimensoions
             int compareAll(int width, int height, std::vector<std::string> aovs);
@@ -125,10 +125,10 @@ namespace aton
             void setHeight(int h);
         
             // Get width of the buffer
-            int getWidth();
+            const int& getWidth();
         
             // Get height of the buffer
-            int getHeight();
+            const int& getHeight();
 
             // Get size of the buffers aka AOVs count
             size_t size();
@@ -140,7 +140,7 @@ namespace aton
             void setBucketBBox(int x = 0, int y = 0, int r = 1, int t = 1);
         
             // Get current bucket BBox for asapUpdate()
-            Box getBucketBBox();
+            const Box& getBucketBBox();
         
             // Set status parameters
             void setProgress(int progress = 0);
@@ -148,26 +148,26 @@ namespace aton
             void setTime(int time = 0);
         
             // Get status parameters
-            int getProgress();
-            long long getRAM();
-            long long getPRAM();
-            int getTime();
+            const int& getProgress();
+            const long long& getRAM();
+            const long long& getPRAM();
+            const int& getTime();
         
             // Set Arnold core version
             void setArnoldVersion(int version);
         
             // Get Arnold core version
-            std::string getArnoldVersion();
+            const std::string& getArnoldVersion();
         
             // Get the frame number of this framebuffer
-            double getFrame();
+            const double& getFrame();
         
             // Check if this framebuffer is empty
             bool empty();
         
             // To keep False while writing the buffer
             void ready(bool ready);
-            bool isReady();
+            const bool& isReady();
         
         private:
             double _frame;
