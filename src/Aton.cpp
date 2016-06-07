@@ -125,6 +125,9 @@ class Aton: public Iop
         void attach()
         {
             m_legit = true;
+            
+            // Disable caching
+            m_node->slowness(0);
 
             // Default status bar
             setStatus();
@@ -181,7 +184,7 @@ class Aton: public Iop
             m_path = NULL;
         }
 
-        void flagForUpdate(int f_index = -1)
+        void flagForUpdate(long f_index = -1)
         {
             if (m_hash_count == UINT_MAX)
                 m_hash_count = 0;
@@ -189,10 +192,10 @@ class Aton: public Iop
                 m_hash_count++;
             
             // Update the image with current bucket if given
-            if (f_index >= 0)
-                asapUpdate(m_node->m_framebuffers[f_index].getBucketBBox());
-            else
+            if (f_index == -1)
                 asapUpdate();
+            else
+                asapUpdate(m_node->m_framebuffers[f_index].getBucketBBox());
         }
 
         // We can use this to change our tcp port
@@ -285,7 +288,7 @@ class Aton: public Iop
             if (!m_node->m_framebuffers.empty())
             {
                 // Get the frame and set the format
-                int f_index = getFrameIndex(uiContext().frame());
+                long f_index = getFrameIndex(uiContext().frame());
                 FrameBuffer& frameBuffer = m_node->m_framebuffers[f_index];
                 
                 if (!frameBuffer.empty())
@@ -333,7 +336,7 @@ class Aton: public Iop
 
                         for(int i = 0; i < fb_size; ++i)
                         {
-                            std::string bufferName = frameBuffer.getBufferName(i);
+                            const std::string& bufferName = frameBuffer.getBufferName(i);
                             
                             if (bufferName.compare(ChannelStr::RGBA) == 0)
                             {
@@ -374,9 +377,6 @@ class Aton: public Iop
                 }
             }
             
-            // Disable caching
-            m_node->slowness(0);
-            
             // Setup format etc
             info_.format(*m_node->m_fmtp.fullSizeFormat());
             info_.full_size_format(*m_node->m_fmtp.format());
@@ -387,7 +387,7 @@ class Aton: public Iop
         void engine(int y, int xx, int r, ChannelMask channels, Row& out)
         {
             int b_index = 0;
-            int f_index = getFrameIndex(uiContext().frame());
+            long f_index = getFrameIndex(uiContext().frame());
             std::vector<FrameBuffer>& fbs  = m_node->m_framebuffers;
 
             foreach(z, channels)
@@ -553,34 +553,34 @@ class Aton: public Iop
             gotoContext(ctxt, true);
         }
     
-        int getFrameIndex(double currentFrame)
+        long getFrameIndex(double currentFrame)
         {
-            int f_index = 0;
+            long f_index = 0;
             std::vector<double>& frames = m_node->m_frames;
 
             if (m_multiframes && !frames.empty())
             {
-                int nearFIndex = INT_MIN;
-                int minFIndex = INT_MAX;
+                long nearFIndex = LONG_MIN;
+                long minFIndex = LONG_MAX;
                 
                 std::vector<double>::iterator it;
                 for( it = frames.begin(); it != frames.end(); ++it)
                 {
                     if (currentFrame == *it)
                     {
-                        f_index = static_cast<int>(it - frames.begin());
+                        f_index = it - frames.begin();
                         break;
                     }
                     else if (currentFrame > *it && nearFIndex < *it)
                     {
-                        nearFIndex = static_cast<int>(*it);
-                        f_index = static_cast<int>(it - frames.begin());
+                        nearFIndex = *it;
+                        f_index = it - frames.begin();
                         continue;
                     }
                     else if (*it < minFIndex && nearFIndex == INT_MIN)
                     {
-                        minFIndex = static_cast<int>(*it);
-                        f_index = static_cast<int>(it - frames.begin());
+                        minFIndex = *it;
+                        f_index = it - frames.begin();
                     }
                 }
             }
@@ -987,9 +987,10 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
         Data d;
 
         // For progress percentage
-        long long imageArea = 0;
         int progress = 0;
-        int f_index = 0;
+        long long imageArea = 0;
+        
+        long f_index = 0;
         
         // Current Frame Number
         double current_frame = 0;
@@ -1063,15 +1064,15 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                                                active_aovs);
                         switch (fbCompare)
                         {
-                            case 0:
+                            case 0: // Nothing changed
                                 break;
-                            case 1:
+                            case 1: // Only AOVs count changed
                             {
                                 node->m_mutex.lock();
                                 frameBuffer.resize(1);
                                 break;
                             }
-                            case 2:
+                            case 2: // All changed
                             {
                                 node->m_mutex.lock();
                                 frameBuffer.clearAll();
