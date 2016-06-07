@@ -912,23 +912,23 @@ class Aton: public Iop
             }
         }
     
-        std::string setStatus(int progress=0,
-                              long long ram=0,
-                              long long p_ram=0,
-                              int time=0,
-                              double frame=0,
-                              std::string version="")
+        void setStatus(int progress = 0,
+                       long long ram = 0,
+                       long long p_ram = 0,
+                       int time = 0,
+                       double frame = 0,
+                       std::string version = "")
         {
-            int f_count = static_cast<int>(m_node->m_framebuffers.size());
+            const size_t& f_count = m_node->m_framebuffers.size();
         
-            ram /= 1024*1024;
-            p_ram /= 1024*1024;
+            ram /= 1048576;
+            p_ram /= 1048576;
 
-            int hour = time / (1000*60*60);
-            int minute = (time % (1000*60*60)) / (1000*60);
-            int second = ((time % (1000*60*60)) % (1000*60)) / 1000;
+            int hour = time / 3600000;
+            int minute = (time % 3600000) / 60000;
+            int second = ((time % 3600000) % 60000) / 1000;
 
-            if (progress>100) progress=100;
+            if (progress > 100) progress = 100;
 
             std::string str_status = (boost::format("Arnold: %s | "
                                                     "Used Memory: %sMB | "
@@ -939,7 +939,6 @@ class Aton: public Iop
                                                                      %hour%minute%second
                                                                      %frame%f_count%progress).str();
             knob("status_knob")->set_text(str_status.c_str());
-            return str_status;
         }
     
         bool firstEngineRendersWholeRequest() const { return true; }
