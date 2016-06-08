@@ -143,12 +143,12 @@ namespace aton
             const Box& getBucketBBox();
         
             // Set status parameters
-            void setProgress(int progress = 0);
+            void setProgress(long long progress = 0);
             void setRAM(long long ram = 0);
             void setTime(int time = 0);
         
             // Get status parameters
-            const int& getProgress();
+            const long long& getProgress();
             const long long& getRAM();
             const long long& getPRAM();
             const int& getTime();
@@ -171,7 +171,7 @@ namespace aton
         
         private:
             double _frame;
-            int _progress;
+            long long _progress;
             int _time;
             long long _ram;
             long long _pram;

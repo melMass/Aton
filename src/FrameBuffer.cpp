@@ -234,7 +234,7 @@ void FrameBuffer::setBucketBBox(int x, int y, int r, int t)
 const Box& FrameBuffer::getBucketBBox() { return _bucket; }
 
 // Set status parameters
-void FrameBuffer::setProgress(int progress) { _progress = progress; }
+void FrameBuffer::setProgress(long long progress) { _progress = progress; }
 void FrameBuffer::setRAM(long long ram)
 {
     _pram = _ram < ram ? ram : _ram;
@@ -243,7 +243,7 @@ void FrameBuffer::setRAM(long long ram)
 void FrameBuffer::setTime(int time) { _time = time; }
 
 // Get status parameters
-const int& FrameBuffer::getProgress() { return _progress; }
+const long long& FrameBuffer::getProgress() { return _progress; }
 const long long& FrameBuffer::getRAM() { return _ram; }
 const long long& FrameBuffer::getPRAM() { return _pram; }
 const int& FrameBuffer::getTime() { return _time; }

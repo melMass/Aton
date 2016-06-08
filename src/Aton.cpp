@@ -400,30 +400,28 @@ class Aton: public Iop
                 float* bOut = out.writable(brother(z, 2)) + xx;
                 float* aOut = out.writable(Chan_Alpha) + xx;
                 const float* END = rOut + (r - xx);
-                unsigned int xxx = static_cast<unsigned int>(xx);
-                unsigned int yyy = static_cast<unsigned int>(y);
                 
                 m_mutex.lock();
                 while (rOut < END)
                 {
                     if (fbs.empty() || !fbs[f_index].isReady() ||
-                        xxx >= fbs[f_index].getWidth() ||
-                        yyy >= fbs[f_index].getHeight())
+                        xx >= fbs[f_index].getWidth() ||
+                        y >= fbs[f_index].getHeight())
                     {
                         *rOut = *gOut = *bOut = *aOut = 0.0f;
                     }
                     else
                     {
-                        *rOut = fbs[f_index].getBuffer(b_index).getColour(xxx, yyy)[0];
-                        *gOut = fbs[f_index].getBuffer(b_index).getColour(xxx, yyy)[1];
-                        *bOut = fbs[f_index].getBuffer(b_index).getColour(xxx, yyy)[2];
-                        *aOut = fbs[f_index].getBuffer(0).getAlpha(xxx, yyy)[0];
+                        *rOut = fbs[f_index].getBuffer(b_index).getColour(xx, y)[0];
+                        *gOut = fbs[f_index].getBuffer(b_index).getColour(xx, y)[1];
+                        *bOut = fbs[f_index].getBuffer(b_index).getColour(xx, y)[2];
+                        *aOut = fbs[f_index].getBuffer(0).getAlpha(xx, y)[0];
                     }
                     ++rOut;
                     ++gOut;
                     ++bOut;
                     ++aOut;
-                    ++xxx;
+                    ++xx;
                 }
                 m_mutex.unlock();
             }
@@ -912,7 +910,7 @@ class Aton: public Iop
             }
         }
     
-        void setStatus(int progress = 0,
+        void setStatus(long long progress = 0,
                        long long ram = 0,
                        long long p_ram = 0,
                        int time = 0,
@@ -987,7 +985,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
         Data d;
 
         // For progress percentage
-        int progress = 0;
+        long long progress = 0;
         long long imageArea = 0;
         
         long f_index = 0;
@@ -1124,13 +1122,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                 {
                     // Get frame buffer
                     FrameBuffer& frameBuffer = node->m_framebuffers[f_index];
-                
+                    
                     // Copy data from d
-                    int _w = frameBuffer.getWidth();
-                    int _h = frameBuffer.getHeight();
-                    unsigned int _x, _x0, _y, _y0, _s, offset;
-                    _x = _x0 = _y = _y0 = _s = 0;
-
                     int _xorigin = d.x();
                     int _yorigin = d.y();
                     int _width = d.width();
@@ -1177,7 +1170,10 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         int b_index = frameBuffer.getBufferIndex(d.aovName());
                         
                         // Writing to buffer
+                        unsigned int _x, _y, _s, offset;
                         const float* pixel_data = d.pixels();
+                        const int& _w = frameBuffer.getWidth();
+                        const int& _h = frameBuffer.getHeight();
                         for (_x = 0; _x < _width; ++_x)
                             for (_y = 0; _y < _height; ++_y)
                             {
@@ -1203,7 +1199,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         {
                             // Calculating the progress percentage
                             imageArea -= (_width*_height);
-                            progress = static_cast<int>(100 - (imageArea*100) / (_w * _h));
+                            progress = 100 - (imageArea*100) / (_w * _h);
 
                             // Getting redraw bucket size
                             node->m_mutex.lock();
