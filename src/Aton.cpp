@@ -575,7 +575,7 @@ class Aton: public Iop
                         f_index = it - frames.begin();
                         continue;
                     }
-                    else if (*it < minFIndex && nearFIndex == INT_MIN)
+                    else if (*it < minFIndex && nearFIndex == LONG_MIN)
                     {
                         minFIndex = *it;
                         f_index = it - frames.begin();
