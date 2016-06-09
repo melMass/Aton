@@ -386,7 +386,7 @@ class Aton: public Iop
 
         void engine(int y, int xx, int r, ChannelMask channels, Row& out)
         {
-            int b_index = 0;
+            long b_index = 0;
             long f_index = getFrameIndex(uiContext().frame());
             std::vector<FrameBuffer>& fbs  = m_node->m_framebuffers;
 
@@ -1161,7 +1161,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                             frameBuffer.ready(true);
                         
                         // Get buffer index
-                        int b_index = frameBuffer.getBufferIndex(data.aovName());
+                        long b_index = frameBuffer.getBufferIndex(data.aovName());
                         
                         // Writing to buffer
                         unsigned int _x, _y, _s, offset;

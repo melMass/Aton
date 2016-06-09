@@ -92,16 +92,16 @@ namespace aton
             void addBuffer(const char* aov = NULL, int spp = 0);
         
             // Get buffer object
-            RenderBuffer& getBuffer(int index = 0);
+            RenderBuffer& getBuffer(long index = 0);
         
             // Get buffer object
-            const RenderBuffer& getBuffer(int index = 0) const;
+            const RenderBuffer& getBuffer(long index = 0) const;
         
             // Get the current buffer index
-            int getBufferIndex(Channel z);
+            long getBufferIndex(Channel z);
         
             // Get the current buffer index
-            int getBufferIndex(const char * aovName);
+            long getBufferIndex(const char * aovName);
         
             // Get N buffer/aov name name
             const std::string& getBufferName(size_t index = 0);

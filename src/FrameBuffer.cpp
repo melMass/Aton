@@ -98,21 +98,21 @@ void FrameBuffer::addBuffer(const char* aov, int spp)
 }
 
 // Get buffer object
-RenderBuffer& FrameBuffer::getBuffer(int index)
+RenderBuffer& FrameBuffer::getBuffer(long index)
 {
     return _buffers[index];
 }
 
 // Get buffer object
-const RenderBuffer& FrameBuffer::getBuffer(int index) const
+const RenderBuffer& FrameBuffer::getBuffer(long index) const
 {
     return _buffers[index];
 }
 
 // Get the current buffer index
-int FrameBuffer::getBufferIndex(Channel z)
+long FrameBuffer::getBufferIndex(Channel z)
 {
-    int b_index = 0;
+    long b_index = 0;
     
     if (!_aovs.empty())
     {
@@ -123,12 +123,12 @@ int FrameBuffer::getBufferIndex(Channel z)
             {
                 if (it->compare(layer) == 0)
                 {
-                    b_index = static_cast<int>(it - _aovs.begin());
+                    b_index = it - _aovs.begin();
                     break;
                 }
                 else if (it->compare(ChannelStr::Z) == 0 && layer.compare(ChannelStr::depth) == 0)
                 {
-                    b_index = static_cast<int>(it - _aovs.begin());
+                    b_index = it - _aovs.begin();
                     break;
                 }
             }
@@ -138,16 +138,16 @@ int FrameBuffer::getBufferIndex(Channel z)
 }
 
 // Get the current buffer index
-int FrameBuffer::getBufferIndex(const char* aovName)
+long FrameBuffer::getBufferIndex(const char* aovName)
 {
-    int b_index = 0;
+    long b_index = 0;
     
     if (!_aovs.empty())
         for(std::vector<std::string>::iterator it = _aovs.begin(); it != _aovs.end(); ++it)
         {
             if (it->compare(aovName) == 0)
             {
-                b_index = static_cast<int>(it - _aovs.begin());
+                b_index = it - _aovs.begin();
                 break;
             }
         }
