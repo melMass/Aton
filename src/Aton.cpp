@@ -390,7 +390,7 @@ class Aton: public Iop
             long b_index = 0;
             
             std::vector<FrameBuffer>& fbs  = m_node->m_framebuffers;
-            if (fbs.size() > 1)
+            if (m_multiframes && fbs.size() > 1)
                 f_index = getFrameIndex(uiContext().frame());
             
             foreach(z, channels)
@@ -403,20 +403,24 @@ class Aton: public Iop
                 float* bOut = out.writable(brother(z, 2)) + x;
                 float* aOut = out.writable(Chan_Alpha) + x;
                 const float* END = rOut + (r - x);
-                int xx = x;
+                unsigned int xx = static_cast<unsigned int>(x);
 
                 m_mutex.lock();
                 while (rOut < END)
                 {
-                    if (!fbs.empty() && fbs[f_index].isReady())
+                    if (fbs.empty() || !fbs[f_index].isReady() ||
+                        xx >= fbs[f_index].getWidth() ||
+                         y >= fbs[f_index].getHeight())
+                    {
+                        *rOut = *gOut = *bOut = *aOut = 0.0f;
+                    }
+                    else
                     {
                         *rOut = fbs[f_index].getBuffer(b_index).getColour(xx, y)[0];
                         *gOut = fbs[f_index].getBuffer(b_index).getColour(xx, y)[1];
                         *bOut = fbs[f_index].getBuffer(b_index).getColour(xx, y)[2];
                         *aOut = fbs[f_index].getBuffer(0).getAlpha(xx, y)[0];
                     }
-                    else
-                        *rOut = *gOut = *bOut = *aOut = 0.0f;
                     ++rOut;
                     ++gOut;
                     ++bOut;
