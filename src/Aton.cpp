@@ -384,39 +384,39 @@ class Aton: public Iop
             info_.set(m_node->info().format());
         }
 
-        void engine(int y, int xx, int r, ChannelMask channels, Row& out)
+        void engine(int y, int x, int r, ChannelMask channels, Row& out)
         {
+            long f_index = 0;
             long b_index = 0;
-            long f_index = getFrameIndex(uiContext().frame());
+            
             std::vector<FrameBuffer>& fbs  = m_node->m_framebuffers;
-
+            if (fbs.size() > 1)
+                f_index = getFrameIndex(uiContext().frame());
+            
             foreach(z, channels)
             {
-                if (m_enable_aovs && !m_node->m_framebuffers.empty())
-                    b_index = m_node->m_framebuffers[f_index].getBufferIndex(z);
-
-                float* rOut = out.writable(brother(z, 0)) + xx;
-                float* gOut = out.writable(brother(z, 1)) + xx;
-                float* bOut = out.writable(brother(z, 2)) + xx;
-                float* aOut = out.writable(Chan_Alpha) + xx;
-                const float* END = rOut + (r - xx);
+                if (m_enable_aovs && !fbs.empty() && fbs[f_index].size() > 1)
+                    b_index = fbs[f_index].getBufferIndex(z);
                 
+                float* rOut = out.writable(brother(z, 0)) + x;
+                float* gOut = out.writable(brother(z, 1)) + x;
+                float* bOut = out.writable(brother(z, 2)) + x;
+                float* aOut = out.writable(Chan_Alpha) + x;
+                const float* END = rOut + (r - x);
+                int xx = x;
+
                 m_mutex.lock();
                 while (rOut < END)
                 {
-                    if (fbs.empty() || !fbs[f_index].isReady() ||
-                        xx >= fbs[f_index].getWidth() ||
-                        y >= fbs[f_index].getHeight())
-                    {
-                        *rOut = *gOut = *bOut = *aOut = 0.0f;
-                    }
-                    else
+                    if (!fbs.empty() && fbs[f_index].isReady())
                     {
                         *rOut = fbs[f_index].getBuffer(b_index).getColour(xx, y)[0];
                         *gOut = fbs[f_index].getBuffer(b_index).getColour(xx, y)[1];
                         *bOut = fbs[f_index].getBuffer(b_index).getColour(xx, y)[2];
                         *aOut = fbs[f_index].getBuffer(0).getAlpha(xx, y)[0];
                     }
+                    else
+                        *rOut = *gOut = *bOut = *aOut = 0.0f;
                     ++rOut;
                     ++gOut;
                     ++bOut;
