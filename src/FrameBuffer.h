@@ -42,19 +42,6 @@ namespace aton
             float _val[3];
     };
     
-    // Lightweight alpha pixel class
-    class RenderAlpha
-    {
-        public:
-            RenderAlpha();
-
-            float& operator[](int i);
-            const float& operator[](int i) const;
-
-            // data
-            float _val;
-    };
-    
     // Our image buffer class
     class RenderBuffer
     {
@@ -68,8 +55,8 @@ namespace aton
             RenderColour& getColour(unsigned int x, unsigned int y);
             const RenderColour& getColour(unsigned int x, unsigned int y) const;
         
-            RenderAlpha& getAlpha(unsigned int x, unsigned int y);
-            const RenderAlpha& getAlpha(unsigned int x, unsigned int y) const;
+            float& getAlpha(unsigned int x, unsigned int y);
+            const float& getAlpha(unsigned int x, unsigned int y) const;
         
             unsigned int width();
             unsigned int height();
@@ -78,7 +65,7 @@ namespace aton
 
             // data
             std::vector<RenderColour> _colour_data;
-            std::vector<RenderAlpha> _alpha_data;
+            std::vector<float> _alpha_data;
             unsigned int _width;
             unsigned int _height;
     };

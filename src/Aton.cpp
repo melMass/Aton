@@ -386,48 +386,39 @@ class Aton: public Iop
 
         void engine(int y, int x, int r, ChannelMask channels, Row& out)
         {
-            long f_index = 0, b_index = 0;
+            long f = 0, b = 0;
             unsigned int xx = static_cast<unsigned int>(x);
             
             std::vector<FrameBuffer>& fbs  = m_node->m_framebuffers;
             
             if (m_multiframes && fbs.size() > 1)
-                f_index = getFrameIndex(uiContext().frame());
+                f = getFrameIndex(uiContext().frame());
             
             foreach(z, channels)
             {
-                if (m_enable_aovs && !fbs.empty() && fbs[f_index].size() > 1)
-                {
-                    b_index = fbs[f_index].getBufferIndex(z);
-                    x = xx;
-                }
+                if (m_enable_aovs && !fbs.empty() && fbs[f].size() > 1)
+                    b = fbs[f].getBufferIndex(z);
                 
-                float* rOut = out.writable(brother(z, 0)) + x;
-                float* gOut = out.writable(brother(z, 1)) + x;
-                float* bOut = out.writable(brother(z, 2)) + x;
-                float* aOut = out.writable(Chan_Alpha) + x;
-                const float* END = rOut + (r - x);
+                x = xx;
+                int c = colourIndex(z);
+                float* cOut = out.writable(z) + x;
+                const float* END = cOut + (r - x);
 
                 m_mutex.lock();
-                while (rOut < END)
+                while (cOut < END)
                 {
-                    if (fbs.empty() || !fbs[f_index].isReady() ||
-                        x >= fbs[f_index].getWidth() ||
-                        y >= fbs[f_index].getHeight())
+                    if (fbs.empty() || !fbs[f].isReady() ||
+                        x >= fbs[f].getWidth() ||
+                        y >= fbs[f].getHeight())
                     {
-                        *rOut = *gOut = *bOut = *aOut = 0.0f;
+                        *cOut = 0.0f;
                     }
+                    else if (c < 3)
+                        *cOut = fbs[f].getBuffer(b).getColour(x, y)[c];
                     else
-                    {
-                        *rOut = fbs[f_index].getBuffer(b_index).getColour(x, y)[0];
-                        *gOut = fbs[f_index].getBuffer(b_index).getColour(x, y)[1];
-                        *bOut = fbs[f_index].getBuffer(b_index).getColour(x, y)[2];
-                        *aOut = fbs[f_index].getBuffer(0).getAlpha(x, y)[0];
-                    }
-                    ++rOut;
-                    ++gOut;
-                    ++bOut;
-                    ++aOut;
+                        *cOut = fbs[f].getBuffer(b).getAlpha(x, y);
+    
+                    ++cOut;
                     ++x;
                 }
                 m_mutex.unlock();
@@ -1186,8 +1177,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                         pix[_s] = pixel_data[offset + _s];
                                 if (_spp == 4)
                                 {
-                                    RenderAlpha& alpha_pix = frameBuffer.getBuffer(b_index).getAlpha(_x+ _xorigin, _h - (_y + _yorigin + 1));
-                                    alpha_pix[0] = pixel_data[offset+3];
+                                    float& alpha_pix = frameBuffer.getBuffer(b_index).getAlpha(_x+ _xorigin, _h - (_y + _yorigin + 1));
+                                    alpha_pix = pixel_data[offset+3];
                                 }
                             }
 

@@ -14,12 +14,6 @@ RenderColour::RenderColour() { _val[0] = _val[1] = _val[2] = 0.f; }
 float& RenderColour::operator[](int i){ return _val[i]; }
 const float& RenderColour::operator[](int i) const { return _val[i]; }
 
-// Lightweight alpha pixel class
-RenderAlpha::RenderAlpha() { _val = 1.f; }
-
-float& RenderAlpha::operator[](int i){ return _val; }
-const float& RenderAlpha::operator[](int i) const { return _val; }
-
 // Our image buffer class
 RenderBuffer::RenderBuffer(): _width(0), _height(0) {}
 
@@ -47,13 +41,13 @@ const RenderColour& RenderBuffer::getColour(unsigned int x, unsigned int y) cons
     return _colour_data[index];
 }
 
-RenderAlpha& RenderBuffer::getAlpha(unsigned int x, unsigned int y)
+float& RenderBuffer::getAlpha(unsigned int x, unsigned int y)
 {
     unsigned int index = (_width * y) + x;
     return _alpha_data[index];
 }
 
-const RenderAlpha& RenderBuffer::getAlpha(unsigned int x, unsigned int y) const
+const float& RenderBuffer::getAlpha(unsigned int x, unsigned int y) const
 {
     unsigned int index = (_width * y) + x;
     return _alpha_data[index];
