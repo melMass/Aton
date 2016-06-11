@@ -29,28 +29,24 @@ void RenderBuffer::initBuffer(const unsigned int width,
         _alpha_data.resize(_width * _height);
 }
 
-RenderColour& RenderBuffer::getColour(unsigned int x, unsigned int y)
+float& RenderBuffer::getColour(unsigned int x, unsigned int y, int s)
 {
     unsigned int index = (_width * y) + x;
-    return _colour_data[index];
+    
+    if (s < 3)
+        return _colour_data[index][s];
+    else
+        return _alpha_data[index];
 }
 
-const RenderColour& RenderBuffer::getColour(unsigned int x, unsigned int y) const
+const float& RenderBuffer::getColour(unsigned int x, unsigned int y, int c) const
 {
     unsigned int index = (_width * y) + x;
-    return _colour_data[index];
-}
-
-float& RenderBuffer::getAlpha(unsigned int x, unsigned int y)
-{
-    unsigned int index = (_width * y) + x;
-    return _alpha_data[index];
-}
-
-const float& RenderBuffer::getAlpha(unsigned int x, unsigned int y) const
-{
-    unsigned int index = (_width * y) + x;
-    return _alpha_data[index];
+    
+    if (c < 3)
+        return _colour_data[index][c];
+    else
+        return _alpha_data[index];
 }
 
 unsigned int RenderBuffer::width() { return _width; }

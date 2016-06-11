@@ -52,11 +52,8 @@ namespace aton
                             const unsigned int height,
                             const bool alpha = false);
 
-            RenderColour& getColour(unsigned int x, unsigned int y);
-            const RenderColour& getColour(unsigned int x, unsigned int y) const;
-        
-            float& getAlpha(unsigned int x, unsigned int y);
-            const float& getAlpha(unsigned int x, unsigned int y) const;
+            float& getColour(unsigned int x, unsigned int y, int s);
+            const float& getColour(unsigned int x, unsigned int y, int c) const;
         
             unsigned int width();
             unsigned int height();

@@ -289,21 +289,21 @@ class Aton: public Iop
             {
                 // Get the frame and set the format
                 long f_index = getFrameIndex(uiContext().frame());
-                FrameBuffer& frameBuffer = m_node->m_framebuffers[f_index];
+                FrameBuffer& fB = m_node->m_framebuffers[f_index];
                 
-                if (!frameBuffer.empty())
+                if (!fB.empty())
                 {
-                    if (frameBuffer.getProgress() > 0)
-                        setStatus(frameBuffer.getProgress(),
-                                  frameBuffer.getRAM(),
-                                  frameBuffer.getPRAM(),
-                                  frameBuffer.getTime(),
-                                  frameBuffer.getFrame(),
-                                  frameBuffer.getArnoldVersion());
+                    if (fB.getProgress() > 0)
+                        setStatus(fB.getProgress(),
+                                  fB.getRAM(),
+                                  fB.getPRAM(),
+                                  fB.getTime(),
+                                  fB.getFrame(),
+                                  fB.getArnoldVersion());
                     
                     // Set the format
-                    const int& width = frameBuffer.getWidth();
-                    const int& height = frameBuffer.getHeight();
+                    const int& width = fB.getWidth();
+                    const int& height = fB.getHeight();
                     
                     if (m_node->m_fmt.width() != width ||
                         m_node->m_fmt.height() != height)
@@ -329,14 +329,14 @@ class Aton: public Iop
                     // Adding channels
                     if (m_enable_aovs)
                     {
-                        size_t fb_size = frameBuffer.size();
+                        size_t fb_size = fB.size();
                         
                         if (channels.size() != fb_size)
                             channels.clear();
 
                         for(int i = 0; i < fb_size; ++i)
                         {
-                            const std::string& bufferName = frameBuffer.getBufferName(i);
+                            const std::string& bufferName = fB.getBufferName(i);
                             
                             if (bufferName.compare(ChannelStr::RGBA) == 0)
                             {
@@ -389,15 +389,15 @@ class Aton: public Iop
             long f = 0, b = 0;
             unsigned int xx = static_cast<unsigned int>(x);
             
-            std::vector<FrameBuffer>& fbs  = m_node->m_framebuffers;
+            std::vector<FrameBuffer>& fBs  = m_node->m_framebuffers;
             
-            if (m_multiframes && fbs.size() > 1)
+            if (m_multiframes && fBs.size() > 1)
                 f = getFrameIndex(uiContext().frame());
             
             foreach(z, channels)
             {
-                if (m_enable_aovs && !fbs.empty() && fbs[f].size() > 1)
-                    b = fbs[f].getBufferIndex(z);
+                if (m_enable_aovs && !fBs.empty() && fBs[f].size() > 1)
+                    b = fBs[f].getBufferIndex(z);
                 
                 x = xx;
                 int c = colourIndex(z);
@@ -407,17 +407,14 @@ class Aton: public Iop
                 m_mutex.lock();
                 while (cOut < END)
                 {
-                    if (fbs.empty() || !fbs[f].isReady() ||
-                        x >= fbs[f].getWidth() ||
-                        y >= fbs[f].getHeight())
+                    if (fBs.empty() || !fBs[f].isReady() ||
+                        x >= fBs[f].getWidth() ||
+                        y >= fBs[f].getHeight())
                     {
                         *cOut = 0.0f;
                     }
-                    else if (c < 3)
-                        *cOut = fbs[f].getBuffer(b).getColour(x, y)[c];
                     else
-                        *cOut = fbs[f].getBuffer(b).getAlpha(x, y);
-    
+                        *cOut = fBs[f].getBuffer(b).getColour(x, y, c);
                     ++cOut;
                     ++x;
                 }
@@ -708,13 +705,13 @@ class Aton: public Iop
     
         void clearAllCmd()
         {
-            std::vector<FrameBuffer>& fbs  = m_node->m_framebuffers;
+            std::vector<FrameBuffer>& fBs  = m_node->m_framebuffers;
             std::vector<double>& frames  = m_node->m_frames;
         
-            if (!fbs.empty() && !frames.empty())
+            if (!fBs.empty() && !frames.empty())
             {
                 std::vector<FrameBuffer>::iterator it;
-                for(it = fbs.begin(); it != fbs.end(); ++it)
+                for(it = fBs.begin(); it != fBs.end(); ++it)
                 {
                     it->ready(false);
                 }
@@ -722,7 +719,7 @@ class Aton: public Iop
                 m_node->m_legit = false;
                 m_node->disconnect();
             
-                fbs =  std::vector<FrameBuffer>();
+                fBs =  std::vector<FrameBuffer>();
                 frames = std::vector<double>();
                
                 m_node->m_legit = true;
@@ -942,7 +939,7 @@ class Aton: public Iop
 static void timeChange(unsigned index, unsigned nthreads, void* data)
 {
     Aton* node = reinterpret_cast<Aton*>(data);
-    std::vector<FrameBuffer>& fbs  = node->m_node->m_framebuffers;
+    std::vector<FrameBuffer>& fBs  = node->m_node->m_framebuffers;
     
     double uiFrame = 0;
     double prevFrame = 0;
@@ -951,7 +948,7 @@ static void timeChange(unsigned index, unsigned nthreads, void* data)
     while (node->m_legit)
     {
         uiFrame = node->uiContext().frame();
-        if (!fbs.empty() && prevFrame != uiFrame)
+        if (!fBs.empty() && prevFrame != uiFrame)
         {
             node->flagForUpdate();
             prevFrame = uiFrame;
@@ -1021,18 +1018,18 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                       node->m_frames.end(),
                                       _active_frame) == node->m_frames.end())
                         {
-                            FrameBuffer frameBuffer(_active_frame, data.width(), data.height());
+                            FrameBuffer fB(_active_frame, data.width(), data.height());
                             node->m_frames.push_back(_active_frame);
-                            node->m_framebuffers.push_back(frameBuffer);
+                            node->m_framebuffers.push_back(fB);
                         }
                     }
                     else
                     {
                         if (node->m_frames.empty())
                         {
-                            FrameBuffer frameBuffer(_active_frame, data.width(), data.height());
+                            FrameBuffer fB(_active_frame, data.width(), data.height());
                             node->m_frames.push_back(_active_frame);
-                            node->m_framebuffers.push_back(frameBuffer);
+                            node->m_framebuffers.push_back(fB);
                         }
                         else if (node->m_frames.size() > 1)
                         {
@@ -1044,35 +1041,35 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     
                     // Get frame buffer
                     f_index = node->getFrameIndex(_active_frame);
-                    FrameBuffer& frameBuffer = node->m_framebuffers[f_index];
+                    FrameBuffer& fB = node->m_framebuffers[f_index];
                     
                     // Reset Buffers and Channels
-                    if (!active_aovs.empty() && !frameBuffer.empty())
+                    if (!active_aovs.empty() && !fB.empty())
                     {
-                        int fbCompare = frameBuffer.compareAll(data.width(),
+                        int fBCompare = fB.compareAll(data.width(),
                                                                data.height(),
                                                                active_aovs);
-                        switch (fbCompare)
+                        switch (fBCompare)
                         {
                             case 0: // Nothing changed
                                 break;
                             case 1: // Only AOVs count changed
                             {
                                 node->m_mutex.lock();
-                                frameBuffer.resize(1);
+                                fB.resize(1);
                                 break;
                             }
                             case 2: // All changed
                             {
                                 node->m_mutex.lock();
-                                frameBuffer.clearAll();
-                                frameBuffer.setWidth(data.width());
-                                frameBuffer.setHeight(data.height());
+                                fB.clearAll();
+                                fB.setWidth(data.width());
+                                fB.setHeight(data.height());
                                 break;
                             }
                         }
 
-                        if (fbCompare > 0)
+                        if (fBCompare > 0)
                         {
                             if (node->m_channels.size() > 4)
                             {
@@ -1083,7 +1080,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                 node->m_channels.insert(Chan_Alpha);
                             }
                             
-                            frameBuffer.ready(false);
+                            fB.ready(false);
                             node->m_mutex.unlock();
                         }
                     }
@@ -1098,7 +1095,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     delta_time = active_time;
                     
                     // Set Arnold Core version
-                    frameBuffer.setArnoldVersion(data.version());
+                    fB.setArnoldVersion(data.version());
                     
                     // Set time to current frame
                     if (node->m_multiframes &&
@@ -1113,7 +1110,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                 case 1: // image data
                 {
                     // Get frame buffer
-                    FrameBuffer& frameBuffer = node->m_framebuffers[f_index];
+                    FrameBuffer& fB = node->m_framebuffers[f_index];
                     
                     // Copy data from d
                     int _xorigin = data.x();
@@ -1128,9 +1125,9 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     active_time = data.time();
 
                     // Get active aov names
-                    if(!(std::find(active_aovs.begin(),
-                                   active_aovs.end(),
-                                   data.aovName()) != active_aovs.end()))
+                    if(std::find(active_aovs.begin(),
+                                 active_aovs.end(),
+                                 data.aovName()) == active_aovs.end())
                     {
                         if (node->m_enable_aovs)
                             active_aovs.push_back(data.aovName());
@@ -1150,35 +1147,33 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         node->m_mutex.lock();
                         
                         // Adding buffer
-                        if(!frameBuffer.bufferNameExists(data.aovName()))
+                        if(!fB.bufferNameExists(data.aovName()))
                         {
-                            if (node->m_enable_aovs || frameBuffer.size()==0)
-                                frameBuffer.addBuffer(data.aovName(), _spp);
+                            if (node->m_enable_aovs || fB.size()==0)
+                                fB.addBuffer(data.aovName(), _spp);
                         }
                         else
-                            frameBuffer.ready(true);
+                            fB.ready(true);
                         
                         // Get buffer index
-                        long b_index = frameBuffer.getBufferIndex(data.aovName());
+                        long b = fB.getBufferIndex(data.aovName());
                         
                         // Writing to buffer
                         unsigned int _x, _y, _s, offset;
                         const float* pixel_data = data.pixels();
-                        const int& _w = frameBuffer.getWidth();
-                        const int& _h = frameBuffer.getHeight();
+                        const int& _w = fB.getWidth();
+                        const int& _h = fB.getHeight();
+                        
                         for (_x = 0; _x < _width; ++_x)
                             for (_y = 0; _y < _height; ++_y)
                             {
                                 offset = (_width * _y * _spp) + (_x * _spp);
-
-                                RenderColour& pix = frameBuffer.getBuffer(b_index).getColour(_x+ _xorigin, _h - (_y + _yorigin + 1));
                                 for (_s = 0; _s < _spp; ++_s)
-                                    if (_s != 3)
-                                        pix[_s] = pixel_data[offset + _s];
-                                if (_spp == 4)
                                 {
-                                    float& alpha_pix = frameBuffer.getBuffer(b_index).getAlpha(_x+ _xorigin, _h - (_y + _yorigin + 1));
-                                    alpha_pix = pixel_data[offset+3];
+                                    float& pix = fB.getBuffer(b).getColour(_x + _xorigin,
+                                                                           _h - (_y + _yorigin + 1),
+                                                                           _s);
+                                    pix = pixel_data[offset + _s];
                                 }
                             }
 
@@ -1187,7 +1182,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
 
                         // Update only on first aov
                         if(!node->m_capturing &&
-                           frameBuffer.getFirstBufferName().compare(data.aovName()) == 0)
+                           fB.getFirstBufferName().compare(data.aovName()) == 0)
                         {
                             // Calculating the progress percentage
                             imageArea -= (_width*_height);
@@ -1195,18 +1190,18 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
 
                             // Getting redraw bucket size
                             node->m_mutex.lock();
-                            frameBuffer.setBucketBBox(_xorigin,
+                            fB.setBucketBBox(_xorigin,
                                                       _h - _yorigin - _height,
                                                       _xorigin + _width,
                                                       _h - _yorigin);
 
                             // Setting status parameters
-                            frameBuffer.setProgress(progress);
-                            frameBuffer.setRAM(_ram);
+                            fB.setProgress(progress);
+                            fB.setRAM(_ram);
                             if (delta_time > _time)
-                                frameBuffer.setTime(_time);
+                                fB.setTime(_time);
                             else
-                                frameBuffer.setTime(_time - delta_time);
+                                fB.setTime(_time - delta_time);
                             node->m_mutex.unlock();
                             
                             // Update the image
