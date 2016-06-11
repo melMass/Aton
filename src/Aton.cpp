@@ -1011,7 +1011,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     if (current_frame != _active_frame)
                         current_frame = _active_frame;
                     
-                    // Sync timeline
+                    // Create FrameBuffer
                     if (std::find(node->m_frames.begin(),
                                   node->m_frames.end(),
                                   _active_frame) == node->m_frames.end())
@@ -1032,11 +1032,11 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     }
                     node->m_mutex.unlock();
                     
-                    // Get frame buffer
+                    // Get FrameBuffer
                     f_index = node->getFrameIndex(_active_frame);
                     FrameBuffer& fB = node->m_framebuffers[f_index];
                     
-                    // Reset Buffers and Channels
+                    // Reset Buffers and Channels if needed
                     if (!active_aovs.empty() && !fB.empty())
                     {
                         int fBCompare = fB.compareAll(data.width(),
