@@ -1012,30 +1012,23 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         current_frame = _active_frame;
                     
                     // Sync timeline
-                    if (node->m_multiframes)
+                    if (std::find(node->m_frames.begin(),
+                                  node->m_frames.end(),
+                                  _active_frame) == node->m_frames.end())
                     {
-                        if (std::find(node->m_frames.begin(),
-                                      node->m_frames.end(),
-                                      _active_frame) == node->m_frames.end())
-                        {
-                            FrameBuffer fB(_active_frame, data.width(), data.height());
-                            node->m_frames.push_back(_active_frame);
-                            node->m_framebuffers.push_back(fB);
-                        }
+                        FrameBuffer fB(_active_frame, data.width(), data.height());
+                        node->m_frames.push_back(_active_frame);
+                        node->m_framebuffers.push_back(fB);
                     }
-                    else
+
+                    if (!node->m_multiframes)
                     {
-                        if (node->m_frames.empty())
-                        {
-                            FrameBuffer fB(_active_frame, data.width(), data.height());
-                            node->m_frames.push_back(_active_frame);
-                            node->m_framebuffers.push_back(fB);
-                        }
-                        else if (node->m_frames.size() > 1)
-                        {
-                            node->m_frames.resize(1);
-                            node->m_framebuffers.resize(1);
-                        }
+                        std::reverse(node->m_frames.begin(),
+                                     node->m_frames.end());
+                        std::reverse(node->m_framebuffers.begin(),
+                                     node->m_framebuffers.end());
+                        node->m_frames.resize(1);
+                        node->m_framebuffers.resize(1);
                     }
                     node->m_mutex.unlock();
                     
@@ -1047,8 +1040,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     if (!active_aovs.empty() && !fB.empty())
                     {
                         int fBCompare = fB.compareAll(data.width(),
-                                                               data.height(),
-                                                               active_aovs);
+                                                      data.height(),
+                                                      active_aovs);
                         switch (fBCompare)
                         {
                             case 0: // Nothing changed
