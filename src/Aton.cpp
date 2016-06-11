@@ -1007,11 +1007,11 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     // Init current frame
                     double _active_frame = static_cast<double>(data.currentFrame());
                     
-                    node->m_mutex.lock();
                     if (current_frame != _active_frame)
                         current_frame = _active_frame;
                     
                     // Create FrameBuffer
+                    node->m_mutex.lock();
                     if (std::find(node->m_frames.begin(),
                                   node->m_frames.end(),
                                   _active_frame) == node->m_frames.end())
