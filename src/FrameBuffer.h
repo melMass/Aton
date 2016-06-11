@@ -99,7 +99,7 @@ namespace aton
             const RenderBuffer& getBuffer(long index = 0) const;
         
             // Get the current buffer index
-            long getBufferIndex(Channel z, long& b_index);
+            long getBufferIndex(Channel z);
         
             // Get the current buffer index
             long getBufferIndex(const char * aovName);

@@ -398,7 +398,7 @@ class Aton: public Iop
             {
                 if (m_enable_aovs && !fbs.empty() && fbs[f_index].size() > 1)
                 {
-                    b_index = fbs[f_index].getBufferIndex(z, b_index);
+                    b_index = fbs[f_index].getBufferIndex(z);
                     x = xx;
                 }
                 
