@@ -20,6 +20,7 @@ namespace ChannelStr
 {
     const std::string RGBA = "RGBA";
     const std::string rgb = "rgb";
+    const std::string rgba = "rgba";
     const std::string depth = "depth";
     const std::string Z = "Z";
     const std::string N = "N";
@@ -98,7 +99,7 @@ namespace aton
             const RenderBuffer& getBuffer(long index = 0) const;
         
             // Get the current buffer index
-            long getBufferIndex(Channel z);
+            long getBufferIndex(Channel z, long& b_index);
         
             // Get the current buffer index
             long getBufferIndex(const char * aovName);

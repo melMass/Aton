@@ -386,46 +386,49 @@ class Aton: public Iop
 
         void engine(int y, int x, int r, ChannelMask channels, Row& out)
         {
-            long f_index = 0;
-            long b_index = 0;
+            long f_index = 0, b_index = 0;
+            unsigned int xx = static_cast<unsigned int>(x);
             
             std::vector<FrameBuffer>& fbs  = m_node->m_framebuffers;
+            
             if (m_multiframes && fbs.size() > 1)
                 f_index = getFrameIndex(uiContext().frame());
             
             foreach(z, channels)
             {
                 if (m_enable_aovs && !fbs.empty() && fbs[f_index].size() > 1)
-                    b_index = fbs[f_index].getBufferIndex(z);
+                {
+                    b_index = fbs[f_index].getBufferIndex(z, b_index);
+                    x = xx;
+                }
                 
                 float* rOut = out.writable(brother(z, 0)) + x;
                 float* gOut = out.writable(brother(z, 1)) + x;
                 float* bOut = out.writable(brother(z, 2)) + x;
                 float* aOut = out.writable(Chan_Alpha) + x;
                 const float* END = rOut + (r - x);
-                unsigned int xx = static_cast<unsigned int>(x);
 
                 m_mutex.lock();
                 while (rOut < END)
                 {
                     if (fbs.empty() || !fbs[f_index].isReady() ||
-                        xx >= fbs[f_index].getWidth() ||
-                         y >= fbs[f_index].getHeight())
+                        x >= fbs[f_index].getWidth() ||
+                        y >= fbs[f_index].getHeight())
                     {
                         *rOut = *gOut = *bOut = *aOut = 0.0f;
                     }
                     else
                     {
-                        *rOut = fbs[f_index].getBuffer(b_index).getColour(xx, y)[0];
-                        *gOut = fbs[f_index].getBuffer(b_index).getColour(xx, y)[1];
-                        *bOut = fbs[f_index].getBuffer(b_index).getColour(xx, y)[2];
-                        *aOut = fbs[f_index].getBuffer(0).getAlpha(xx, y)[0];
+                        *rOut = fbs[f_index].getBuffer(b_index).getColour(x, y)[0];
+                        *gOut = fbs[f_index].getBuffer(b_index).getColour(x, y)[1];
+                        *bOut = fbs[f_index].getBuffer(b_index).getColour(x, y)[2];
+                        *aOut = fbs[f_index].getBuffer(0).getAlpha(x, y)[0];
                     }
                     ++rOut;
                     ++gOut;
                     ++bOut;
                     ++aOut;
-                    ++xx;
+                    ++x;
                 }
                 m_mutex.unlock();
             }

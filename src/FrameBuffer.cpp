@@ -110,23 +110,24 @@ const RenderBuffer& FrameBuffer::getBuffer(long index) const
 }
 
 // Get the current buffer index
-long FrameBuffer::getBufferIndex(Channel z)
+long FrameBuffer::getBufferIndex(Channel z, long& b_index)
 {
-    long b_index = 0;
-    
     if (!_aovs.empty())
     {
-        std::string layer = getLayerName(z);
-        if (layer.compare(ChannelStr::rgb) != 0)
+        const char* layer = getLayerName(z);
+        if (std::strcmp(layer, ChannelStr::rgb.c_str()) ||
+            std::strcmp(layer, ChannelStr::rgba.c_str()))
         {
-            for(std::vector<std::string>::iterator it = _aovs.begin(); it != _aovs.end(); ++it)
+            std::vector<std::string>::iterator it;
+            for(it = _aovs.begin(); it != _aovs.end(); ++it)
             {
-                if (it->compare(layer) == 0)
+                if (!std::strcmp(layer, it->c_str()))
                 {
                     b_index = it - _aovs.begin();
                     break;
                 }
-                else if (it->compare(ChannelStr::Z) == 0 && layer.compare(ChannelStr::depth) == 0)
+                else if (it->compare(ChannelStr::Z) == 0 &&
+                         !std::strcmp(layer, ChannelStr::depth.c_str()))
                 {
                     b_index = it - _aovs.begin();
                     break;
