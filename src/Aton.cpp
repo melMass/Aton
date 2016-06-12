@@ -364,14 +364,16 @@ class Aton: public Iop
                             }
                             else if (bfName.compare(Z) == 0 && !channels.contains(Chan_Z))
                             {
-                                channels.insert( Chan_Z );
+                                channels.insert(Chan_Z);
                             }
-                            else if ((bfName.compare(N) == 0 || bfName.compare(P) == 0) &&
-                                      !channels.contains(channel((bfName + _X).c_str())))
+                            else if (bfName.compare(N) == 0 || bfName.compare(P) == 0)
                             {
-                                channels.insert(channel((bfName + _X).c_str()));
-                                channels.insert(channel((bfName + _Y).c_str()));
-                                channels.insert(channel((bfName + _Z).c_str()));
+                                if (!channels.contains(channel((bfName + _X).c_str())))
+                                {
+                                    channels.insert(channel((bfName + _X).c_str()));
+                                    channels.insert(channel((bfName + _Y).c_str()));
+                                    channels.insert(channel((bfName + _Z).c_str()));
+                                }
                             }
                             else if (!channels.contains(channel((bfName + _red).c_str())))
                             {
@@ -396,7 +398,7 @@ class Aton: public Iop
             long f = 0, b = 0;
             unsigned int xx = static_cast<unsigned int>(x);
             
-            std::vector<FrameBuffer>& fBs  = m_node->m_framebuffers;
+            std::vector<FrameBuffer>& fBs = m_node->m_framebuffers;
             
             if (m_multiframes && fBs.size() > 1)
                 f = getFrameIndex(uiContext().frame());
@@ -410,7 +412,7 @@ class Aton: public Iop
                 int c = colourIndex(z);
                 float* cOut = out.writable(z) + x;
                 const float* END = cOut + (r - x);
-
+                
                 m_mutex.lock();
                 while (cOut < END)
                 {

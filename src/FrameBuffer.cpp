@@ -47,16 +47,6 @@ float& RenderBuffer::getColour(unsigned int x, unsigned int y, int s)
         return _alpha_data[index];
 }
 
-const float& RenderBuffer::getColour(unsigned int x, unsigned int y, int c) const
-{
-    unsigned int index = (_width * y) + x;
-    
-    if (c < 3)
-        return _colour_data[index][c];
-    else
-        return _alpha_data[index];
-}
-
 unsigned int RenderBuffer::width() { return _width; }
 unsigned int RenderBuffer::height() { return _height; }
 

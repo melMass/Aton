@@ -42,8 +42,7 @@ namespace aton
                             const bool alpha = false);
 
             float& getColour(unsigned int x, unsigned int y, int s);
-            const float& getColour(unsigned int x, unsigned int y, int c) const;
-        
+                    
             unsigned int width();
             unsigned int height();
         
