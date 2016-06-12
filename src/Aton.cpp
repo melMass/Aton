@@ -1128,13 +1128,10 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     {
                         if (node->m_enable_aovs)
                             active_aovs.push_back(d.aovName());
-                        else
-                        {
-                            if (active_aovs.size() == 0)
-                                active_aovs.push_back(d.aovName());
-                            else if (active_aovs.size() > 1)
-                                active_aovs.resize(1);
-                        }
+                        else if (active_aovs.size() == 0)
+                            active_aovs.push_back(d.aovName());
+                        else if (active_aovs.size() > 1)
+                            active_aovs.resize(1);
                     }
                     
                     // Skip non RGBA buckets if AOVs are disabled
@@ -1144,11 +1141,9 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         node->m_mutex.lock();
                         
                         // Adding buffer
-                        if(!fB.bufferNameExists(d.aovName()))
-                        {
-                            if (node->m_enable_aovs || fB.size() == 0)
-                                fB.addBuffer(d.aovName(), _spp);
-                        }
+                        if(!fB.bufferNameExists(d.aovName()) && (node->m_enable_aovs ||
+                                                                 fB.size() == 0))
+                            fB.addBuffer(d.aovName(), _spp);
                         else
                             fB.ready(true);
                         
