@@ -448,7 +448,6 @@ class Aton: public Iop
 
             Divider(f, "Capture");
             Knob* limit_knob = Int_knob(f, &m_slimit, "limit_knob", "Limit");
-            Newline(f);
             Knob* all_frames_knob = Bool_knob(f, &m_all_frames, "all_frames_knob", "Capture All Frames");
             Knob* path_knob = File_knob(f, &m_path, "path_knob", "Path");
 
