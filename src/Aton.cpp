@@ -449,9 +449,7 @@ class Aton: public Iop
             Divider(f, "Capture");
             Knob* limit_knob = Int_knob(f, &m_slimit, "limit_knob", "Limit");
             Newline(f);
-            Knob* all_frames_knob = Bool_knob(f, &m_all_frames,
-                                              "all_frames_knob",
-                                              "Capture All Frames");
+            Knob* all_frames_knob = Bool_knob(f, &m_all_frames, "all_frames_knob", "Capture All Frames");
             Knob* path_knob = File_knob(f, &m_path, "path_knob", "Path");
 
             Newline(f);
@@ -475,7 +473,6 @@ class Aton: public Iop
             stamp_knob->set_flag(Knob::NO_RERENDER, true);
             stamp_scale_knob->set_flag(Knob::NO_RERENDER, true);
             comment_knob->set_flag(Knob::NO_RERENDER, true);
-
             statusKnob->set_flag(Knob::NO_RERENDER, true);
             statusKnob->set_flag(Knob::DISABLED, true);
             statusKnob->set_flag(Knob::OUTPUT_ONLY, true);
@@ -527,7 +524,8 @@ class Aton: public Iop
     
         bool isVersionValid()
         {
-            // Check the Nuke version to be minimum 9.0v7
+            // Check the Nuke version to be minimum 9.0v7 in order
+            // to status stamp text be consistant with Linux version
             std::string cmd = "nuke.NUKE_VERSION_MAJOR * 100 + "
                               "nuke.NUKE_VERSION_MINOR * 10 + "
                               "nuke.NUKE_VERSION_RELEASE >= 907";
@@ -667,7 +665,7 @@ class Aton: public Iop
         {
             if ( !m_garbageList.empty() )
             {
-                // in windows sometimes files can't be deleted due to lack of
+                // In windows sometimes files can't be deleted due to lack of
                 // access so we collecting a garbage list and trying to remove
                 // them next time when user make a capture
                 std::vector<std::string>::iterator it;
