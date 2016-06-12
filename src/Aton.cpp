@@ -354,41 +354,31 @@ class Aton: public Iop
                         for(int i = 0; i < fb_size; ++i)
                         {
                             using namespace chStr;
-                            const std::string& bufferName = fB.getBufferName(i);
+                            const std::string& bfName = fB.getBufferName(i);
                             
-                            if (bufferName.compare(RGBA) == 0)
+                            if (bfName.compare(RGBA) == 0 && !channels.contains(Chan_Red))
                             {
-                                if (!channels.contains(Chan_Red))
-                                {
-                                    channels.insert(Chan_Red);
-                                    channels.insert(Chan_Green);
-                                    channels.insert(Chan_Blue);
-                                    channels.insert(Chan_Alpha);
-                                }
+                                channels.insert(Chan_Red);
+                                channels.insert(Chan_Green);
+                                channels.insert(Chan_Blue);
+                                channels.insert(Chan_Alpha);
                             }
-                            else if (bufferName.compare(Z) == 0)
+                            else if (bfName.compare(Z) == 0 && !channels.contains(Chan_Z))
                             {
-                                if (!channels.contains(Chan_Z))
-                                    channels.insert( Chan_Z );
+                                channels.insert( Chan_Z );
                             }
-                            else if (bufferName.compare(N) == 0 ||
-                                     bufferName.compare(P) == 0)
+                            else if ((bfName.compare(N) == 0 || bfName.compare(P) == 0) &&
+                                      !channels.contains(channel((bfName + _X).c_str())))
                             {
-                                if (!channels.contains(channel((bufferName + _X).c_str())))
-                                {
-                                    channels.insert(channel((bufferName + _X).c_str()));
-                                    channels.insert(channel((bufferName + _Y).c_str()));
-                                    channels.insert(channel((bufferName + _Z).c_str()));
-                                }
+                                channels.insert(channel((bfName + _X).c_str()));
+                                channels.insert(channel((bfName + _Y).c_str()));
+                                channels.insert(channel((bfName + _Z).c_str()));
                             }
-                            else
+                            else if (!channels.contains(channel((bfName + _red).c_str())))
                             {
-                                if (!channels.contains(channel((bufferName + _red).c_str())))
-                                {
-                                    channels.insert(channel((bufferName + _red).c_str()));
-                                    channels.insert(channel((bufferName + _green).c_str()));
-                                    channels.insert(channel((bufferName + _blue).c_str()));
-                                }
+                                channels.insert(channel((bfName + _red).c_str()));
+                                channels.insert(channel((bfName + _green).c_str()));
+                                channels.insert(channel((bfName + _blue).c_str()));
                             }
                         }
                     }
