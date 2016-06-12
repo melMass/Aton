@@ -945,7 +945,7 @@ static void timeChange(unsigned index, unsigned nthreads, void* data)
 {
     using namespace boost;
     Aton* node = reinterpret_cast<Aton*>(data);
-    std::vector<FrameBuffer>& fBs  = node->m_node->m_framebuffers;
+    std::vector<FrameBuffer>& fBs = node->m_node->m_framebuffers;
     
     double uiFrame = 0;
     double prevFrame = 0;
@@ -993,7 +993,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
         static int delta_time = 0;
 
         // Loop over incoming data
-        while ((d.type()==2 || d.type()==9) == false)
+        while ((d.type() == 2 || d.type() == 9) == false)
         {
             // Listen for some data
             try
@@ -1146,7 +1146,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         // Adding buffer
                         if(!fB.bufferNameExists(d.aovName()))
                         {
-                            if (node->m_enable_aovs || fB.size()==0)
+                            if (node->m_enable_aovs || fB.size() == 0)
                                 fB.addBuffer(d.aovName(), _spp);
                         }
                         else
