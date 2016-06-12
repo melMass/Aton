@@ -39,9 +39,10 @@ namespace aton
 
             void initBuffer(const unsigned int width,
                             const unsigned int height,
-                            const bool alpha = false);
+                            const unsigned int spp);
 
-            float& getColour(unsigned int x, unsigned int y, int s);
+            float& getColour(unsigned int x, unsigned int y, int s, int spp);
+            const float& getColour(unsigned int x, unsigned int y, int c) const;
                     
             unsigned int width();
             unsigned int height();

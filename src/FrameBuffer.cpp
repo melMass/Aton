@@ -27,22 +27,50 @@ RenderBuffer::RenderBuffer(): _width(0), _height(0) {}
 
 void RenderBuffer::initBuffer(const unsigned int width,
                               const unsigned int height,
-                              const bool alpha)
+                              const unsigned int spp)
 {
     _width = width;
     _height = height;
-
-    _colour_data.resize(_width * _height);
-    if (alpha)
-        _alpha_data.resize(_width * _height);
+    
+    switch (spp)
+    {
+        case 1:
+        {
+            _alpha_data.resize(_width * _height);
+            break;
+        }
+        case 3:
+        {
+            _colour_data.resize(_width * _height);
+            break;
+        }
+        case 4:
+        {
+            _colour_data.resize(_width * _height);
+            _alpha_data.resize(_width * _height);
+            break;
+        }
+    }
 }
 
-float& RenderBuffer::getColour(unsigned int x, unsigned int y, int s)
+float& RenderBuffer::getColour(unsigned int x, unsigned int y, int s, int spp)
 {
     unsigned int index = (_width * y) + x;
     
-    if (s < 3)
+    if ((spp == 3 || spp == 4) && s < 3)
         return _colour_data[index][s];
+    else
+        return _alpha_data[index];
+}
+
+const float& RenderBuffer::getColour(unsigned int x, unsigned int y, int c) const
+{
+    unsigned int index = (_width * y) + x;
+    
+    if (c == 0 && _colour_data.empty())
+        return _alpha_data[index];
+    else if (c < 3)
+        return _colour_data[index][c];
     else
         return _alpha_data[index];
 }
@@ -76,10 +104,7 @@ void FrameBuffer::addBuffer(const char* aov, int spp)
 {
     RenderBuffer buffer;
     
-    if (spp < 4)
-        buffer.initBuffer(_width, _height);
-    else
-        buffer.initBuffer(_width, _height, true);
+    buffer.initBuffer(_width, _height, spp);
     
     _buffers.push_back(buffer);
     _aovs.push_back(aov);

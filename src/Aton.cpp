@@ -1164,7 +1164,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                 for (_s = 0; _s < _spp; ++_s)
                                 {
                                     float& pix = fB.getBuffer(b).getColour(_x + _xorigin,
-                                                                           _h - (_y + _yorigin + 1), _s);
+                                                                           _h - (_y + _yorigin + 1),
+                                                                           _s, _spp);
                                     pix = pixel_data[offset + _s];
                                 }
                             }
