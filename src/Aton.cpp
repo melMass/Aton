@@ -55,18 +55,18 @@ static void atonListen(unsigned index, unsigned nthreads, void* data);
 
 namespace chStr
 {
-    const std::string RGBA = "RGBA";
-    const std::string rgb = "rgb";
-    const std::string depth = "depth";
-    const std::string Z = "Z";
-    const std::string N = "N";
-    const std::string P = "P";
-    const std::string _red = ".red";
-    const std::string _green = ".green";
-    const std::string _blue = ".blue";
-    const std::string _X = ".X";
-    const std::string _Y = ".Y";
-    const std::string _Z = ".Z";
+    const std::string RGBA = "RGBA",
+                       rgb = "rgb",
+                     depth = "depth",
+                         Z = "Z",
+                         N = "N",
+                         P = "P",
+                      _red = ".red",
+                    _green = ".green",
+                     _blue = ".blue",
+                        _X = ".X",
+                        _Y = ".Y",
+                        _Z = ".Z";
     
 }
 
@@ -292,13 +292,13 @@ class Aton: public Iop
             ChannelSet& channels = m_node->m_channels;
             if (m_node->m_framebuffers.empty() || !m_enable_aovs)
             {
-                if (m_node->m_channels.size() > 4)
+                if (channels.size() > 4)
                 {
-                    m_node->m_channels.clear();
-                    m_node->m_channels.insert(Chan_Red);
-                    m_node->m_channels.insert(Chan_Green);
-                    m_node->m_channels.insert(Chan_Blue);
-                    m_node->m_channels.insert(Chan_Alpha);
+                    channels.clear();
+                    channels.insert(Chan_Red);
+                    channels.insert(Chan_Green);
+                    channels.insert(Chan_Blue);
+                    channels.insert(Chan_Alpha);
                 }
             }
 
@@ -353,9 +353,10 @@ class Aton: public Iop
 
                         for(int i = 0; i < fb_size; ++i)
                         {
+                            using namespace chStr;
                             const std::string& bufferName = fB.getBufferName(i);
                             
-                            if (bufferName.compare(chStr::RGBA) == 0)
+                            if (bufferName.compare(RGBA) == 0)
                             {
                                 if (!channels.contains(Chan_Red))
                                 {
@@ -365,28 +366,28 @@ class Aton: public Iop
                                     channels.insert(Chan_Alpha);
                                 }
                             }
-                            else if (bufferName.compare(chStr::Z) == 0)
+                            else if (bufferName.compare(Z) == 0)
                             {
                                 if (!channels.contains(Chan_Z))
                                     channels.insert( Chan_Z );
                             }
-                            else if (bufferName.compare(chStr::N) == 0 ||
-                                     bufferName.compare(chStr::P) == 0)
+                            else if (bufferName.compare(N) == 0 ||
+                                     bufferName.compare(P) == 0)
                             {
-                                if (!channels.contains(channel((bufferName + chStr::_X).c_str())))
+                                if (!channels.contains(channel((bufferName + _X).c_str())))
                                 {
-                                    channels.insert(channel((bufferName + chStr::_X).c_str()));
-                                    channels.insert(channel((bufferName + chStr::_Y).c_str()));
-                                    channels.insert(channel((bufferName + chStr::_Z).c_str()));
+                                    channels.insert(channel((bufferName + _X).c_str()));
+                                    channels.insert(channel((bufferName + _Y).c_str()));
+                                    channels.insert(channel((bufferName + _Z).c_str()));
                                 }
                             }
                             else
                             {
-                                if (!channels.contains(channel((bufferName + chStr::_red).c_str())))
+                                if (!channels.contains(channel((bufferName + _red).c_str())))
                                 {
-                                    channels.insert(channel((bufferName + chStr::_red).c_str()));
-                                    channels.insert(channel((bufferName + chStr::_green).c_str()));
-                                    channels.insert(channel((bufferName + chStr::_blue).c_str()));
+                                    channels.insert(channel((bufferName + _red).c_str()));
+                                    channels.insert(channel((bufferName + _green).c_str()));
+                                    channels.insert(channel((bufferName + _blue).c_str()));
                                 }
                             }
                         }
@@ -988,7 +989,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
         node->m_server.accept();
 
         // Our incoming data object
-        Data data;
+        Data d;
 
         // For progress percentage
         long long progress = 0;
@@ -1004,12 +1005,12 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
         static int delta_time = 0;
 
         // Loop over incoming data
-        while ((data.type()==2 || data.type()==9) == false)
+        while ((d.type()==2 || d.type()==9) == false)
         {
             // Listen for some data
             try
             {
-                data = node->m_server.listen();
+                d = node->m_server.listen();
             }
             catch( ... )
             {
@@ -1017,12 +1018,12 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
             }
 
             // Handle the data we received
-            switch (data.type())
+            switch (d.type())
             {
                 case 0: // Open a new image
                 {
                     // Init current frame
-                    double _active_frame = static_cast<double>(data.currentFrame());
+                    double _active_frame = static_cast<double>(d.currentFrame());
                     
                     if (current_frame != _active_frame)
                         current_frame = _active_frame;
@@ -1033,7 +1034,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                   node->m_frames.end(),
                                   _active_frame) == node->m_frames.end())
                     {
-                        FrameBuffer fB(_active_frame, data.width(), data.height());
+                        FrameBuffer fB(_active_frame, d.width(), d.height());
                         node->m_frames.push_back(_active_frame);
                         node->m_framebuffers.push_back(fB);
                     }
@@ -1056,9 +1057,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     // Reset Buffers and Channels if needed
                     if (!active_aovs.empty() && !fB.empty())
                     {
-                        int fBCompare = fB.compareAll(data.width(),
-                                                      data.height(),
-                                                      active_aovs);
+                        int fBCompare = fB.compareAll(d.width(), d.height(), active_aovs);
                         switch (fBCompare)
                         {
                             case 0: // Nothing changed
@@ -1073,8 +1072,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                             {
                                 node->m_mutex.lock();
                                 fB.clearAll();
-                                fB.setWidth(data.width());
-                                fB.setHeight(data.height());
+                                fB.setWidth(d.width());
+                                fB.setHeight(d.height());
                                 break;
                             }
                         }
@@ -1096,16 +1095,16 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     }
                     
                     // Get image area to calculate the progress
-                    if (data.width()*data.height() == data.rArea())
-                        imageArea = data.width()*data.height();
+                    if (d.width()*d.height() == d.rArea())
+                        imageArea = d.width()*d.height();
                     else
-                        imageArea = data.rArea();
+                        imageArea = d.rArea();
                     
                     // Get delta time per IPR iteration
                     delta_time = active_time;
                     
                     // Set Arnold Core version
-                    fB.setArnoldVersion(data.version());
+                    fB.setArnoldVersion(d.version());
                     
                     // Set time to current frame
                     if (node->m_multiframes &&
@@ -1123,54 +1122,54 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     FrameBuffer& fB = node->m_framebuffers[f_index];
                     
                     // Copy data from d
-                    int _xorigin = data.x();
-                    int _yorigin = data.y();
-                    int _width = data.width();
-                    int _height = data.height();
-                    int _spp = data.spp();
-                    long long _ram = data.ram();
-                    int _time = data.time();
+                    int _xorigin = d.x();
+                    int _yorigin = d.y();
+                    int _width = d.width();
+                    int _height = d.height();
+                    int _spp = d.spp();
+                    long long _ram = d.ram();
+                    int _time = d.time();
                     
                     // Get active time
-                    active_time = data.time();
+                    active_time = d.time();
 
                     // Get active aov names
                     if(std::find(active_aovs.begin(),
                                  active_aovs.end(),
-                                 data.aovName()) == active_aovs.end())
+                                 d.aovName()) == active_aovs.end())
                     {
                         if (node->m_enable_aovs)
-                            active_aovs.push_back(data.aovName());
+                            active_aovs.push_back(d.aovName());
                         else
                         {
                             if (active_aovs.size() == 0)
-                                active_aovs.push_back(data.aovName());
+                                active_aovs.push_back(d.aovName());
                             else if (active_aovs.size() > 1)
                                 active_aovs.resize(1);
                         }
                     }
                     
                     // Skip non RGBA buckets if AOVs are disabled
-                    if (node->m_enable_aovs || active_aovs[0] == data.aovName())
+                    if (node->m_enable_aovs || active_aovs[0] == d.aovName())
                     {
                         // Lock buffer
                         node->m_mutex.lock();
                         
                         // Adding buffer
-                        if(!fB.bufferNameExists(data.aovName()))
+                        if(!fB.bufferNameExists(d.aovName()))
                         {
                             if (node->m_enable_aovs || fB.size()==0)
-                                fB.addBuffer(data.aovName(), _spp);
+                                fB.addBuffer(d.aovName(), _spp);
                         }
                         else
                             fB.ready(true);
                         
                         // Get buffer index
-                        long b = fB.getBufferIndex(data.aovName());
+                        long b = fB.getBufferIndex(d.aovName());
                         
                         // Writing to buffer
                         unsigned int _x, _y, _s, offset;
-                        const float* pixel_data = data.pixels();
+                        const float* pixel_data = d.pixels();
                         const int& _w = fB.getWidth();
                         const int& _h = fB.getHeight();
                         
@@ -1192,7 +1191,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
 
                         // Update only on first aov
                         if(!node->m_capturing &&
-                           fB.getFirstBufferName().compare(data.aovName()) == 0)
+                           fB.getFirstBufferName().compare(d.aovName()) == 0)
                         {
                             // Calculating the progress percentage
                             imageArea -= (_width*_height);
@@ -1220,7 +1219,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     }
                     
                     // Deallocate aov name
-                    data.clearAovName();
+                    d.clearAovName();
                     break;
                 }
                 case 2: // Close image

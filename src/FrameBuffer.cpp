@@ -8,10 +8,10 @@
 
 namespace chStr
 {
-    const std::string rgb = "rgb";
-    const std::string rgba = "rgb";
-    const std::string depth = "depth";
-    const std::string Z = "Z";
+    const std::string rgb = "rgb",
+                     rgba = "rgba",
+                    depth = "depth",
+                        Z = "Z";
 }
 
 using namespace aton;
@@ -113,9 +113,10 @@ long FrameBuffer::getBufferIndex(Channel z)
     long b_index = 0;
     if (!_aovs.empty())
     {
+        using namespace chStr;
         const char* layer = getLayerName(z);
-        if (std::strcmp(layer, chStr::rgb.c_str()) ||
-            std::strcmp(layer, chStr::rgba.c_str()))
+        if (std::strcmp(layer, rgb.c_str()) ||
+            std::strcmp(layer, rgba.c_str()))
         {
             std::vector<std::string>::iterator it;
             for(it = _aovs.begin(); it != _aovs.end(); ++it)
@@ -125,8 +126,8 @@ long FrameBuffer::getBufferIndex(Channel z)
                     b_index = it - _aovs.begin();
                     break;
                 }
-                else if (it->compare(chStr::Z) == 0 &&
-                         !std::strcmp(layer, chStr::depth.c_str()))
+                else if (it->compare(Z) == 0 &&
+                         !std::strcmp(layer, depth.c_str()))
                 {
                     b_index = it - _aovs.begin();
                     break;
