@@ -53,6 +53,23 @@ static void timeChange(unsigned index, unsigned nthreads, void* data);
 // Our listener method
 static void atonListen(unsigned index, unsigned nthreads, void* data);
 
+namespace chStr
+{
+    const std::string RGBA = "RGBA";
+    const std::string rgb = "rgb";
+    const std::string depth = "depth";
+    const std::string Z = "Z";
+    const std::string N = "N";
+    const std::string P = "P";
+    const std::string _red = ".red";
+    const std::string _green = ".green";
+    const std::string _blue = ".blue";
+    const std::string _X = ".X";
+    const std::string _Y = ".Y";
+    const std::string _Z = ".Z";
+    
+}
+
 // Nuke node
 class Aton: public Iop
 {
@@ -338,7 +355,7 @@ class Aton: public Iop
                         {
                             const std::string& bufferName = fB.getBufferName(i);
                             
-                            if (bufferName.compare(ChannelStr::RGBA) == 0)
+                            if (bufferName.compare(chStr::RGBA) == 0)
                             {
                                 if (!channels.contains(Chan_Red))
                                 {
@@ -348,28 +365,28 @@ class Aton: public Iop
                                     channels.insert(Chan_Alpha);
                                 }
                             }
-                            else if (bufferName.compare(ChannelStr::Z) == 0)
+                            else if (bufferName.compare(chStr::Z) == 0)
                             {
                                 if (!channels.contains(Chan_Z))
                                     channels.insert( Chan_Z );
                             }
-                            else if (bufferName.compare(ChannelStr::N) == 0 ||
-                                     bufferName.compare(ChannelStr::P) == 0)
+                            else if (bufferName.compare(chStr::N) == 0 ||
+                                     bufferName.compare(chStr::P) == 0)
                             {
-                                if (!channels.contains(channel((boost::format("%s.X")%bufferName.c_str()).str().c_str())))
+                                if (!channels.contains(channel((bufferName + chStr::_X).c_str())))
                                 {
-                                    channels.insert(channel((boost::format("%s.X")%bufferName.c_str()).str().c_str()));
-                                    channels.insert(channel((boost::format("%s.Y")%bufferName.c_str()).str().c_str()));
-                                    channels.insert(channel((boost::format("%s.Z")%bufferName.c_str()).str().c_str()));
+                                    channels.insert(channel((bufferName + chStr::_X).c_str()));
+                                    channels.insert(channel((bufferName + chStr::_Y).c_str()));
+                                    channels.insert(channel((bufferName + chStr::_Z).c_str()));
                                 }
                             }
                             else
                             {
-                                if (!channels.contains(channel((boost::format("%s.red")%bufferName.c_str()).str().c_str())))
+                                if (!channels.contains(channel((bufferName + chStr::_red).c_str())))
                                 {
-                                    channels.insert(channel((boost::format("%s.red")%bufferName.c_str()).str().c_str()));
-                                    channels.insert(channel((boost::format("%s.blue")%bufferName.c_str()).str().c_str()));
-                                    channels.insert(channel((boost::format("%s.green")%bufferName.c_str()).str().c_str()));
+                                    channels.insert(channel((bufferName + chStr::_red).c_str()));
+                                    channels.insert(channel((bufferName + chStr::_green).c_str()));
+                                    channels.insert(channel((bufferName + chStr::_blue).c_str()));
                                 }
                             }
                         }

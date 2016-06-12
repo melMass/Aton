@@ -6,6 +6,14 @@
 
 #include "FrameBuffer.h"
 
+namespace chStr
+{
+    const std::string rgb = "rgb";
+    const std::string rgba = "rgb";
+    const std::string depth = "depth";
+    const std::string Z = "Z";
+}
+
 using namespace aton;
 
 // Lightweight colour pixel class
@@ -106,8 +114,8 @@ long FrameBuffer::getBufferIndex(Channel z)
     if (!_aovs.empty())
     {
         const char* layer = getLayerName(z);
-        if (std::strcmp(layer, ChannelStr::rgb.c_str()) ||
-            std::strcmp(layer, ChannelStr::rgba.c_str()))
+        if (std::strcmp(layer, chStr::rgb.c_str()) ||
+            std::strcmp(layer, chStr::rgba.c_str()))
         {
             std::vector<std::string>::iterator it;
             for(it = _aovs.begin(); it != _aovs.end(); ++it)
@@ -117,8 +125,8 @@ long FrameBuffer::getBufferIndex(Channel z)
                     b_index = it - _aovs.begin();
                     break;
                 }
-                else if (it->compare(ChannelStr::Z) == 0 &&
-                         !std::strcmp(layer, ChannelStr::depth.c_str()))
+                else if (it->compare(chStr::Z) == 0 &&
+                         !std::strcmp(layer, chStr::depth.c_str()))
                 {
                     b_index = it - _aovs.begin();
                     break;
@@ -147,9 +155,9 @@ long FrameBuffer::getBufferIndex(const char* aovName)
 }
 
 // Get N buffer/aov name name
-const std::string& FrameBuffer::getBufferName(size_t index)
+const char* FrameBuffer::getBufferName(size_t index)
 {
-    return _aovs[index];
+    return _aovs[index].c_str();
 }
 
 // Get last buffer/aov name

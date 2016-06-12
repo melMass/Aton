@@ -16,17 +16,6 @@
 
 using namespace DD::Image;
 
-namespace ChannelStr
-{
-    const std::string RGBA = "RGBA";
-    const std::string rgb = "rgb";
-    const std::string rgba = "rgba";
-    const std::string depth = "depth";
-    const std::string Z = "Z";
-    const std::string N = "N";
-    const std::string P = "P";
-};
-
 namespace aton
 {
     // Lightweight colour pixel class
@@ -89,7 +78,7 @@ namespace aton
             long getBufferIndex(const char * aovName);
         
             // Get N buffer/aov name name
-            const std::string& getBufferName(size_t index = 0);
+            const char* getBufferName(size_t index = 0);
         
             // Get last buffer/aov name
             const std::string& getFirstBufferName();
