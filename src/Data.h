@@ -41,7 +41,7 @@ namespace aton
              long long ram=0, 
              int time=0, 
              const char *aovName = 0, 
-             const float *data=0 );
+             const float *data=0);
         //! Destructor
         ~Data();
         /*! \brief The 'type' of message this Data represents
@@ -63,9 +63,9 @@ namespace aton
         // Area of the render region
         long long rArea() const { return mRArea; }
         //! Version number
-        int version() const {return mVersion; }
+        int version() const { return mVersion; }
         //! Current frame
-        float currentFrame() const {return mCurrentFrame; }
+        float currentFrame() const { return mCurrentFrame; }
         //! Samples-per-pixel, aka channel depth
         int spp() const { return mSpp; }
         //! Taken memory while rendering

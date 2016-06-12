@@ -65,10 +65,10 @@ namespace aton
             // Add new buffer
             void addBuffer(const char* aov = NULL, int spp = 0);
         
-            // Get buffer object
+            // Get writable buffer object
             RenderBuffer& getBuffer(long index = 0);
         
-            // Get buffer object
+            // Get read only buffer object
             const RenderBuffer& getBuffer(long index = 0) const;
         
             // Get the current buffer index

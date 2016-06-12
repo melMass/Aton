@@ -11,7 +11,7 @@
 using namespace aton;
 
 Data::Data(int x, 
-	   int y, 
+           int y,
            int width, 
            int height, 
            long long rArea, 
@@ -22,16 +22,16 @@ Data::Data(int x,
            int time, 
            const char* aovName, 
            const float* data ): mType(-1),
-           			mX(x),
-    				mY(y),
-    				mWidth(width),
-    				mHeight(height),
-				mRArea(rArea),
-				mVersion(version),
-				mCurrentFrame(currentFrame),
-    				mSpp(spp),
-    				mRam(ram),
-    				mTime(time)
+                                mX(x),
+                                mY(y),
+                                mWidth(width),
+                                mHeight(height),
+                                mRArea(rArea),
+                                mVersion(version),
+                                mCurrentFrame(currentFrame),
+                                mSpp(spp),
+                                mRam(ram),
+                                mTime(time)
 {
     if (aovName != 0)
         mAovName = const_cast<char*>(aovName);

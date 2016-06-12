@@ -95,13 +95,13 @@ void FrameBuffer::addBuffer(const char* aov, int spp)
     _aovs.push_back(aov);
 }
 
-// Get buffer object
+// Get writable buffer object
 RenderBuffer& FrameBuffer::getBuffer(long index)
 {
     return _buffers[index];
 }
 
-// Get buffer object
+// Get read only buffer object
 const RenderBuffer& FrameBuffer::getBuffer(long index) const
 {
     return _buffers[index];
