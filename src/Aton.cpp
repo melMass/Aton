@@ -1012,19 +1012,19 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                 case 0: // Open a new image
                 {
                     // Init current frame
-                    double _active_frame = static_cast<double>(d.currentFrame());
+                    double active_frame = static_cast<double>(d.currentFrame());
                     
-                    if (current_frame != _active_frame)
-                        current_frame = _active_frame;
+                    if (current_frame != active_frame)
+                        current_frame = active_frame;
                     
                     // Create FrameBuffer
                     node->m_mutex.lock();
                     if (std::find(node->m_frames.begin(),
                                   node->m_frames.end(),
-                                  _active_frame) == node->m_frames.end())
+                                  active_frame) == node->m_frames.end())
                     {
-                        FrameBuffer fB(_active_frame, d.width(), d.height());
-                        node->m_frames.push_back(_active_frame);
+                        FrameBuffer fB(active_frame, d.width(), d.height());
+                        node->m_frames.push_back(active_frame);
                         node->m_framebuffers.push_back(fB);
                     }
 
@@ -1040,7 +1040,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     node->m_mutex.unlock();
                     
                     // Get FrameBuffer
-                    f_index = node->getFrameIndex(_active_frame);
+                    f_index = node->getFrameIndex(active_frame);
                     FrameBuffer& fB = node->m_framebuffers[f_index];
                     
                     // Reset Buffers and Channels if needed
@@ -1109,15 +1109,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                 {
                     // Get frame buffer
                     FrameBuffer& fB = node->m_framebuffers[f_index];
-                    
-                    // Copy data from d
-                    int _xorigin = d.x();
-                    int _yorigin = d.y();
-                    int _width = d.width();
-                    int _height = d.height();
-                    int _spp = d.spp();
-                    long long _ram = d.ram();
-                    int _time = d.time();
+                    const char* _aov_name = d.aovName();
                     
                     // Get active time
                     active_time = d.time();
@@ -1125,35 +1117,44 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     // Get active aov names
                     if(std::find(active_aovs.begin(),
                                  active_aovs.end(),
-                                 d.aovName()) == active_aovs.end())
+                                 _aov_name) == active_aovs.end())
                     {
                         if (node->m_enable_aovs)
-                            active_aovs.push_back(d.aovName());
+                            active_aovs.push_back(_aov_name);
                         else if (active_aovs.size() == 0)
-                            active_aovs.push_back(d.aovName());
+                            active_aovs.push_back(_aov_name);
                         else if (active_aovs.size() > 1)
                             active_aovs.resize(1);
                     }
                     
                     // Skip non RGBA buckets if AOVs are disabled
-                    if (node->m_enable_aovs || active_aovs[0] == d.aovName())
+                    if (node->m_enable_aovs || active_aovs[0] == _aov_name)
                     {
+                        // Copy data from d
+                        int _xorigin = d.x();
+                        int _yorigin = d.y();
+                        int _width = d.width();
+                        int _height = d.height();
+                        int _spp = d.spp();
+                        long long _ram = d.ram();
+                        int _time = d.time();
+                        const float* _pix_data = d.pixels();
+                    
                         // Lock buffer
                         node->m_mutex.lock();
                         
                         // Adding buffer
-                        if(!fB.bufferNameExists(d.aovName()) && (node->m_enable_aovs ||
+                        if(!fB.bufferNameExists(_aov_name) && (node->m_enable_aovs ||
                                                                  fB.size() == 0))
-                            fB.addBuffer(d.aovName(), _spp);
+                            fB.addBuffer(_aov_name, _spp);
                         else
                             fB.ready(true);
                         
                         // Get buffer index
-                        long b = fB.getBufferIndex(d.aovName());
+                        long b = fB.getBufferIndex(_aov_name);
                         
                         // Writing to buffer
                         unsigned int x, y, c, offset;
-                        const float* pixel_data = d.pixels();
                         const int& w = fB.getWidth();
                         const int& h = fB.getHeight();
                         
@@ -1167,7 +1168,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                     float& pix = fB.getBufferPix(b, x + _xorigin,
                                                                  h - (y + _yorigin + 1),
                                                                  c, _spp);
-                                    pix = pixel_data[offset + c];
+                                    pix = _pix_data[offset + c];
                                 }
                             }
                         }
@@ -1177,7 +1178,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
 
                         // Update only on first aov
                         if(!node->m_capturing &&
-                           fB.getFirstBufferName().compare(d.aovName()) == 0)
+                           fB.getFirstBufferName().compare(_aov_name) == 0)
                         {
                             // Calculating the progress percentage
                             imageArea -= (_width*_height);
