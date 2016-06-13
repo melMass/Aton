@@ -12,11 +12,10 @@ All rights reserved. See Copyright.txt for more details.
 using namespace aton;
 using namespace boost::asio;
 
-Client::Client(std::string hostname, int port) :
-               mHost(hostname),
-               mPort(port),
-               mImageId(-1),
-               mSocket(mIoService)
+Client::Client(std::string hostname, int port): mHost(hostname),
+                                                mPort(port),
+                                                mImageId(-1),
+                                                mSocket(mIoService)
 {
 }
 
