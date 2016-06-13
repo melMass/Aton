@@ -1,5 +1,5 @@
 /*
- Copyright (c) 2015,
+ Copyright (c) 2016,
  Dan Bethell, Johannes Saam, Vahan Sosoyan.
  All rights reserved. See Copyright.txt for more details.
  */
