@@ -9,7 +9,6 @@
 
 #include <vector>
 
-//! \namespace aton
 namespace aton
 {
     // Represents image information passed from Client to Server
