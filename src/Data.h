@@ -12,25 +12,20 @@
 //! \namespace aton
 namespace aton
 {
-    /*! \class Data
-     * \brief Represents image information passed from Client to Server
-     *
-     * This class wraps up the data sent from Client to Server. When calling
-     * Client::openImage() a Data object should first be constructed that
-     * specifies the full image dimensions.
-     * E.g. Data( 0, 0, 320, 240, 3 );
-     *
-     * When sending actually pixel information it should be constructed using
-     * values that represent the chunk of pixels being sent.
-     * E.g. Data( 15, 15, 16, 16, 3, myPixelPointer );
-     */
+    // Represents image information passed from Client to Server
+    // This class wraps up the data sent from Client to Server. When calling
+    // Client::openImage() a Data object should first be constructed that
+    // specifies the full image dimensions.
+    // E.g. Data( 0, 0, 320, 240, 3 );
+    // When sending actually pixel information it should be constructed using
+    // values that represent the chunk of pixels being sent.
+    // E.g. Data( 15, 15, 16, 16, 3, myPixelPointer );
     class Data
     {
     friend class Client;
     friend class Server;
     public:
-        //! Constructor
-        Data(int x=0, 
+        Data(int x=0,
              int y=0,
              int width=0, 
              int height=0, 
@@ -42,68 +37,81 @@ namespace aton
              int time=0, 
              const char *aovName = 0, 
              const float *data=0);
-        //! Destructor
+        
         ~Data();
-        /*! \brief The 'type' of message this Data represents
-         *
-         * 0: image open
-         * 1: pixels
-         * 2: image close
-         */
+        
+        // The 'type' of message this Data represents
+        // 0: image open
+        // 1: pixels
+        // 2: image close
         const int type() const { return mType; }
 
-        //! X position
+        // Get x position
         int x() const { return mX; }
-        //! y position
+        
+        // Get y position
         int y() const { return mY; }
-        //! Width
+        
+        // Get width
         int width() const { return mWidth; }
-        //! Height
+        
+        // Get height
         int height() const { return mHeight; }
-        // Area of the render region
+        
+        // Get area of the render region
         long long rArea() const { return mRArea; }
-        //! Version number
+        
+        // Version number
         int version() const { return mVersion; }
-        //! Current frame
+        
+        // Current frame
         float currentFrame() const { return mCurrentFrame; }
-        //! Samples-per-pixel, aka channel depth
+        
+        // Samples-per-pixel, aka channel depth
         int spp() const { return mSpp; }
-        //! Taken memory while rendering
+        
+        // Taken memory while rendering
         long long ram() const { return mRam; }
-        //! Taken time while rendering
+        
+        // Taken time while rendering
         int time() const { return mTime; }
-        // Aov name
+        
+        // Get Aov name
         const char* aovName() const { return mAovName; }
+        
+        // Deallocate Aov name
         void clearAovName();
-        //! Pointer to pixel data owned by the display driver (client-side)
+        
+        // Pointer to pixel data owned by the display driver (client-side)
         const float* data() const { return mpData; }
-        //! Pointer to pixel data owned by this object (server-side)
+        
+        // Pointer to pixel data owned by this object (server-side)
         const float* pixels() const { return &mPixelStore[0]; }
 
     private:
-        // what type of data is this?
+        // What type of data is this?
         int mType;
 
-        // x & y position
+        // X & Y position
         int mX, mY;
 
-        // version number
+        // Version number
         int mVersion;
 
-        // current frame
+        // Current frame
         float mCurrentFrame;
 
-        // width, height, num channels (samples)
+        // Width, height, num channels (samples)
         unsigned int mWidth, mHeight, mSpp, mTime;
 
         unsigned long long mRArea, mRam;
 
         char *mAovName;
 
-        // our pixel data pointer (for driver-owned pixels)
+        // Our pixel data pointer (for driver-owned pixels)
         float *mpData;
 
-        // our persistent pixel storage (for Data-owned pixels)
+        // Our persistent pixel storage (for Data-owned pixels)
         std::vector<float> mPixelStore;
     };
 }

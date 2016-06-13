@@ -10,10 +10,9 @@
 #include "Data.h"
 #include <boost/asio.hpp>
 
-//! \namespace aton
 namespace aton
 {
-     // Represents a listening Server, ready to accept incoming images.
+     // Represents a listening Server, ready to accept incoming images
      // This class wraps up the provision of a TCP port, and handles incoming
      // connections from Client objects when they're ready to send image data
     class Server
@@ -46,10 +45,10 @@ namespace aton
         // This can be used to exit a listening loop running on a separate thread
         void quit();
 
-        //! Returns whether or not the server is connected to a port.
+        // Returns whether or not the server is connected to a port
         bool isConnected() { return mAcceptor.is_open(); }
 
-        //! Returns the port the server is currently connected to.
+        //! Returns the port the server is currently connected to
         int getPort() { return mPort; }
 
     private:
