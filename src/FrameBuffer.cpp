@@ -111,15 +111,15 @@ void FrameBuffer::addBuffer(const char* aov, int spp)
 }
 
 // Get writable buffer object
-RenderBuffer& FrameBuffer::getBuffer(long index)
+float& FrameBuffer::getBufferPix(long b, unsigned int x, unsigned int y, int c, int spp)
 {
-    return _buffers[index];
+    return _buffers[b].getColour(x, y, c, spp);
 }
 
 // Get read only buffer object
-const RenderBuffer& FrameBuffer::getBuffer(long index) const
+const float& FrameBuffer::getBufferPix(long b, unsigned int x, unsigned int y, int c) const
 {
-    return _buffers[index];
+    return _buffers[b].getColour(x, y, c);
 }
 
 // Get the current buffer index

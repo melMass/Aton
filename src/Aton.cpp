@@ -423,7 +423,7 @@ class Aton: public Iop
                         *cOut = 0.0f;
                     }
                     else
-                        *cOut = fBs[f].getBuffer(b).getColour(x, y, c);
+                        *cOut = fBs[f].getBufferPix(b, x, y, c);
                     ++cOut;
                     ++x;
                 }
@@ -1152,23 +1152,25 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         long b = fB.getBufferIndex(d.aovName());
                         
                         // Writing to buffer
-                        unsigned int _x, _y, _s, offset;
+                        unsigned int x, y, c, offset;
                         const float* pixel_data = d.pixels();
-                        const int& _w = fB.getWidth();
-                        const int& _h = fB.getHeight();
+                        const int& w = fB.getWidth();
+                        const int& h = fB.getHeight();
                         
-                        for (_x = 0; _x < _width; ++_x)
-                            for (_y = 0; _y < _height; ++_y)
+                        for (x = 0; x < _width; ++x)
+                        {
+                            for (y = 0; y < _height; ++y)
                             {
-                                offset = (_width * _y * _spp) + (_x * _spp);
-                                for (_s = 0; _s < _spp; ++_s)
+                                offset = (_width * y * _spp) + (x * _spp);
+                                for (c = 0; c < _spp; ++c)
                                 {
-                                    float& pix = fB.getBuffer(b).getColour(_x + _xorigin,
-                                                                           _h - (_y + _yorigin + 1),
-                                                                           _s, _spp);
-                                    pix = pixel_data[offset + _s];
+                                    float& pix = fB.getBufferPix(b, x + _xorigin,
+                                                                 h - (y + _yorigin + 1),
+                                                                 c, _spp);
+                                    pix = pixel_data[offset + c];
                                 }
                             }
+                        }
 
                         // Release lock
                         node->m_mutex.unlock();
@@ -1179,14 +1181,14 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         {
                             // Calculating the progress percentage
                             imageArea -= (_width*_height);
-                            progress = 100 - (imageArea*100) / (_w * _h);
+                            progress = 100 - (imageArea*100) / (w * h);
 
                             // Getting redraw bucket size
                             node->m_mutex.lock();
                             fB.setBucketBBox(_xorigin,
-                                             _h - _yorigin - _height,
+                                             h - _yorigin - _height,
                                              _xorigin + _width,
-                                             _h - _yorigin);
+                                             h - _yorigin);
 
                             // Setting status parameters
                             fB.setProgress(progress);
