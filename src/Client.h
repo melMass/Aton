@@ -64,12 +64,12 @@ namespace aton
         void disconnect();
         void quit();
 
-        // store the port we should connect to
+        // Store the port we should connect to
         std::string mHost;
         int mPort, mImageId;
         bool mIsConnected;
 
-        // tcp stuff
+        // TCP stuff
         boost::asio::io_service mIoService;
         boost::asio::ip::tcp::socket mSocket;
     };

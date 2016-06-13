@@ -10,7 +10,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <vector>
-#include "boost/format.hpp"
 
 #include "DDImage/Iop.h"
 
@@ -27,7 +26,7 @@ namespace aton
             float& operator[](int i);
             const float& operator[](int i) const;
 
-            // data
+            // Data
             float _val[3];
     };
     
@@ -55,7 +54,7 @@ namespace aton
         
             bool empty();
 
-            // data
+            // Data
             std::vector<RenderColour> _colour_data;
             std::vector<float> _alpha_data;
             unsigned int _width;

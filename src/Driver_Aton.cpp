@@ -147,7 +147,6 @@ driver_open
     {
         const char *err = e.what();
         AiMsgError("Aton display driver", "%s", err);
-
     }
 
 }

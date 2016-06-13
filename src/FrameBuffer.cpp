@@ -5,6 +5,7 @@
  */
 
 #include "FrameBuffer.h"
+#include "boost/format.hpp"
 
 namespace chStr
 {
