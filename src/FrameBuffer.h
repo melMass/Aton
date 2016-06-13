@@ -41,7 +41,7 @@ namespace aton
                             const unsigned int height,
                             const unsigned int spp);
 
-            float& getColour(unsigned int x, unsigned int y, int s, int spp);
+            float& getColour(unsigned int x, unsigned int y, int c, int spp);
             const float& getColour(unsigned int x, unsigned int y, int c) const;
                     
             unsigned int width();

@@ -53,12 +53,12 @@ void RenderBuffer::initBuffer(const unsigned int width,
     }
 }
 
-float& RenderBuffer::getColour(unsigned int x, unsigned int y, int s, int spp)
+float& RenderBuffer::getColour(unsigned int x, unsigned int y, int c, int spp)
 {
     unsigned int index = (_width * y) + x;
     
-    if ((spp == 3 || spp == 4) && s < 3)
-        return _colour_data[index][s];
+    if ((spp == 3 || spp == 4) && c < 3)
+        return _colour_data[index][c];
     else
         return _alpha_data[index];
 }
