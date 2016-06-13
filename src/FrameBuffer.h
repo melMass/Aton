@@ -41,8 +41,14 @@ namespace aton
                             const unsigned int height,
                             const unsigned int spp);
 
-            float& getColour(unsigned int x, unsigned int y, int c, int spp);
-            const float& getColour(unsigned int x, unsigned int y, int c) const;
+            float& getColour(unsigned int x,
+                             unsigned int y,
+                             int s,
+                             int spp);
+        
+            const float& getColour(unsigned int x,
+                                   unsigned int y,
+                                   int c) const;
                     
             unsigned int width();
             unsigned int height();
@@ -65,11 +71,18 @@ namespace aton
             // Add new buffer
             void addBuffer(const char* aov = NULL, int spp = 0);
         
-            // Get writable buffer object
-            float& getBufferPix(long b, unsigned int x, unsigned int y, int c, int spp);
+            // Get writable buffer's pixel
+            float& getBufferPix(long b,
+                                unsigned int x,
+                                unsigned int y,
+                                int c,
+                                int spp);
         
-            // Get read only buffer object
-            const float& getBufferPix(long b, unsigned int x, unsigned int y, int c) const;
+            // Get read only buffer's pixel
+            const float& getBufferPix(long b,
+                                      unsigned int x,
+                                      unsigned int y,
+                                      int c) const;
         
             // Get the current buffer index
             long getBufferIndex(Channel z);

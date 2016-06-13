@@ -651,7 +651,8 @@ class Aton: public Iop
                     if(boost::filesystem::is_regular_file(p))
                     {
                         boost::match_results<std::string::const_iterator> what;
-                        if (boost::regex_search(it->path().filename().string(), what, filter, boost::match_default))
+                        if (boost::regex_search(it->path().filename().string(),
+                                                what, filter, boost::match_default))
                         {
                             std::string res = p.filename().string();
                             results.push_back(res);

@@ -53,7 +53,10 @@ void RenderBuffer::initBuffer(const unsigned int width,
     }
 }
 
-float& RenderBuffer::getColour(unsigned int x, unsigned int y, int c, int spp)
+float& RenderBuffer::getColour(unsigned int x,
+                               unsigned int y,
+                               int c,
+                               int spp)
 {
     unsigned int index = (_width * y) + x;
     
@@ -63,7 +66,9 @@ float& RenderBuffer::getColour(unsigned int x, unsigned int y, int c, int spp)
         return _alpha_data[index];
 }
 
-const float& RenderBuffer::getColour(unsigned int x, unsigned int y, int c) const
+const float& RenderBuffer::getColour(unsigned int x,
+                                     unsigned int y,
+                                     int c) const
 {
     unsigned int index = (_width * y) + x;
     
@@ -111,13 +116,20 @@ void FrameBuffer::addBuffer(const char* aov, int spp)
 }
 
 // Get writable buffer object
-float& FrameBuffer::getBufferPix(long b, unsigned int x, unsigned int y, int c, int spp)
+float& FrameBuffer::getBufferPix(long b,
+                                 unsigned int x,
+                                 unsigned int y,
+                                 int c,
+                                 int spp)
 {
     return _buffers[b].getColour(x, y, c, spp);
 }
 
 // Get read only buffer object
-const float& FrameBuffer::getBufferPix(long b, unsigned int x, unsigned int y, int c) const
+const float& FrameBuffer::getBufferPix(long b,
+                                       unsigned int x,
+                                       unsigned int y,
+                                       int c) const
 {
     return _buffers[b].getColour(x, y, c);
 }
