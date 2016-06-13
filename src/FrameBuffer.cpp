@@ -278,10 +278,10 @@ const int& FrameBuffer::getTime() { return _time; }
 void FrameBuffer::setArnoldVersion(int version)
 {
     // Construct a string from the version number passed
-    int archV = (version%10000000)/1000000;
-    int majorV = (version%1000000)/10000;
-    int minorV = (version%10000)/100;
-    int fixV = version%100;
+    int archV = (version % 10000000) / 1000000;
+    int majorV = (version % 1000000) / 10000;
+    int minorV = (version % 10000) / 100;
+    int fixV = version % 100;
     _version = (boost::format("%s.%s.%s.%s")%archV%majorV%minorV%fixV).str();
 }
 
