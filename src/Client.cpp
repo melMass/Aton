@@ -49,17 +49,17 @@ Client::~Client()
 
 void Client::openImage(Data& header)
 {
-    // connect to port!
+    // Connect to port!
     connect(mHost, mPort);
 
-    // send image header message with image desc information
+    // Send image header message with image desc information
     int key = 0;
     write(mSocket, buffer(reinterpret_cast<char*>(&key), sizeof(int)));
 
-    // read our imageid
+    // Read our imageid
     read(mSocket, buffer(reinterpret_cast<char*>(&mImageId), sizeof(int)));
 
-    // send our width & height
+    // Send our width & height
     write(mSocket, buffer(reinterpret_cast<char*>(&header.mWidth), sizeof(int)));
     write(mSocket, buffer(reinterpret_cast<char*>(&header.mHeight), sizeof(int)));
     write(mSocket, buffer(reinterpret_cast<char*>(&header.mRArea), sizeof(int)));
