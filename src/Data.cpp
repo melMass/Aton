@@ -1,8 +1,8 @@
 /*
- Copyright (c) 2016,
- Dan Bethell, Johannes Saam, Vahan Sosoyan.
- All rights reserved. See Copyright.txt for more details.
- */
+Copyright (c) 2016,
+Dan Bethell, Johannes Saam, Vahan Sosoyan.
+All rights reserved. See COPYING.txt for more details.
+*/
 
 #include "Data.h"
 #include <cstring>
