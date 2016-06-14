@@ -33,21 +33,13 @@ namespace aton
     // Our image buffer class
     class RenderBuffer
     {
+        friend class FrameBuffer;
         public:
             RenderBuffer();
 
             void initBuffer(const unsigned int width,
                             const unsigned int height,
                             const unsigned int spp);
-
-            float& getColour(unsigned int x,
-                             unsigned int y,
-                             int s,
-                             int spp);
-        
-            const float& getColour(unsigned int x,
-                                   unsigned int y,
-                                   int c) const;
                     
             unsigned int width();
             unsigned int height();
@@ -70,8 +62,8 @@ namespace aton
             // Add new buffer
             void addBuffer(const char* aov = NULL, int spp = 0);
         
-            // Get writable buffer's pixel
-            float& getBufferPix(long b,
+            // Set writable buffer's pixel
+            float& setBufferPix(long b,
                                 unsigned int x,
                                 unsigned int y,
                                 int c,

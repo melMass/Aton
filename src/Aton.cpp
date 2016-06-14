@@ -165,9 +165,10 @@ class Aton: public Iop
             m_node_name = nodeName;
             
             // Construct full path for capturing
-            boost::filesystem::path dir = getPath();
-            boost::filesystem::path file = (boost::format("%s.exr")%m_node_name).str();
-            boost::filesystem::path fullPath = dir / file;
+            using namespace boost::filesystem;
+            path dir = getPath();
+            path file = (boost::format("%s.exr")%m_node_name).str();
+            path fullPath = dir / file;
             std::string str_path = fullPath.string();
             boost::replace_all(str_path, "\\", "/");
             knob("path_knob")->set_text(str_path.c_str());
@@ -636,9 +637,10 @@ class Aton: public Iop
             // If the directory exist
             if (isPathValid(m_path))
             {
-                boost::filesystem::path filepath(m_path);
-                boost::filesystem::directory_iterator it(filepath.parent_path());
-                boost::filesystem::directory_iterator end;
+                using namespace boost::filesystem;
+                path filepath(m_path);
+                directory_iterator it(filepath.parent_path());
+                directory_iterator end;
 
                 // Regex expression to find captured files
                 std::string exp = ( boost::format("%s.+.%s")%filepath.stem().string()
@@ -646,9 +648,9 @@ class Aton: public Iop
                 const boost::regex filter(exp);
 
                 // Iterating through directory to find matching files
-                BOOST_FOREACH(boost::filesystem::path const &p, std::make_pair(it, end))
+                BOOST_FOREACH(path const &p, std::make_pair(it, end))
                 {
-                    if(boost::filesystem::is_regular_file(p))
+                    if(is_regular_file(p))
                     {
                         boost::match_results<std::string::const_iterator> what;
                         if (boost::regex_search(it->path().filename().string(),
@@ -672,23 +674,23 @@ class Aton: public Iop
                 // them next time when user make a capture
                 std::vector<std::string>::iterator it;
                 for(it = m_garbageList.begin(); it != m_garbageList.end(); ++it)
-                {
                     std::remove(it->c_str());
-                }
             }
 
             std::vector<std::string> captures = getCaptures();
-            boost::filesystem::path filepath(m_path);
-            boost::filesystem::path dir = filepath.parent_path();
+            
+            using namespace boost::filesystem;
+            path filepath(m_path);
+            path dir = filepath.parent_path();
 
             // Reverse iterating through file list
             if ( !captures.empty() )
             {
-                for(std::vector<std::string>::reverse_iterator it = captures.rbegin();
-                                                               it != captures.rend(); ++it)
+                std::vector<std::string>::reverse_iterator it;
+                for(it = captures.rbegin(); it != captures.rend(); ++it)
                 {
-                    boost::filesystem::path file = *it;
-                    boost::filesystem::path path = dir / file;
+                    path file = *it;
+                    path path = dir / file;
                     std::string str_path = path.string();
                     boost::replace_all(str_path, "\\", "/");
 
@@ -847,14 +849,16 @@ class Aton: public Iop
         void importLatestCmd()
         {
             std::vector<std::string> captures = getCaptures();
-            boost::filesystem::path filepath(m_path);
-            boost::filesystem::path dir = filepath.parent_path();
+            
+            using namespace boost::filesystem;
+            path filepath(m_path);
+            path dir = filepath.parent_path();
 
             if ( !captures.empty() )
             {
                 // Getting last ellemnt of the vector
-                boost::filesystem::path file = captures.back();
-                boost::filesystem::path path = dir / file;
+                path file = captures.back();
+                path path = dir / file;
                 std::string str_path = path.string();
                 boost::replace_all(str_path, "\\", "/");
 
@@ -876,8 +880,10 @@ class Aton: public Iop
         void importAllCmd()
         {
             std::vector<std::string> captures = getCaptures();
-            boost::filesystem::path filepath(m_path);
-            boost::filesystem::path dir = filepath.parent_path();
+            
+            using namespace boost::filesystem;
+            path filepath(m_path);
+            path dir = filepath.parent_path();
 
             if (!captures.empty())
             {
@@ -885,8 +891,8 @@ class Aton: public Iop
                 for(std::vector<std::string>::reverse_iterator it = captures.rbegin();
                                                                it != captures.rend(); ++it)
                 {
-                    boost::filesystem::path file = *it;
-                    boost::filesystem::path path = dir / file;
+                    path file = *it;
+                    path path = dir / file;
                     std::string str_path = path.string();
                     boost::replace_all(str_path, "\\", "/");
 
@@ -1146,7 +1152,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         
                         // Adding buffer
                         if(!fB.bufferNameExists(_aov_name) && (node->m_enable_aovs ||
-                                                                 fB.size() == 0))
+                                                               fB.size() == 0))
                             fB.addBuffer(_aov_name, _spp);
                         else
                             fB.ready(true);
@@ -1166,7 +1172,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                 offset = (_width * y * _spp) + (x * _spp);
                                 for (c = 0; c < _spp; ++c)
                                 {
-                                    float& pix = fB.getBufferPix(b, x + _xorigin,
+                                    float& pix = fB.setBufferPix(b, x + _xorigin,
                                                                  h - (y + _yorigin + 1),
                                                                  c, _spp);
                                     pix = _pix_data[offset + c];

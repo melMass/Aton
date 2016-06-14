@@ -54,33 +54,6 @@ void RenderBuffer::initBuffer(const unsigned int width,
     }
 }
 
-float& RenderBuffer::getColour(unsigned int x,
-                               unsigned int y,
-                               int c,
-                               int spp)
-{
-    unsigned int index = (_width * y) + x;
-    
-    if ((spp == 3 || spp == 4) && c < 3)
-        return _colour_data[index][c];
-    else
-        return _alpha_data[index];
-}
-
-const float& RenderBuffer::getColour(unsigned int x,
-                                     unsigned int y,
-                                     int c) const
-{
-    unsigned int index = (_width * y) + x;
-    
-    if (c == 0 && _colour_data.empty())
-        return _alpha_data[index];
-    else if (c < 3)
-        return _colour_data[index][c];
-    else
-        return _alpha_data[index];
-}
-
 unsigned int RenderBuffer::width() { return _width; }
 unsigned int RenderBuffer::height() { return _height; }
 
@@ -117,13 +90,20 @@ void FrameBuffer::addBuffer(const char* aov, int spp)
 }
 
 // Get writable buffer object
-float& FrameBuffer::getBufferPix(long b,
+float& FrameBuffer::setBufferPix(long b,
                                  unsigned int x,
                                  unsigned int y,
                                  int c,
                                  int spp)
 {
-    return _buffers[b].getColour(x, y, c, spp);
+    RenderBuffer& rb = _buffers[b];
+    
+    unsigned int index = (rb._width * y) + x;
+    
+    if ((spp == 3 || spp == 4) && c < 3)
+        return rb._colour_data[index][c];
+    else
+        return rb._alpha_data[index];
 }
 
 // Get read only buffer object
@@ -132,7 +112,16 @@ const float& FrameBuffer::getBufferPix(long b,
                                        unsigned int y,
                                        int c) const
 {
-    return _buffers[b].getColour(x, y, c);
+    const RenderBuffer& rb = _buffers[b];
+    
+    unsigned int index = (rb._width * y) + x;
+    
+    if (c == 0 && rb._colour_data.empty())
+        return rb._alpha_data[index];
+    else if (c < 3)
+        return rb._colour_data[index][c];
+    else
+        return rb._alpha_data[index];
 }
 
 // Get the current buffer index
