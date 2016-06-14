@@ -721,9 +721,7 @@ class Aton: public Iop
             {
                 std::vector<FrameBuffer>::iterator it;
                 for(it = fBs.begin(); it != fBs.end(); ++it)
-                {
                     it->ready(false);
-                }
                 
                 m_node->m_legit = false;
                 m_node->disconnect();
