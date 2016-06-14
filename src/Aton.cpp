@@ -910,23 +910,17 @@ class Aton: public Iop
             }
         }
     
-        void setStatus(long long progress = 0,
-                       long long ram = 0,
-                       long long p_ram = 0,
-                       int time = 0,
-                       double frame = 0,
-                       std::string version = "")
+        void setStatus(const long long& progress = 0,
+                       const long long& ram = 0,
+                       const long long& p_ram = 0,
+                       const int& time = 0,
+                       const double& frame = 0,
+                       const std::string& version = "")
         {
-            const size_t& f_count = m_node->m_framebuffers.size();
-        
-            ram /= 1048576;
-            p_ram /= 1048576;
-
             int hour = time / 3600000;
             int minute = (time % 3600000) / 60000;
             int second = ((time % 3600000) % 60000) / 1000;
-
-            if (progress > 100) progress = 100;
+            size_t f_count = m_node->m_framebuffers.size();
 
             std::string str_status = (boost::format("Arnold: %s | "
                                                     "Used Memory: %sMB | "

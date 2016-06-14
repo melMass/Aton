@@ -250,9 +250,14 @@ void FrameBuffer::setBucketBBox(int x, int y, int r, int t)
 const Box& FrameBuffer::getBucketBBox() { return _bucket; }
 
 // Set status parameters
-void FrameBuffer::setProgress(long long progress) { _progress = progress; }
+void FrameBuffer::setProgress(long long progress)
+{
+    _progress = progress > 100 ? 100 : progress;
+}
+
 void FrameBuffer::setRAM(long long ram)
 {
+    ram /= 1048576;
     _pram = _ram < ram ? ram : _ram;
     _ram = ram;
 }
