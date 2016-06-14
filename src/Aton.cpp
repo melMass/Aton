@@ -560,8 +560,8 @@ class Aton: public Iop
 
             if (m_multiframes && !frames.empty())
             {
-                long nearFIndex = LONG_MIN;
-                long minFIndex = LONG_MAX;
+                int nearFIndex = INT_MIN;
+                int minFIndex = INT_MAX;
                 
                 std::vector<double>::iterator it;
                 for( it = frames.begin(); it != frames.end(); ++it)
@@ -573,13 +573,13 @@ class Aton: public Iop
                     }
                     else if (currentFrame > *it && nearFIndex < *it)
                     {
-                        nearFIndex = *it;
+                        nearFIndex = static_cast<int>(*it);
                         f_index = it - frames.begin();
                         continue;
                     }
-                    else if (*it < minFIndex && nearFIndex == LONG_MIN)
+                    else if (*it < minFIndex && nearFIndex == INT_MIN)
                     {
-                        minFIndex = *it;
+                        minFIndex = static_cast<int>(*it);
                         f_index = it - frames.begin();
                     }
                 }
