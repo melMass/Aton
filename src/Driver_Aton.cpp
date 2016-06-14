@@ -1,8 +1,8 @@
 /*
- Copyright (c) 2015,
- Dan Bethell, Johannes Saam, Vahan Sosoyan, Brian Scherbinski.
- All rights reserved. See Copyright.txt for more details.
- */
+Copyright (c) 2016,
+Dan Bethell, Johannes Saam, Vahan Sosoyan, Brian Scherbinski.
+All rights reserved. See COPYING.txt for more details.
+*/
 
 #include <iostream>
 #include <exception>
@@ -10,7 +10,6 @@
 
 #include "Client.h"
 #include "Data.h"
-
 
 #include <ai.h>
 #include <ai_critsec.h>
@@ -107,7 +106,7 @@ driver_extension
 
 driver_open
 {
-    //construct full version number into padded interger
+    // Construct full version number into padded interger
     string versionString = AiGetVersion(0, 0, 0, 0);
     vector<string> svec;
     vector<int> ivec;
@@ -134,13 +133,13 @@ driver_open
     int rHeight = data_window.maxy - data_window.miny +1;
     long long rArea = rWidth * rHeight;
 
-    // now we can connect to the server and start rendering
+    // Now we can connect to the server and start rendering
     try
     {
-       // create a new aton object
+       // Create a new aton object
        data->client = new aton::Client( host, port );
 
-       // make image header & send to server
+       // Make image header & send to server
        aton::Data header( 0, 0, width, height, rArea, version, currentFrame);
        data->client->openImage( header );
     }
@@ -148,7 +147,6 @@ driver_open
     {
         const char *err = e.what();
         AiMsgError("Aton display driver", "%s", err);
-
     }
 
 }
@@ -195,12 +193,12 @@ driver_write_bucket
                 spp = 3;
         }
         
-        // create our data object
+        // Create our data object
         aton::Data packet(bucket_xo, bucket_yo,
                           bucket_size_x, bucket_size_y,
                           0, 0, 0, spp, ram, time, aov_name, ptr);
 
-        // send it to the server
+        // Send it to the server
         data->client->sendPixels(packet);
     }
 }
@@ -224,7 +222,7 @@ node_finish
 {
     AiMsgInfo("[Aton] driver finish");
    
-    // release the driver
+    // Release the driver
     ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
     delete data->client;
     delete[] getHost();

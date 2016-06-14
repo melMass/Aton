@@ -1,8 +1,8 @@
 /*
- Copyright (c) 2015,
- Dan Bethell, Johannes Saam, Vahan Sosoyan.
- All rights reserved. See Copyright.txt for more details.
- */
+Copyright (c) 2016,
+Dan Bethell, Johannes Saam, Vahan Sosoyan, Brian Scherbinski.
+All rights reserved. See COPYING.txt for more details.
+*/
 
 #include "Data.h"
 #include <cstring>
@@ -11,7 +11,7 @@
 using namespace aton;
 
 Data::Data(int x, 
-	   int y, 
+           int y,
            int width, 
            int height, 
            long long rArea, 
@@ -22,16 +22,16 @@ Data::Data(int x,
            int time, 
            const char* aovName, 
            const float* data ): mType(-1),
-           			mX(x),
-    				mY(y),
-    				mWidth(width),
-    				mHeight(height),
-				mRArea(rArea),
-				mVersion(version),
-				mCurrentFrame(currentFrame),
-    				mSpp(spp),
-    				mRam(ram),
-    				mTime(time)
+                                mX(x),
+                                mY(y),
+                                mWidth(width),
+                                mHeight(height),
+                                mRArea(rArea),
+                                mVersion(version),
+                                mCurrentFrame(currentFrame),
+                                mSpp(spp),
+                                mRam(ram),
+                                mTime(time)
 {
     if (aovName != 0)
         mAovName = const_cast<char*>(aovName);

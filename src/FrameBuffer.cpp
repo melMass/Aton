@@ -1,10 +1,19 @@
 /*
- Copyright (c) 2016,
- Dan Bethell, Johannes Saam, Vahan Sosoyan, Brian Scherbinski.
- All rights reserved. See Copyright.txt for more details.
- */
+Copyright (c) 2016,
+Dan Bethell, Johannes Saam, Vahan Sosoyan, Brian Scherbinski.
+All rights reserved. See COPYING.txt for more details.
+*/
 
 #include "FrameBuffer.h"
+#include "boost/format.hpp"
+
+namespace chStr
+{
+    const std::string rgb = "rgb",
+                     rgba = "rgba",
+                    depth = "depth",
+                        Z = "Z";
+}
 
 using namespace aton;
 
@@ -14,49 +23,35 @@ RenderColour::RenderColour() { _val[0] = _val[1] = _val[2] = 0.f; }
 float& RenderColour::operator[](int i){ return _val[i]; }
 const float& RenderColour::operator[](int i) const { return _val[i]; }
 
-// Lightweight alpha pixel class
-RenderAlpha::RenderAlpha() { _val = 1.f; }
-
-float& RenderAlpha::operator[](int i){ return _val; }
-const float& RenderAlpha::operator[](int i) const { return _val; }
-
 // Our image buffer class
 RenderBuffer::RenderBuffer(): _width(0), _height(0) {}
 
 void RenderBuffer::initBuffer(const unsigned int width,
                               const unsigned int height,
-                              const bool alpha)
+                              const unsigned int spp)
 {
     _width = width;
     _height = height;
-
-    _colour_data.resize(_width * _height);
-    if (alpha)
-        _alpha_data.resize(_width * _height);
-}
-
-RenderColour& RenderBuffer::getColour(unsigned int x, unsigned int y)
-{
-    unsigned int index = (_width * y) + x;
-    return _colour_data[index];
-}
-
-const RenderColour& RenderBuffer::getColour(unsigned int x, unsigned int y) const
-{
-    unsigned int index = (_width * y) + x;
-    return _colour_data[index];
-}
-
-RenderAlpha& RenderBuffer::getAlpha(unsigned int x, unsigned int y)
-{
-    unsigned int index = (_width * y) + x;
-    return _alpha_data[index];
-}
-
-const RenderAlpha& RenderBuffer::getAlpha(unsigned int x, unsigned int y) const
-{
-    unsigned int index = (_width * y) + x;
-    return _alpha_data[index];
+    
+    switch (spp)
+    {
+        case 1:
+        {
+            _alpha_data.resize(_width * _height);
+            break;
+        }
+        case 3:
+        {
+            _colour_data.resize(_width * _height);
+            break;
+        }
+        case 4:
+        {
+            _colour_data.resize(_width * _height);
+            _alpha_data.resize(_width * _height);
+            break;
+        }
+    }
 }
 
 unsigned int RenderBuffer::width() { return _width; }
@@ -88,45 +83,66 @@ void FrameBuffer::addBuffer(const char* aov, int spp)
 {
     RenderBuffer buffer;
     
-    if (spp < 4)
-        buffer.initBuffer(_width, _height);
-    else
-        buffer.initBuffer(_width, _height, true);
+    buffer.initBuffer(_width, _height, spp);
     
     _buffers.push_back(buffer);
     _aovs.push_back(aov);
 }
 
-// Get buffer object
-RenderBuffer& FrameBuffer::getBuffer(int index)
+// Get writable buffer object
+float& FrameBuffer::setBufferPix(long b,
+                                 unsigned int x,
+                                 unsigned int y,
+                                 int c,
+                                 int spp)
 {
-    return _buffers[index];
+    RenderBuffer& rb = _buffers[b];
+    
+    unsigned int index = (rb._width * y) + x;
+    
+    if ((spp == 3 || spp == 4) && c < 3)
+        return rb._colour_data[index][c];
+    else
+        return rb._alpha_data[index];
 }
 
-// Get buffer object
-const RenderBuffer& FrameBuffer::getBuffer(int index) const
+// Get read only buffer object
+const float& FrameBuffer::getBufferPix(long b,
+                                       unsigned int x,
+                                       unsigned int y,
+                                       int c) const
 {
-    return _buffers[index];
+    const RenderBuffer& rb = _buffers[b];
+    
+    unsigned int index = (rb._width * y) + x;
+    
+    if (c == 0 && rb._colour_data.empty())
+        return rb._alpha_data[index];
+    else if (c < 3)
+        return rb._colour_data[index][c];
+    else
+        return rb._alpha_data[index];
 }
 
 // Get the current buffer index
-int FrameBuffer::getBufferIndex(Channel z)
+long FrameBuffer::getBufferIndex(Channel z)
 {
-    int b_index = 0;
-    
+    long b_index = 0;    
     if (!_aovs.empty())
     {
+        using namespace chStr;
         std::string layer = getLayerName(z);
-        if (layer.compare(ChannelStr::rgb) != 0)
+        if (layer.compare(rgb) != 0)
         {
-            for(std::vector<std::string>::iterator it = _aovs.begin(); it != _aovs.end(); ++it)
+            std::vector<std::string>::iterator it;
+            for(it = _aovs.begin(); it != _aovs.end(); ++it)
             {
                 if (it->compare(layer) == 0)
                 {
                     b_index = static_cast<int>(it - _aovs.begin());
                     break;
                 }
-                else if (it->compare(ChannelStr::Z) == 0 && layer.compare(ChannelStr::depth) == 0)
+                else if (it->compare(Z) == 0 && layer.compare(depth) == 0)
                 {
                     b_index = static_cast<int>(it - _aovs.begin());
                     break;
@@ -138,16 +154,16 @@ int FrameBuffer::getBufferIndex(Channel z)
 }
 
 // Get the current buffer index
-int FrameBuffer::getBufferIndex(const char* aovName)
+long FrameBuffer::getBufferIndex(const char* aovName)
 {
-    int b_index = 0;
-    
+    long b_index = 0;
     if (!_aovs.empty())
-        for(std::vector<std::string>::iterator it = _aovs.begin(); it != _aovs.end(); ++it)
+        for(std::vector<std::string>::iterator it = _aovs.begin();
+                                               it != _aovs.end(); ++it)
         {
             if (it->compare(aovName) == 0)
             {
-                b_index = static_cast<int>(it - _aovs.begin());
+                b_index = it - _aovs.begin();
                 break;
             }
         }
@@ -155,21 +171,15 @@ int FrameBuffer::getBufferIndex(const char* aovName)
 }
 
 // Get N buffer/aov name name
-std::string FrameBuffer::getBufferName(size_t index)
+const char* FrameBuffer::getBufferName(size_t index)
 {
-    std::string bufferName = "";
-    if (!_aovs.empty())
-        bufferName = _aovs[index];
-    return bufferName;
+    return _aovs[index].c_str();
 }
 
 // Get last buffer/aov name
-std::string FrameBuffer::getFirstBufferName()
+const std::string& FrameBuffer::getFirstBufferName()
 {
-    std::string bufferName = "";
-    if (!_aovs.empty())
-        bufferName = _aovs.front();
-    return bufferName;
+    return _aovs.front();
 }
 
 // Compare buffers with given buffer/aov names and dimensoions
@@ -196,8 +206,8 @@ int FrameBuffer::compareAll(int width,
 // Clear buffers and aovs
 void FrameBuffer::clearAll()
 {
-    _buffers.resize(0);
-    _aovs.resize(0);
+    _buffers = std::vector<RenderBuffer>();
+    _aovs = std::vector<std::string>();
 }
 
 // Check if the given buffer/aov name name is exist
@@ -215,10 +225,10 @@ void FrameBuffer::setWidth(int w) { _width = w; }
 void FrameBuffer::setHeight(int h) { _height = h; }
 
 // Get width of the buffer
-int FrameBuffer::getWidth() { return _width; }
+const int& FrameBuffer::getWidth() { return _width; }
 
 // Get height of the buffer
-int FrameBuffer::getHeight() { return _height; }
+const int& FrameBuffer::getHeight() { return _height; }
 
 // Get size of the buffers aka AOVs count
 size_t FrameBuffer::size() { return _aovs.size(); }
@@ -237,43 +247,48 @@ void FrameBuffer::setBucketBBox(int x, int y, int r, int t)
 }
 
 // Get current bucket BBox for asapUpdate()
-Box FrameBuffer::getBucketBBox() { return _bucket; }
+const Box& FrameBuffer::getBucketBBox() { return _bucket; }
 
 // Set status parameters
-void FrameBuffer::setProgress(int progress) { _progress = progress; }
+void FrameBuffer::setProgress(long long progress)
+{
+    _progress = progress > 100 ? 100 : progress;
+}
+
 void FrameBuffer::setRAM(long long ram)
 {
+    ram /= 1048576;
     _pram = _ram < ram ? ram : _ram;
     _ram = ram;
 }
 void FrameBuffer::setTime(int time) { _time = time; }
 
 // Get status parameters
-int FrameBuffer::getProgress() { return _progress; }
-long long FrameBuffer::getRAM() { return _ram; }
-long long FrameBuffer::getPRAM() { return _pram; }
-int FrameBuffer::getTime() { return _time; }
+const long long& FrameBuffer::getProgress() { return _progress; }
+const long long& FrameBuffer::getRAM() { return _ram; }
+const long long& FrameBuffer::getPRAM() { return _pram; }
+const int& FrameBuffer::getTime() { return _time; }
 
 // Set Arnold core version
 void FrameBuffer::setArnoldVersion(int version)
 {
     // Construct a string from the version number passed
-    int archV = (version%10000000)/1000000;
-    int majorV = (version%1000000)/10000;
-    int minorV = (version%10000)/100;
-    int fixV = version%100;
+    int archV = (version % 10000000) / 1000000;
+    int majorV = (version % 1000000) / 10000;
+    int minorV = (version % 10000) / 100;
+    int fixV = version % 100;
     _version = (boost::format("%s.%s.%s.%s")%archV%majorV%minorV%fixV).str();
 }
 
 // Get Arnold core version
-std::string FrameBuffer::getArnoldVersion() { return _version; }
+const std::string& FrameBuffer::getArnoldVersion() { return _version; }
 
 // Get the frame number of this framebuffer
-double FrameBuffer::getFrame() { return _frame; }
+const double& FrameBuffer::getFrame() { return _frame; }
 
 // Check if this framebuffer is empty
 bool FrameBuffer::empty() { return (_buffers.empty() && _aovs.empty()) ; }
 
 // To keep False while writing the buffer
 void FrameBuffer::ready(bool ready) { _ready = ready; }
-bool FrameBuffer::isReady() { return _ready; }
+const bool& FrameBuffer::isReady() { return _ready; }

@@ -1,8 +1,8 @@
 /*
- Copyright (c) 2016,
- Dan Bethell, Johannes Saam, Vahan Sosoyan, Brian Scherbinski.
- All rights reserved. See Copyright.txt for more details.
- */
+Copyright (c) 2016,
+Dan Bethell, Johannes Saam, Vahan Sosoyan, Brian Scherbinski.
+All rights reserved. See COPYING.txt for more details.
+*/
 
 #include <time.h>
 #include <stdio.h>
@@ -40,7 +40,7 @@ using namespace aton;
 static const char* const CLASS = "Aton";
 
 // Version
-static const char* const VERSION = "1.1.1";
+static const char* const VERSION = "1.1.2";
 
 // Help
 static const char* const HELP =
@@ -52,6 +52,22 @@ static void timeChange(unsigned index, unsigned nthreads, void* data);
 
 // Our listener method
 static void atonListen(unsigned index, unsigned nthreads, void* data);
+
+namespace chStr
+{
+    const std::string RGBA = "RGBA",
+                       rgb = "rgb",
+                     depth = "depth",
+                         Z = "Z",
+                         N = "N",
+                         P = "P",
+                      _red = ".red",
+                    _green = ".green",
+                     _blue = ".blue",
+                        _X = ".X",
+                        _Y = ".Y",
+                        _Z = ".Z";
+}
 
 // Nuke node
 class Aton: public Iop
@@ -125,6 +141,9 @@ class Aton: public Iop
         void attach()
         {
             m_legit = true;
+            
+            // Disable caching
+            m_node->slowness(0);
 
             // Default status bar
             setStatus();
@@ -146,9 +165,10 @@ class Aton: public Iop
             m_node_name = nodeName;
             
             // Construct full path for capturing
-            boost::filesystem::path dir = getPath();
-            boost::filesystem::path file = (boost::format("%s.exr")%m_node_name).str();
-            boost::filesystem::path fullPath = dir / file;
+            using namespace boost::filesystem;
+            path dir = getPath();
+            path file = (boost::format("%s.exr")%m_node_name).str();
+            path fullPath = dir / file;
             std::string str_path = fullPath.string();
             boost::replace_all(str_path, "\\", "/");
             knob("path_knob")->set_text(str_path.c_str());
@@ -174,14 +194,14 @@ class Aton: public Iop
             // called.
             m_legit = false;
             disconnect();
-            m_node->m_frames.resize(0);
-            m_node->m_framebuffers.resize(0);
+            m_node->m_frames = std::vector<double>();
+            m_node->m_framebuffers = std::vector<FrameBuffer>();
             
             delete[] m_path;
             m_path = NULL;
         }
 
-        void flagForUpdate(int f_index = -1)
+        void flagForUpdate(long f_index = -1)
         {
             if (m_hash_count == UINT_MAX)
                 m_hash_count = 0;
@@ -189,16 +209,17 @@ class Aton: public Iop
                 m_hash_count++;
             
             // Update the image with current bucket if given
-            if (f_index >= 0)
-                asapUpdate(m_node->m_framebuffers[f_index].getBucketBBox());
-            else
+            if (f_index == -1)
                 asapUpdate();
+            else
+                asapUpdate(m_node->m_framebuffers[f_index].getBucketBBox());
         }
 
         // We can use this to change our tcp port
         void changePort(int port)
         {
             m_inError = false;
+            m_legit = false;
             m_connectionError = "";
             
             // Try to reconnect
@@ -207,6 +228,7 @@ class Aton: public Iop
             try
             {
                 m_server.connect(port, true);
+                m_legit = true;
             }
             catch ( ... )
             {
@@ -265,27 +287,40 @@ class Aton: public Iop
             // Handle any connection error
             if (m_inError)
                 error(m_connectionError.c_str());
+            
+            // Reseting channels
+            ChannelSet& channels = m_node->m_channels;
+            if (m_node->m_framebuffers.empty() || !m_enable_aovs)
+            {
+                if (channels.size() > 4)
+                {
+                    channels.clear();
+                    channels.insert(Chan_Red);
+                    channels.insert(Chan_Green);
+                    channels.insert(Chan_Blue);
+                    channels.insert(Chan_Alpha);
+                }
+            }
 
             if (!m_node->m_framebuffers.empty())
             {
                 // Get the frame and set the format
-                int f_index = getFrameIndex(uiContext().frame());
+                long f_index = getFrameIndex(uiContext().frame());
+                FrameBuffer& fB = m_node->m_framebuffers[f_index];
                 
-                FrameBuffer &frameBuffer = m_node->m_framebuffers[f_index];
-
-                if (!frameBuffer.empty())
+                if (!fB.empty())
                 {
-                    if (frameBuffer.getProgress() > 0)
-                        setStatus(frameBuffer.getProgress(),
-                                  frameBuffer.getRAM(),
-                                  frameBuffer.getPRAM(),
-                                  frameBuffer.getTime(),
-                                  frameBuffer.getFrame(),
-                                  frameBuffer.getArnoldVersion());
+                    if (fB.getProgress() > 0)
+                        setStatus(fB.getProgress(),
+                                  fB.getRAM(),
+                                  fB.getPRAM(),
+                                  fB.getTime(),
+                                  fB.getFrame(),
+                                  fB.getArnoldVersion());
                     
                     // Set the format
-                    int width = frameBuffer.getWidth();
-                    int height = frameBuffer.getHeight();
+                    const int& width = fB.getWidth();
+                    const int& height = fB.getHeight();
                     
                     if (m_node->m_fmt.width() != width ||
                         m_node->m_fmt.height() != height)
@@ -308,68 +343,49 @@ class Aton: public Iop
                         knob("formats_knob")->set_text(m_node->m_node_name);
                     }
                     
-                    ChannelSet& channels = m_node->m_channels;
-
+                    // Adding channels
                     if (m_enable_aovs)
                     {
-                        size_t fb_size = frameBuffer.size();
+                        size_t fb_size = fB.size();
                         
                         if (channels.size() != fb_size)
                             channels.clear();
 
                         for(int i = 0; i < fb_size; ++i)
                         {
-                            std::string bufferName = frameBuffer.getBufferName(i);
+                            using namespace chStr;
+                            const std::string& bfName = fB.getBufferName(i);
                             
-                            if (bufferName.compare(ChannelStr::RGBA) == 0)
+                            if (bfName.compare(RGBA) == 0 && !channels.contains(Chan_Red))
                             {
-                                if (!channels.contains(Chan_Red))
+                                channels.insert(Chan_Red);
+                                channels.insert(Chan_Green);
+                                channels.insert(Chan_Blue);
+                                channels.insert(Chan_Alpha);
+                            }
+                            else if (bfName.compare(Z) == 0 && !channels.contains(Chan_Z))
+                            {
+                                channels.insert(Chan_Z);
+                            }
+                            else if (bfName.compare(N) == 0 || bfName.compare(P) == 0)
+                            {
+                                if (!channels.contains(channel((bfName + _X).c_str())))
                                 {
-                                    channels.insert(Chan_Red);
-                                    channels.insert(Chan_Green);
-                                    channels.insert(Chan_Blue);
-                                    channels.insert(Chan_Alpha);
+                                    channels.insert(channel((bfName + _X).c_str()));
+                                    channels.insert(channel((bfName + _Y).c_str()));
+                                    channels.insert(channel((bfName + _Z).c_str()));
                                 }
                             }
-                            else if (bufferName.compare(ChannelStr::Z) == 0)
+                            else if (!channels.contains(channel((bfName + _red).c_str())))
                             {
-                                if (!channels.contains(Chan_Z))
-                                    channels.insert( Chan_Z );
-                            }
-                            else if (bufferName.compare(ChannelStr::N) == 0 ||
-                                     bufferName.compare(ChannelStr::P) == 0)
-                            {
-                                if (!channels.contains(channel((boost::format("%s.X")%bufferName.c_str()).str().c_str())))
-                                {
-                                    channels.insert(channel((boost::format("%s.X")%bufferName.c_str()).str().c_str()));
-                                    channels.insert(channel((boost::format("%s.Y")%bufferName.c_str()).str().c_str()));
-                                    channels.insert(channel((boost::format("%s.Z")%bufferName.c_str()).str().c_str()));
-                                }
-                            }
-                            else
-                            {
-                                if (!channels.contains(channel((boost::format("%s.red")%bufferName.c_str()).str().c_str())))
-                                {
-                                    channels.insert(channel((boost::format("%s.red")%bufferName.c_str()).str().c_str()));
-                                    channels.insert(channel((boost::format("%s.blue")%bufferName.c_str()).str().c_str()));
-                                    channels.insert(channel((boost::format("%s.green")%bufferName.c_str()).str().c_str()));
-                                }
+                                channels.insert(channel((bfName + _red).c_str()));
+                                channels.insert(channel((bfName + _green).c_str()));
+                                channels.insert(channel((bfName + _blue).c_str()));
                             }
                         }
                     }
-                    else if (channels.size() > 4)
-                    {
-                        channels.clear();
-                        channels.insert(Chan_Red);
-                        channels.insert(Chan_Green);
-                        channels.insert(Chan_Blue);
-                        channels.insert(Chan_Alpha);
-                    }
                 }
             }
-            
-            // Disable caching
-            m_node->slowness(0);
             
             // Setup format etc
             info_.format(*m_node->m_fmtp.fullSizeFormat());
@@ -378,46 +394,39 @@ class Aton: public Iop
             info_.set(m_node->info().format());
         }
 
-        void engine(int y, int xx, int r, ChannelMask channels, Row& out)
+        void engine(int y, int x, int r, ChannelMask channels, Row& out)
         {
-            int b_index = 0;
-            int f_index = getFrameIndex(uiContext().frame());
-            std::vector<FrameBuffer>& fbs  = m_node->m_framebuffers;
-
+            long f = 0, b = 0;
+            unsigned int xx = static_cast<unsigned int>(x);
+            
+            std::vector<FrameBuffer>& fBs = m_node->m_framebuffers;
+            
+            if (m_multiframes && fBs.size() > 1)
+                f = getFrameIndex(uiContext().frame());
+            
             foreach(z, channels)
             {
-                if (m_enable_aovs && !m_node->m_framebuffers.empty())
-                    b_index = m_node->m_framebuffers[f_index].getBufferIndex(z);
-
-                float* rOut = out.writable(brother(z, 0)) + xx;
-                float* gOut = out.writable(brother(z, 1)) + xx;
-                float* bOut = out.writable(brother(z, 2)) + xx;
-                float* aOut = out.writable(Chan_Alpha) + xx;
-                const float* END = rOut + (r - xx);
-                unsigned int xxx = static_cast<unsigned int>(xx);
-                unsigned int yyy = static_cast<unsigned int>(y);
+                if (m_enable_aovs && !fBs.empty() && fBs[f].size() > 1)
+                    b = fBs[f].getBufferIndex(z);
+                
+                x = xx;
+                int c = colourIndex(z);
+                float* cOut = out.writable(z) + x;
+                const float* END = cOut + (r - x);
                 
                 m_mutex.lock();
-                while (rOut < END)
+                while (cOut < END)
                 {
-                    if (fbs.empty() || !fbs[f_index].isReady() ||
-                        xxx >= fbs[f_index].getWidth() ||
-                        yyy >= fbs[f_index].getHeight())
+                    if (fBs.empty() || !fBs[f].isReady() ||
+                        x >= fBs[f].getWidth() ||
+                        y >= fBs[f].getHeight())
                     {
-                        *rOut = *gOut = *bOut = *aOut = 0.0f;
+                        *cOut = 0.0f;
                     }
                     else
-                    {
-                        *rOut = fbs[f_index].getBuffer(b_index).getColour(xxx, yyy)[0];
-                        *gOut = fbs[f_index].getBuffer(b_index).getColour(xxx, yyy)[1];
-                        *bOut = fbs[f_index].getBuffer(b_index).getColour(xxx, yyy)[2];
-                        *aOut = fbs[f_index].getBuffer(0).getAlpha(xxx, yyy)[0];
-                    }
-                    ++rOut;
-                    ++gOut;
-                    ++bOut;
-                    ++aOut;
-                    ++xxx;
+                        *cOut = fBs[f].getBufferPix(b, x, y, c);
+                    ++cOut;
+                    ++x;
                 }
                 m_mutex.unlock();
             }
@@ -442,10 +451,7 @@ class Aton: public Iop
 
             Divider(f, "Capture");
             Knob* limit_knob = Int_knob(f, &m_slimit, "limit_knob", "Limit");
-            Newline(f);
-            Knob* all_frames_knob = Bool_knob(f, &m_all_frames,
-                                              "all_frames_knob",
-                                              "Capture All Frames");
+            Knob* all_frames_knob = Bool_knob(f, &m_all_frames, "all_frames_knob", "Capture All Frames");
             Knob* path_knob = File_knob(f, &m_path, "path_knob", "Path");
 
             Newline(f);
@@ -469,7 +475,6 @@ class Aton: public Iop
             stamp_knob->set_flag(Knob::NO_RERENDER, true);
             stamp_scale_knob->set_flag(Knob::NO_RERENDER, true);
             comment_knob->set_flag(Knob::NO_RERENDER, true);
-
             statusKnob->set_flag(Knob::NO_RERENDER, true);
             statusKnob->set_flag(Knob::DISABLED, true);
             statusKnob->set_flag(Knob::OUTPUT_ONLY, true);
@@ -521,7 +526,8 @@ class Aton: public Iop
     
         bool isVersionValid()
         {
-            // Check the Nuke version to be minimum 9.0v7
+            // Check the Nuke version to be minimum 9.0v7 in order
+            // to status stamp text be consistant with Linux version
             std::string cmd = "nuke.NUKE_VERSION_MAJOR * 100 + "
                               "nuke.NUKE_VERSION_MINOR * 10 + "
                               "nuke.NUKE_VERSION_RELEASE >= 907";
@@ -547,9 +553,9 @@ class Aton: public Iop
             gotoContext(ctxt, true);
         }
     
-        int getFrameIndex(double currentFrame)
+        long getFrameIndex(double currentFrame)
         {
-            int f_index = 0;
+            long f_index = 0;
             std::vector<double>& frames = m_node->m_frames;
 
             if (m_multiframes && !frames.empty())
@@ -562,19 +568,19 @@ class Aton: public Iop
                 {
                     if (currentFrame == *it)
                     {
-                        f_index = static_cast<int>(it - frames.begin());
+                        f_index = it - frames.begin();
                         break;
                     }
                     else if (currentFrame > *it && nearFIndex < *it)
                     {
                         nearFIndex = static_cast<int>(*it);
-                        f_index = static_cast<int>(it - frames.begin());
+                        f_index = it - frames.begin();
                         continue;
                     }
                     else if (*it < minFIndex && nearFIndex == INT_MIN)
                     {
                         minFIndex = static_cast<int>(*it);
-                        f_index = static_cast<int>(it - frames.begin());
+                        f_index = it - frames.begin();
                     }
                 }
             }
@@ -620,9 +626,6 @@ class Aton: public Iop
             // Setting up the Date and Time format style
             strftime(time_buffer, 20, "%Y-%m-%d_%H-%M-%S", timeinfo);
 
-            std::string path = std::string(m_path);
-            std::string key (".");
-
             return std::string(time_buffer);
         }
 
@@ -634,9 +637,10 @@ class Aton: public Iop
             // If the directory exist
             if (isPathValid(m_path))
             {
-                boost::filesystem::path filepath(m_path);
-                boost::filesystem::directory_iterator it(filepath.parent_path());
-                boost::filesystem::directory_iterator end;
+                using namespace boost::filesystem;
+                path filepath(m_path);
+                directory_iterator it(filepath.parent_path());
+                directory_iterator end;
 
                 // Regex expression to find captured files
                 std::string exp = ( boost::format("%s.+.%s")%filepath.stem().string()
@@ -644,12 +648,13 @@ class Aton: public Iop
                 const boost::regex filter(exp);
 
                 // Iterating through directory to find matching files
-                BOOST_FOREACH(boost::filesystem::path const &p, std::make_pair(it, end))
+                BOOST_FOREACH(path const &p, std::make_pair(it, end))
                 {
-                    if(boost::filesystem::is_regular_file(p))
+                    if(is_regular_file(p))
                     {
                         boost::match_results<std::string::const_iterator> what;
-                        if (boost::regex_search(it->path().filename().string(), what, filter, boost::match_default))
+                        if (boost::regex_search(it->path().filename().string(),
+                                                what, filter, boost::match_default))
                         {
                             std::string res = p.filename().string();
                             results.push_back(res);
@@ -664,36 +669,33 @@ class Aton: public Iop
         {
             if ( !m_garbageList.empty() )
             {
-                // in windows sometimes files can't be deleted due to lack of
+                // In windows sometimes files can't be deleted due to lack of
                 // access so we collecting a garbage list and trying to remove
                 // them next time when user make a capture
                 std::vector<std::string>::iterator it;
                 for(it = m_garbageList.begin(); it != m_garbageList.end(); ++it)
-                {
                     std::remove(it->c_str());
-                }
             }
 
-            int count = 0;
             std::vector<std::string> captures = getCaptures();
-            boost::filesystem::path filepath(m_path);
-            boost::filesystem::path dir = filepath.parent_path();
+            
+            using namespace boost::filesystem;
+            path filepath(m_path);
+            path dir = filepath.parent_path();
 
             // Reverse iterating through file list
             if ( !captures.empty() )
             {
-                for(std::vector<std::string>::reverse_iterator it = captures.rbegin();
-                    it != captures.rend(); ++it)
+                std::vector<std::string>::reverse_iterator it;
+                for(it = captures.rbegin(); it != captures.rend(); ++it)
                 {
-                    boost::filesystem::path file = *it;
-                    boost::filesystem::path path = dir / file;
+                    path file = *it;
+                    path path = dir / file;
                     std::string str_path = path.string();
                     boost::replace_all(str_path, "\\", "/");
 
-                    count += 1;
-
                     // Remove the file if it's out of limit
-                    if (count >= m_slimit)
+                    if ((it - captures.rbegin()) >= m_slimit)
                     {
                         if (std::remove(str_path.c_str()) != 0)
                             m_garbageList.push_back(str_path);
@@ -712,16 +714,22 @@ class Aton: public Iop
     
         void clearAllCmd()
         {
-            if (m_node->m_frames.size() > 0 &&
-                m_node->m_framebuffers.size() > 0)
+            std::vector<FrameBuffer>& fBs  = m_node->m_framebuffers;
+            std::vector<double>& frames  = m_node->m_frames;
+        
+            if (!fBs.empty() && !frames.empty())
             {
-                m_legit = false;
-                disconnect();
-                m_mutex.lock();
-                m_node->m_frames.resize(0);
-                m_node->m_framebuffers.resize(0);
-                m_mutex.unlock();
-                m_legit = true;
+                std::vector<FrameBuffer>::iterator it;
+                for(it = fBs.begin(); it != fBs.end(); ++it)
+                    it->ready(false);
+                
+                m_node->m_legit = false;
+                m_node->disconnect();
+            
+                fBs =  std::vector<FrameBuffer>();
+                frames = std::vector<double>();
+               
+                m_node->m_legit = true;
                 flagForUpdate();
                 setStatus();
             }
@@ -839,14 +847,16 @@ class Aton: public Iop
         void importLatestCmd()
         {
             std::vector<std::string> captures = getCaptures();
-            boost::filesystem::path filepath(m_path);
-            boost::filesystem::path dir = filepath.parent_path();
+            
+            using namespace boost::filesystem;
+            path filepath(m_path);
+            path dir = filepath.parent_path();
 
             if ( !captures.empty() )
             {
                 // Getting last ellemnt of the vector
-                boost::filesystem::path file = captures.back();
-                boost::filesystem::path path = dir / file;
+                path file = captures.back();
+                path path = dir / file;
                 std::string str_path = path.string();
                 boost::replace_all(str_path, "\\", "/");
 
@@ -868,17 +878,19 @@ class Aton: public Iop
         void importAllCmd()
         {
             std::vector<std::string> captures = getCaptures();
-            boost::filesystem::path filepath(m_path);
-            boost::filesystem::path dir = filepath.parent_path();
+            
+            using namespace boost::filesystem;
+            path filepath(m_path);
+            path dir = filepath.parent_path();
 
             if (!captures.empty())
             {
                 // Reverse iterating through vector
                 for(std::vector<std::string>::reverse_iterator it = captures.rbegin();
-                    it != captures.rend(); ++it)
+                                                               it != captures.rend(); ++it)
                 {
-                    boost::filesystem::path file = *it;
-                    boost::filesystem::path path = dir / file;
+                    path file = *it;
+                    path path = dir / file;
                     std::string str_path = path.string();
                     boost::replace_all(str_path, "\\", "/");
 
@@ -898,23 +910,17 @@ class Aton: public Iop
             }
         }
     
-        std::string setStatus(int progress=0,
-                              long long ram=0,
-                              long long p_ram=0,
-                              int time=0,
-                              double frame=0,
-                              std::string version="")
+        void setStatus(const long long& progress = 0,
+                       const long long& ram = 0,
+                       const long long& p_ram = 0,
+                       const int& time = 0,
+                       const double& frame = 0,
+                       const std::string& version = "")
         {
-            int f_count = static_cast<int>(m_node->m_framebuffers.size());
-        
-            ram /= 1024*1024;
-            p_ram /= 1024*1024;
-
-            int hour = time / (1000*60*60);
-            int minute = (time % (1000*60*60)) / (1000*60);
-            int second = ((time % (1000*60*60)) % (1000*60)) / 1000;
-
-            if (progress>100) progress=100;
+            int hour = time / 3600000;
+            int minute = (time % 3600000) / 60000;
+            int second = ((time % 3600000) % 60000) / 1000;
+            size_t f_count = m_node->m_framebuffers.size();
 
             std::string str_status = (boost::format("Arnold: %s | "
                                                     "Used Memory: %sMB | "
@@ -925,7 +931,6 @@ class Aton: public Iop
                                                                      %hour%minute%second
                                                                      %frame%f_count%progress).str();
             knob("status_knob")->set_text(str_status.c_str());
-            return str_status;
         }
     
         bool firstEngineRendersWholeRequest() const { return true; }
@@ -938,8 +943,9 @@ class Aton: public Iop
 // Time change thread method
 static void timeChange(unsigned index, unsigned nthreads, void* data)
 {
+    using namespace boost;
     Aton* node = reinterpret_cast<Aton*>(data);
-    std::vector<FrameBuffer>& fbs  = node->m_node->m_framebuffers;
+    std::vector<FrameBuffer>& fBs = node->m_node->m_framebuffers;
     
     double uiFrame = 0;
     double prevFrame = 0;
@@ -948,12 +954,12 @@ static void timeChange(unsigned index, unsigned nthreads, void* data)
     while (node->m_legit)
     {
         uiFrame = node->uiContext().frame();
-        if (!fbs.empty() && prevFrame != uiFrame)
+        if (!fBs.empty() && prevFrame != uiFrame)
         {
             node->flagForUpdate();
             prevFrame = uiFrame;
         }
-        boost::this_thread::sleep(boost::posix_time::millisec(milliseconds));
+        this_thread::sleep(posix_time::millisec(milliseconds));
     }
 }
 
@@ -974,9 +980,10 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
         Data d;
 
         // For progress percentage
+        long long progress = 0;
         long long imageArea = 0;
-        int progress = 0;
-        int f_index = 0;
+        
+        long f_index = 0;
         
         // Current Frame Number
         double current_frame = 0;
@@ -986,7 +993,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
         static int delta_time = 0;
 
         // Loop over incoming data
-        while ((d.type()==2 || d.type()==9) == false)
+        while ((d.type() == 2 || d.type() == 9) == false)
         {
             // Listen for some data
             try
@@ -1004,71 +1011,62 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                 case 0: // Open a new image
                 {
                     // Init current frame
-                    double _active_frame = static_cast<double>(d.currentFrame());
+                    double active_frame = static_cast<double>(d.currentFrame());
                     
+                    if (current_frame != active_frame)
+                        current_frame = active_frame;
+                    
+                    // Create FrameBuffer
                     node->m_mutex.lock();
-                    if (current_frame != _active_frame)
-                        current_frame = _active_frame;
-                    
-                    // Sync timeline
-                    if (node->m_multiframes)
+                    if (std::find(node->m_frames.begin(),
+                                  node->m_frames.end(),
+                                  active_frame) == node->m_frames.end())
                     {
-                        if (std::find(node->m_frames.begin(),
-                                      node->m_frames.end(),
-                                      _active_frame) == node->m_frames.end())
-                        {
-                            FrameBuffer frameBuffer(_active_frame, d.width(), d.height());
-                            node->m_frames.push_back(_active_frame);
-                            node->m_framebuffers.push_back(frameBuffer);
-                        }
+                        FrameBuffer fB(active_frame, d.width(), d.height());
+                        node->m_frames.push_back(active_frame);
+                        node->m_framebuffers.push_back(fB);
                     }
-                    else
+
+                    if (!node->m_multiframes)
                     {
-                        if (node->m_frames.empty())
-                        {
-                            FrameBuffer frameBuffer(_active_frame, d.width(), d.height());
-                            node->m_frames.push_back(_active_frame);
-                            node->m_framebuffers.push_back(frameBuffer);
-                        }
-                        else if (node->m_frames.size() > 1)
-                        {
-                            node->m_frames.resize(1);
-                            node->m_framebuffers.resize(1);
-                        }
+                        std::reverse(node->m_frames.begin(),
+                                     node->m_frames.end());
+                        std::reverse(node->m_framebuffers.begin(),
+                                     node->m_framebuffers.end());
+                        node->m_frames.resize(1);
+                        node->m_framebuffers.resize(1);
                     }
                     node->m_mutex.unlock();
                     
-                    // Get frame buffer
-                    f_index = node->getFrameIndex(_active_frame);
-                    FrameBuffer &frameBuffer = node->m_framebuffers[f_index];
+                    // Get FrameBuffer
+                    f_index = node->getFrameIndex(active_frame);
+                    FrameBuffer& fB = node->m_framebuffers[f_index];
                     
-                    // Reset Buffers and Channels
-                    if (!active_aovs.empty() && !frameBuffer.empty())
+                    // Reset Buffers and Channels if needed
+                    if (!active_aovs.empty() && !fB.empty())
                     {
-                        int fbCompare = frameBuffer.compareAll(d.width(),
-                                                               d.height(),
-                                                               active_aovs);
-                        switch (fbCompare)
+                        int fBCompare = fB.compareAll(d.width(), d.height(), active_aovs);
+                        switch (fBCompare)
                         {
-                            case 0:
+                            case 0: // Nothing changed
                                 break;
-                            case 1:
+                            case 1: // Only AOVs count changed
                             {
                                 node->m_mutex.lock();
-                                frameBuffer.resize(1);
+                                fB.resize(1);
                                 break;
                             }
-                            case 2:
+                            case 2: // All changed
                             {
                                 node->m_mutex.lock();
-                                frameBuffer.clearAll();
-                                frameBuffer.setWidth(d.width());
-                                frameBuffer.setHeight(d.height());
+                                fB.clearAll();
+                                fB.setWidth(d.width());
+                                fB.setHeight(d.height());
                                 break;
                             }
                         }
 
-                        if (fbCompare > 0)
+                        if (fBCompare > 0)
                         {
                             if (node->m_channels.size() > 4)
                             {
@@ -1079,7 +1077,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                 node->m_channels.insert(Chan_Alpha);
                             }
                             
-                            frameBuffer.ready(false);
+                            fB.ready(false);
                             node->m_mutex.unlock();
                         }
                     }
@@ -1094,7 +1092,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     delta_time = active_time;
                     
                     // Set Arnold Core version
-                    frameBuffer.setArnoldVersion(d.version());
+                    fB.setArnoldVersion(d.version());
                     
                     // Set time to current frame
                     if (node->m_multiframes &&
@@ -1109,102 +1107,96 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                 case 1: // image data
                 {
                     // Get frame buffer
-                    FrameBuffer& frameBuffer = node->m_framebuffers[f_index];
-                
-                    // Copy data from d
-                    int _w = frameBuffer.getWidth();
-                    int _h = frameBuffer.getHeight();
-                    unsigned int _x, _x0, _y, _y0, _s, offset;
-                    _x = _x0 = _y = _y0 = _s = 0;
-
-                    int _xorigin = d.x();
-                    int _yorigin = d.y();
-                    int _width = d.width();
-                    int _height = d.height();
-                    int _spp = d.spp();
-                    long long _ram = d.ram();
-                    int _time = d.time();
+                    FrameBuffer& fB = node->m_framebuffers[f_index];
+                    const char* _aov_name = d.aovName();
                     
                     // Get active time
                     active_time = d.time();
 
                     // Get active aov names
-                    if(!(std::find(active_aovs.begin(),
-                                   active_aovs.end(),
-                                   d.aovName()) != active_aovs.end()))
+                    if(std::find(active_aovs.begin(),
+                                 active_aovs.end(),
+                                 _aov_name) == active_aovs.end())
                     {
                         if (node->m_enable_aovs)
-                            active_aovs.push_back(d.aovName());
-                        else
-                        {
-                            if (active_aovs.size() == 0)
-                                active_aovs.push_back(d.aovName());
-                            else if (active_aovs.size() > 1)
-                                active_aovs.resize(1);
-                        }
+                            active_aovs.push_back(_aov_name);
+                        else if (active_aovs.size() == 0)
+                            active_aovs.push_back(_aov_name);
+                        else if (active_aovs.size() > 1)
+                            active_aovs.resize(1);
                     }
                     
                     // Skip non RGBA buckets if AOVs are disabled
-                    if (node->m_enable_aovs || active_aovs[0] == d.aovName())
+                    if (node->m_enable_aovs || active_aovs[0] == _aov_name)
                     {
+                        // Copy data from d
+                        int _xorigin = d.x();
+                        int _yorigin = d.y();
+                        int _width = d.width();
+                        int _height = d.height();
+                        int _spp = d.spp();
+                        long long _ram = d.ram();
+                        int _time = d.time();
+                        const float* _pix_data = d.pixels();
+                    
                         // Lock buffer
                         node->m_mutex.lock();
                         
                         // Adding buffer
-                        if(!frameBuffer.bufferNameExists(d.aovName()))
-                        {
-                            if (node->m_enable_aovs || frameBuffer.size()==0)
-                                frameBuffer.addBuffer(d.aovName(), _spp);
-                        }
+                        if(!fB.bufferNameExists(_aov_name) && (node->m_enable_aovs ||
+                                                               fB.size() == 0))
+                            fB.addBuffer(_aov_name, _spp);
                         else
-                            frameBuffer.ready(true);
+                            fB.ready(true);
                         
                         // Get buffer index
-                        int b_index = frameBuffer.getBufferIndex(d.aovName());
+                        long b = fB.getBufferIndex(_aov_name);
                         
                         // Writing to buffer
-                        const float* pixel_data = d.pixels();
-                        for (_x = 0; _x < _width; ++_x)
-                            for (_y = 0; _y < _height; ++_y)
+                        unsigned int x, y, c, offset;
+                        const int& w = fB.getWidth();
+                        const int& h = fB.getHeight();
+                        
+                        for (x = 0; x < _width; ++x)
+                        {
+                            for (y = 0; y < _height; ++y)
                             {
-                                offset = (_width * _y * _spp) + (_x * _spp);
-
-                                RenderColour& pix = frameBuffer.getBuffer(b_index).getColour(_x+ _xorigin, _h - (_y + _yorigin + 1));
-                                for (_s = 0; _s < _spp; ++_s)
-                                    if (_s != 3)
-                                        pix[_s] = pixel_data[offset + _s];
-                                if (_spp == 4)
+                                offset = (_width * y * _spp) + (x * _spp);
+                                for (c = 0; c < _spp; ++c)
                                 {
-                                    RenderAlpha& alpha_pix = frameBuffer.getBuffer(b_index).getAlpha(_x+ _xorigin, _h - (_y + _yorigin + 1));
-                                    alpha_pix[0] = pixel_data[offset+3];
+                                    float& pix = fB.setBufferPix(b, x + _xorigin,
+                                                                 h - (y + _yorigin + 1),
+                                                                 c, _spp);
+                                    pix = _pix_data[offset + c];
                                 }
                             }
+                        }
 
                         // Release lock
                         node->m_mutex.unlock();
 
                         // Update only on first aov
                         if(!node->m_capturing &&
-                           frameBuffer.getFirstBufferName().compare(d.aovName()) == 0)
+                           fB.getFirstBufferName().compare(_aov_name) == 0)
                         {
                             // Calculating the progress percentage
                             imageArea -= (_width*_height);
-                            progress = static_cast<int>(100 - (imageArea*100) / (_w * _h));
+                            progress = 100 - (imageArea*100) / (w * h);
 
                             // Getting redraw bucket size
                             node->m_mutex.lock();
-                            frameBuffer.setBucketBBox(_xorigin,
-                                                      _h - _yorigin - _height,
-                                                      _xorigin + _width,
-                                                      _h - _yorigin);
+                            fB.setBucketBBox(_xorigin,
+                                             h - _yorigin - _height,
+                                             _xorigin + _width,
+                                             h - _yorigin);
 
                             // Setting status parameters
-                            frameBuffer.setProgress(progress);
-                            frameBuffer.setRAM(_ram);
+                            fB.setProgress(progress);
+                            fB.setRAM(_ram);
                             if (delta_time > _time)
-                                frameBuffer.setTime(_time);
+                                fB.setTime(_time);
                             else
-                                frameBuffer.setTime(_time - delta_time);
+                                fB.setTime(_time - delta_time);
                             node->m_mutex.unlock();
                             
                             // Update the image
