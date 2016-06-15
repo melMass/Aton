@@ -23,24 +23,21 @@ function showStats(data) {
     } else {
         html += "<div>";
 
-        $.each(data, function(index, item) {
+	var releaseAssets = data.assets;
+	var hasAssets = releaseAssets.length != 0;
 
-            var releaseAssets = item.assets;
-            var hasAssets = releaseAssets.length != 0;
-
-            if(hasAssets) {
-               
-                $.each(releaseAssets, function(index, asset) {
-                    var assetSize = (asset.size / 1000000.0).toFixed(2);
-                    var lastUpdate = asset.updated_at.split("T")[0];
-                    html += "<p>" + asset.name + " (" + assetSize + "MB) - Downloaded " +
-                        asset.download_count + " times.<br><i>Last updated on " + lastUpdate + "</i></p>";
-                 
-                });
-               
-            }
-            html += "</div>";
-        });
+	if(hasAssets) {
+	    
+	    $.each(releaseAssets, function(index, asset) {
+		var assetSize = (asset.size / 1000000.0).toFixed(2);
+		var lastUpdate = asset.updated_at.split("T")[0];
+		html += "<p>" + asset.name + " (" + assetSize + "MB) - Downloaded " +
+		    asset.download_count + " times.<br><i>Last updated on " + lastUpdate + "</i></p>";
+	      
+	    });
+	    
+	}
+	html += "</div>";
     }
 
     var resultDiv = $("#stats-result");
@@ -55,7 +52,7 @@ function getStats() {
 	var user = 'Sosoyan';
 	var repository = 'Aton';
 
-    var url = apiRoot + "repos/" + user + "/" + repository + "/releases";
+    var url = apiRoot + "repos/" + user + "/" + repository + "/releases/latest";
     $.getJSON(url, showStats).fail(showStats);
 }
 getStats();
