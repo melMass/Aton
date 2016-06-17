@@ -109,7 +109,7 @@ const float& FrameBuffer::getBufferPix(long b,
 {
     const RenderBuffer& rb = _buffers[b];
     unsigned int index = (rb._width * y) + x;
-    if ( c < 3 && !rb._color_data.empty())
+    if (c < 3 && !rb._color_data.empty())
         return rb._color_data[index][c];
     else
         return rb._float_data[index];

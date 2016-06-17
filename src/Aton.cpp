@@ -852,7 +852,7 @@ class Aton: public Iop
             path filepath(m_path);
             path dir = filepath.parent_path();
 
-            if ( !captures.empty() )
+            if (!captures.empty() )
             {
                 // Getting last ellemnt of the vector
                 path file = captures.back();
