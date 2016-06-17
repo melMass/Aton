@@ -18,10 +18,10 @@ using namespace DD::Image;
 namespace aton
 {
     // Lightweight colour pixel class
-    class RenderColour
+    class RenderColor
     {
         public:
-            RenderColour();
+            RenderColor();
 
             float& operator[](int i);
             const float& operator[](int i) const;
@@ -40,15 +40,12 @@ namespace aton
             void initBuffer(const unsigned int width,
                             const unsigned int height,
                             const unsigned int spp);
-                    
-            unsigned int width();
-            unsigned int height();
         
             bool empty();
 
             // Data
-            std::vector<RenderColour> _colour_data;
-            std::vector<float> _alpha_data;
+            std::vector<RenderColor> _color_data;
+            std::vector<float> _float_data;
             unsigned int _width;
             unsigned int _height;
     };
@@ -66,8 +63,8 @@ namespace aton
             float& setBufferPix(long b,
                                 unsigned int x,
                                 unsigned int y,
-                                int c,
-                                int spp);
+                                int spp,
+                                int c);
         
             // Get read only buffer's pixel
             const float& getBufferPix(long b,

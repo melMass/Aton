@@ -18,10 +18,10 @@ namespace chStr
 using namespace aton;
 
 // Lightweight colour pixel class
-RenderColour::RenderColour() { _val[0] = _val[1] = _val[2] = 0.f; }
+RenderColor::RenderColor() { _val[0] = _val[1] = _val[2] = 0.f; }
 
-float& RenderColour::operator[](int i){ return _val[i]; }
-const float& RenderColour::operator[](int i) const { return _val[i]; }
+float& RenderColor::operator[](int i){ return _val[i]; }
+const float& RenderColor::operator[](int i) const { return _val[i]; }
 
 // Our image buffer class
 RenderBuffer::RenderBuffer(): _width(0), _height(0) {}
@@ -37,29 +37,26 @@ void RenderBuffer::initBuffer(const unsigned int width,
     {
         case 1:
         {
-            _alpha_data.resize(_width * _height);
+            _float_data.resize(_width * _height);
             break;
         }
         case 3:
         {
-            _colour_data.resize(_width * _height);
+            _color_data.resize(_width * _height);
             break;
         }
         case 4:
         {
-            _colour_data.resize(_width * _height);
-            _alpha_data.resize(_width * _height);
+            _color_data.resize(_width * _height);
+            _float_data.resize(_width * _height);
             break;
         }
     }
 }
 
-unsigned int RenderBuffer::width() { return _width; }
-unsigned int RenderBuffer::height() { return _height; }
-
 bool RenderBuffer::empty()
 {
-    return _colour_data.empty();
+    return _color_data.empty();
 }
 
 // Framebuffer main class
@@ -93,17 +90,15 @@ void FrameBuffer::addBuffer(const char* aov, int spp)
 float& FrameBuffer::setBufferPix(long b,
                                  unsigned int x,
                                  unsigned int y,
-                                 int c,
-                                 int spp)
+                                 int spp,
+                                 int c)
 {
     RenderBuffer& rb = _buffers[b];
-    
     unsigned int index = (rb._width * y) + x;
-    
-    if ((spp == 3 || spp == 4) && c < 3)
-        return rb._colour_data[index][c];
+    if (c < 3 && spp != 1)
+        return rb._color_data[index][c];
     else
-        return rb._alpha_data[index];
+        return rb._float_data[index];
 }
 
 // Get read only buffer object
@@ -113,15 +108,11 @@ const float& FrameBuffer::getBufferPix(long b,
                                        int c) const
 {
     const RenderBuffer& rb = _buffers[b];
-    
     unsigned int index = (rb._width * y) + x;
-    
-    if (c == 0 && rb._colour_data.empty())
-        return rb._alpha_data[index];
-    else if (c < 3)
-        return rb._colour_data[index][c];
+    if ( c < 3 && !rb._color_data.empty())
+        return rb._color_data[index][c];
     else
-        return rb._alpha_data[index];
+        return rb._float_data[index];
 }
 
 // Get the current buffer index
@@ -190,11 +181,11 @@ int FrameBuffer::compareAll(int width,
     if (!_buffers.empty() && !_aovs.empty())
     {
         if (aovs == _aovs &&
-            width == _buffers[0].width() &&
-            height == _buffers[0].height())
+            width == _buffers[0]._width &&
+            height == _buffers[0]._height)
             return 0;
-        else if (width == _buffers[0].width() &&
-                 height == _buffers[0].height())
+        else if (width == _buffers[0]._width &&
+                 height == _buffers[0]._height)
             return 1;
         else
             return 2;

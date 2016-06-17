@@ -1166,7 +1166,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                 {
                                     float& pix = fB.setBufferPix(b, x + _xorigin,
                                                                  h - (y + _yorigin + 1),
-                                                                 c, _spp);
+                                                                 _spp, c);
                                     pix = _pix_data[offset + c];
                                 }
                             }
