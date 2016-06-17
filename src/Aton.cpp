@@ -1045,7 +1045,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     // Reset Buffers and Channels if needed
                     if (!active_aovs.empty() && !fB.empty())
                     {
-                        int fBCompare = fB.compareAll(d.width(), d.height(), active_aovs);
+                        int fBCompare = fB.compareAll(d.width(), d.height(),
+                                                      active_aovs);
                         switch (fBCompare)
                         {
                             case 0: // Nothing changed
@@ -1130,33 +1131,33 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     if (node->m_enable_aovs || active_aovs[0] == _aov_name)
                     {
                         // Copy data from d
-                        int _xorigin = d.x();
-                        int _yorigin = d.y();
+                        int _x = d.x();
+                        int _y = d.y();
                         int _width = d.width();
                         int _height = d.height();
                         int _spp = d.spp();
                         long long _ram = d.ram();
                         int _time = d.time();
                         const float* _pix_data = d.pixels();
+                        
+                        const int& w = fB.getWidth();
+                        const int& h = fB.getHeight();
+                        unsigned int x, y, c, offset;
                     
                         // Lock buffer
                         node->m_mutex.lock();
                         
                         // Adding buffer
-                        if(!fB.bufferNameExists(_aov_name) && (node->m_enable_aovs ||
-                                                               fB.size() == 0))
+                        if(!fB.bufferNameExists(_aov_name) &&
+                           (node->m_enable_aovs || fB.size() == 0))
                             fB.addBuffer(_aov_name, _spp);
                         else
                             fB.ready(true);
                         
                         // Get buffer index
                         long b = fB.getBufferIndex(_aov_name);
-                        
-                        // Writing to buffer
-                        unsigned int x, y, c, offset;
-                        const int& w = fB.getWidth();
-                        const int& h = fB.getHeight();
-                        
+                       
+                         // Writing to buffer
                         for (x = 0; x < _width; ++x)
                         {
                             for (y = 0; y < _height; ++y)
@@ -1164,10 +1165,10 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                 offset = (_width * y * _spp) + (x * _spp);
                                 for (c = 0; c < _spp; ++c)
                                 {
-                                    float& pix = fB.setBufferPix(b, x + _xorigin,
-                                                                 h - (y + _yorigin + 1),
-                                                                 _spp, c);
-                                    pix = _pix_data[offset + c];
+                                    float& p = fB.setBufferPix(b, x + _x,
+                                                               h - (y + _y + 1),
+                                                               _spp, c);
+                                    p = _pix_data[offset + c];
                                 }
                             }
                         }
@@ -1185,10 +1186,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
 
                             // Getting redraw bucket size
                             node->m_mutex.lock();
-                            fB.setBucketBBox(_xorigin,
-                                             h - _yorigin - _height,
-                                             _xorigin + _width,
-                                             h - _yorigin);
+                            fB.setBucketBBox(_x, h - _y - _height, _x + _width,
+                                             h - _y);
 
                             // Setting status parameters
                             fB.setProgress(progress);

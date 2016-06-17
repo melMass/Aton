@@ -17,18 +17,17 @@ namespace chStr
 
 using namespace aton;
 
-// Lightweight colour pixel class
-RenderColor::RenderColor() { _val[0] = _val[1] = _val[2] = 0.f; }
+// Lightweight color pixel class
+RenderColor::RenderColor() { _val[0] = _val[1] = _val[2] = 0.0f; }
 
 float& RenderColor::operator[](int i){ return _val[i]; }
 const float& RenderColor::operator[](int i) const { return _val[i]; }
 
-// Our image buffer class
-RenderBuffer::RenderBuffer(): _width(0), _height(0) {}
 
-void RenderBuffer::initBuffer(const unsigned int width,
-                              const unsigned int height,
-                              const unsigned int spp)
+// RenderBuffer class
+RenderBuffer::RenderBuffer(unsigned int width,
+                           unsigned int height,
+                           int spp)
 {
     _width = width;
     _height = height;
@@ -59,7 +58,8 @@ bool RenderBuffer::empty()
     return _color_data.empty();
 }
 
-// Framebuffer main class
+
+// FrameBuffer class
 FrameBuffer::FrameBuffer(double currentFrame,
                          int w,
                          int h): _frame(0),
@@ -78,9 +78,7 @@ FrameBuffer::FrameBuffer(double currentFrame,
 // Add new buffer
 void FrameBuffer::addBuffer(const char* aov, int spp)
 {
-    RenderBuffer buffer;
-    
-    buffer.initBuffer(_width, _height, spp);
+    RenderBuffer buffer(_width, _height, spp);
     
     _buffers.push_back(buffer);
     _aovs.push_back(aov);
@@ -130,12 +128,12 @@ long FrameBuffer::getBufferIndex(Channel z)
             {
                 if (it->compare(layer) == 0)
                 {
-                    b_index = static_cast<int>(it - _aovs.begin());
+                    b_index = it - _aovs.begin();
                     break;
                 }
                 else if (it->compare(Z) == 0 && layer.compare(depth) == 0)
                 {
-                    b_index = static_cast<int>(it - _aovs.begin());
+                    b_index = it - _aovs.begin();
                     break;
                 }
             }
@@ -149,8 +147,9 @@ long FrameBuffer::getBufferIndex(const char* aovName)
 {
     long b_index = 0;
     if (!_aovs.empty())
-        for(std::vector<std::string>::iterator it = _aovs.begin();
-                                               it != _aovs.end(); ++it)
+    {
+        std::vector<std::string>::iterator it;
+        for(it = _aovs.begin(); it != _aovs.end(); ++it)
         {
             if (it->compare(aovName) == 0)
             {
@@ -158,6 +157,7 @@ long FrameBuffer::getBufferIndex(const char* aovName)
                 break;
             }
         }
+    }
     return b_index;
 }
 
@@ -174,9 +174,9 @@ const std::string& FrameBuffer::getFirstBufferName()
 }
 
 // Compare buffers with given buffer/aov names and dimensoions
-int FrameBuffer::compareAll(int width, 
-                            int height, 
-                            std::vector<std::string> aovs)
+int FrameBuffer::compareAll(const unsigned int& width,
+                            const unsigned int& height,
+                            const std::vector<std::string>& aovs)
 {
     if (!_buffers.empty() && !_aovs.empty())
     {

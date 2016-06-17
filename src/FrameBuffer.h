@@ -35,11 +35,9 @@ namespace aton
     {
         friend class FrameBuffer;
         public:
-            RenderBuffer();
-
-            void initBuffer(const unsigned int width,
-                            const unsigned int height,
-                            const unsigned int spp);
+            RenderBuffer(unsigned int width = 0,
+                         unsigned int height = 0,
+                         int spp = 0);
         
             bool empty();
 
@@ -85,7 +83,9 @@ namespace aton
             const std::string& getFirstBufferName();
         
             // Compare buffers with given buffer/aov names and dimensoions
-            int compareAll(int width, int height, std::vector<std::string> aovs);
+            int compareAll(const unsigned int& width,
+                           const unsigned int& height,
+                           const std::vector<std::string>& aovs);
         
             // Clear buffers and aovs
             void clearAll();
