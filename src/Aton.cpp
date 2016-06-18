@@ -40,7 +40,7 @@ using namespace aton;
 static const char* const CLASS = "Aton";
 
 // Version
-static const char* const VERSION = "1.1.2";
+static const char* const VERSION = "1.1.3";
 
 // Help
 static const char* const HELP =
