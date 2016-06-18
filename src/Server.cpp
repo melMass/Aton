@@ -174,9 +174,6 @@ Data Server::listen()
             {
                 d.mType = 9;
 
-                // Debug Closing socket
-                std::cout << "Socket closed" << std::endl;
-
                 mSocket.close();
 
                 // This fixes all nuke destructor issues on windows

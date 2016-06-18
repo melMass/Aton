@@ -224,7 +224,7 @@ class Aton: public Iop
 
             try
             {
-                m_server.connect(port, true);
+                m_node->m_server.connect(port, true);
                 m_legit = true;
             }
             catch ( ... )
@@ -246,13 +246,13 @@ class Aton: public Iop
                 print_name(std::cout);
                 
                 // Update port in the UI
-                std::string cmd; // Our python command buffer
-                cmd = (boost::format("nuke.toNode('%s')['port_number'].setValue(%s)")%m_node_name
-                                                                                     %m_server.getPort()).str();
-                script_command(cmd.c_str());
-                script_unlock();
-                
-                std::cout << ": Connected to port " << m_server.getPort() << std::endl;
+                if (m_node->m_port != m_node->m_server.getPort())
+                {
+                    std::stringstream str;
+                    str << (m_node->m_server.getPort());
+                    std::string port = str.str();
+                    knob("port_number")->set_text(port.c_str());
+                }
             }
         }
 
@@ -263,9 +263,6 @@ class Aton: public Iop
             {
                 m_server.quit();
                 Thread::wait(this);
-
-                print_name(std::cout);
-                std::cout << ": Disconnected from port " << m_server.getPort() << std::endl;
             }
         }
 
@@ -278,7 +275,7 @@ class Aton: public Iop
         void _validate(bool for_real)
         {
             // Do we need to open a port?
-            if (m_server.isConnected() == false && !m_inError && m_legit)
+            if (m_node->m_server.isConnected() == false && !m_inError && m_legit)
                 changePort(m_port);
             
             // Handle any connection error
@@ -1024,6 +1021,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                   _frame) == node->m_frames.end())
                     {
                         FrameBuffer fB(_frame, _width, _height);
+                        if (!node->m_frames.empty())
+                            fB = node->m_framebuffers.back();
                         node->m_mutex.lock();
                         node->m_frames.push_back(_frame);
                         node->m_framebuffers.push_back(fB);
