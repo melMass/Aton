@@ -243,7 +243,6 @@ class Aton: public Iop
             {
                 Thread::spawn(::atonListen, 1, this);
                 Thread::spawn(::timeChange, 1, this);
-                print_name(std::cout);
                 
                 // Update port in the UI
                 if (m_node->m_port != m_node->m_server.getPort())
