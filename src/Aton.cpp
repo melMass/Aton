@@ -987,7 +987,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
 
         // For progress percentage
         long long progress = 0;
-        long long imageArea = 0;
+        long long _regionArea = 0;
         
         long f_index = 0;
         
@@ -1016,23 +1016,22 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
             {
                 case 0: // Open a new image
                 {
-                    // Init current frame
-                    double active_frame = static_cast<double>(d.currentFrame());
+                    // Get current frame
+                    double _active_frame = static_cast<double>(d.currentFrame());
                     
-                    if (current_frame != active_frame)
-                        current_frame = active_frame;
+                    if (current_frame != _active_frame)
+                        current_frame = _active_frame;
                     
                     // Create FrameBuffer
                     node->m_mutex.lock();
                     if (std::find(node->m_frames.begin(),
                                   node->m_frames.end(),
-                                  active_frame) == node->m_frames.end())
+                                  _active_frame) == node->m_frames.end())
                     {
-                        FrameBuffer fB(active_frame, d.width(), d.height());
-                        node->m_frames.push_back(active_frame);
+                        FrameBuffer fB(_active_frame, d.width(), d.height());
+                        node->m_frames.push_back(_active_frame);
                         node->m_framebuffers.push_back(fB);
                     }
-
                     if (!node->m_multiframes)
                     {
                         std::reverse(node->m_frames.begin(),
@@ -1044,23 +1043,21 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     }
                     node->m_mutex.unlock();
                     
-                    // Get FrameBuffer
-                    f_index = node->getFrameIndex(active_frame);
+                    // Get current FrameBuffer
+                    f_index = node->getFrameIndex(_active_frame);
                     FrameBuffer& fB = node->m_framebuffers[f_index];
                     
                     // Reset Buffers and Channels if needed
                     if (!active_aovs.empty() && !fB.empty())
                     {
-                        int fBCompare = fB.compare(d.width(), d.height(),
-                                                   active_aovs);
-                        switch (fBCompare)
+                        switch (fB.compare(d.width(), d.height(), active_aovs))
                         {
-                            case 0: // Nothing changed
-                                break;
                             case 1: // Only AOVs changed
                             {
                                 node->m_mutex.lock();
                                 fB.resize(1);
+                                fB.ready(false);
+                                node->resetChannels(node->m_channels);
                                 break;
                             }
                             case 2: // All changed
@@ -1069,23 +1066,15 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                 fB.clearAll();
                                 fB.setWidth(d.width());
                                 fB.setHeight(d.height());
+                                fB.ready(false);
+                                node->resetChannels(node->m_channels);
                                 break;
                             }
-                        }
-
-                        if (fBCompare > 0)
-                        {
-                            node->resetChannels(node->m_channels);
-                            fB.ready(false);
-                            node->m_mutex.unlock();
                         }
                     }
                     
                     // Get image area to calculate the progress
-                    if (d.width()*d.height() == d.rArea())
-                        imageArea = d.width()*d.height();
-                    else
-                        imageArea = d.rArea();
+                    _regionArea = d.rArea();
                     
                     // Get delta time per IPR iteration
                     delta_time = active_time;
@@ -1179,14 +1168,14 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                            fB.getFirstBufferName().compare(_aov_name) == 0)
                         {
                             // Calculating the progress percentage
-                            imageArea -= (_width*_height);
-                            progress = 100 - (imageArea*100) / (w * h);
-
-                            // Getting redraw bucket size
+                            _regionArea -= (_width*_height);
+                            progress = 100 - (_regionArea * 100) / (w * h);
+                           
+                             // Setting bucket size
                             node->m_mutex.lock();
                             fB.setBucketBBox(_x, h - _y - _height, _x + _width,
                                              h - _y);
-
+                            
                             // Setting status parameters
                             fB.setProgress(progress);
                             fB.setRAM(_ram);
