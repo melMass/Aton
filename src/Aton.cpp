@@ -1054,6 +1054,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                 fB.resize(1);
                                 fB.ready(false);
                                 node->resetChannels(node->m_channels);
+                                node->m_mutex.unlock();
                                 break;
                             }
                             case 2: // All changed
@@ -1064,6 +1065,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                 fB.setHeight(d.height());
                                 fB.ready(false);
                                 node->resetChannels(node->m_channels);
+                                node->m_mutex.unlock();
                                 break;
                             }
                         }
