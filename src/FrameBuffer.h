@@ -39,8 +39,6 @@ namespace aton
                          unsigned int height = 0,
                          int spp = 0);
         
-            bool empty();
-
             // Data
             std::vector<RenderColor> _color_data;
             std::vector<float> _float_data;
@@ -85,6 +83,7 @@ namespace aton
             // Compare buffers with given buffer/aov names and dimensoions
             int compare(const unsigned int& width,
                         const unsigned int& height,
+                        const double& frame,
                         const std::vector<std::string>& aovs);
         
             // Clear buffers and aovs
@@ -133,6 +132,9 @@ namespace aton
         
             // Get Arnold core version
             const std::string& getArnoldVersion();
+        
+            // Set the frame number of this framebuffer
+            void setFrame(double frame);
         
             // Get the frame number of this framebuffer
             const double& getFrame();

@@ -53,12 +53,6 @@ RenderBuffer::RenderBuffer(unsigned int width,
     }
 }
 
-bool RenderBuffer::empty()
-{
-    return _color_data.empty();
-}
-
-
 // FrameBuffer class
 FrameBuffer::FrameBuffer(double currentFrame,
                          int w,
@@ -117,7 +111,7 @@ const float& FrameBuffer::getBufferPix(long b,
 long FrameBuffer::getBufferIndex(Channel z)
 {
     long b_index = 0;    
-    if (!_aovs.empty())
+    if (_aovs.size() > 1)
     {
         using namespace chStr;
         std::string layer = getLayerName(z);
@@ -146,7 +140,7 @@ long FrameBuffer::getBufferIndex(Channel z)
 long FrameBuffer::getBufferIndex(const char* aovName)
 {
     long b_index = 0;
-    if (!_aovs.empty())
+    if (_aovs.size() > 1)
     {
         std::vector<std::string>::iterator it;
         for(it = _aovs.begin(); it != _aovs.end(); ++it)
@@ -176,19 +170,24 @@ const std::string& FrameBuffer::getFirstBufferName()
 // Compare buffers with given buffer/aov names and dimensoions
 int FrameBuffer::compare(const unsigned int& width,
                          const unsigned int& height,
+                         const double& frame,
                          const std::vector<std::string>& aovs)
 {
     if (!_buffers.empty() && !_aovs.empty())
     {
-        if (aovs == _aovs &&
-            width == _buffers[0]._width &&
-            height == _buffers[0]._height)
+        bool aov = (aovs == _aovs);
+        bool fra = (frame == _frame);
+        bool res = (width == _buffers[0]._width &&
+                    height == _buffers[0]._height);
+        
+        if (aov && fra && res)
             return 0;
-        else if (width == _buffers[0]._width &&
-                 height == _buffers[0]._height)
+        else if (aov && !fra && res)
             return 1;
-        else
+        else if (!aov && !fra && res)
             return 2;
+        else
+            return 3;
     }
     else
         return -1;
@@ -273,6 +272,12 @@ void FrameBuffer::setArnoldVersion(int version)
 
 // Get Arnold core version
 const std::string& FrameBuffer::getArnoldVersion() { return _version; }
+
+// Set the frame number of this framebuffer
+void FrameBuffer::setFrame(double frame)
+{
+    _frame = frame;
+}
 
 // Get the frame number of this framebuffer
 const double& FrameBuffer::getFrame() { return _frame; }

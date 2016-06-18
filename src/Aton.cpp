@@ -287,10 +287,7 @@ class Aton: public Iop
 
             if (!m_node->m_framebuffers.empty())
             {
-                long f_index = 0;
-                if (m_multiframes)
-                    f_index = getFrameIndex(uiContext().frame());
-                
+                long f_index = getFrameIndex(uiContext().frame());
                 FrameBuffer& fB = m_node->m_framebuffers[f_index];
                 
                 if (!fB.empty())
@@ -311,10 +308,10 @@ class Aton: public Iop
                     if (m_node->m_fmt.width() != width ||
                         m_node->m_fmt.height() != height)
                     {
+                        // If the format is already exist
                         Format* m_fmt_exist = &m_node->m_fmt;
                         if (m_node->m_formatExists)
                         {
-                            // If the format is already exist we need to get its pointer
                             for (int i=0; i < Format::size(); ++i)
                             {
                                 const char* f_name = Format::index(i)->name();
@@ -386,17 +383,14 @@ class Aton: public Iop
 
         void engine(int y, int x, int r, ChannelMask channels, Row& out)
         {
-            long f = 0, b = 0;
-            unsigned int xx = static_cast<unsigned int>(x);
-            
             std::vector<FrameBuffer>& fBs = m_node->m_framebuffers;
-            
-            if (m_multiframes && fBs.size() > 1)
-                f = getFrameIndex(uiContext().frame());
+            long f = getFrameIndex(uiContext().frame());
+            unsigned int xx = static_cast<unsigned int>(x);
             
             foreach(z, channels)
             {
-                if (m_enable_aovs && !fBs.empty() && fBs[f].size() > 1)
+                long b = 0;
+                if (m_enable_aovs && !fBs.empty() && fBs[f].isReady())
                     b = fBs[f].getBufferIndex(z);
                 
                 x = xx;
@@ -560,31 +554,35 @@ class Aton: public Iop
             long f_index = 0;
             std::vector<double>& frames = m_node->m_frames;
 
-            if (!frames.empty())
+            if (frames.size() > 1)
             {
-                int nearFIndex = INT_MIN;
-                int minFIndex = INT_MAX;
-                
-                std::vector<double>::iterator it;
-                for( it = frames.begin(); it != frames.end(); ++it)
+                if (m_multiframes)
                 {
-                    if (currentFrame == *it)
+                    int nearFIndex = INT_MIN;
+                    int minFIndex = INT_MAX;
+                    std::vector<double>::iterator it;
+                    for( it = frames.begin(); it != frames.end(); ++it)
                     {
-                        f_index = it - frames.begin();
-                        break;
-                    }
-                    else if (currentFrame > *it && nearFIndex < *it)
-                    {
-                        nearFIndex = static_cast<int>(*it);
-                        f_index = it - frames.begin();
-                        continue;
-                    }
-                    else if (*it < minFIndex && nearFIndex == INT_MIN)
-                    {
-                        minFIndex = static_cast<int>(*it);
-                        f_index = it - frames.begin();
+                        if (currentFrame == *it)
+                        {
+                            f_index = it - frames.begin();
+                            break;
+                        }
+                        else if (currentFrame > *it && nearFIndex < *it)
+                        {
+                            nearFIndex = static_cast<int>(*it);
+                            f_index = it - frames.begin();
+                            continue;
+                        }
+                        else if (*it < minFIndex && nearFIndex == INT_MIN)
+                        {
+                            minFIndex = static_cast<int>(*it);
+                            f_index = it - frames.begin();
+                        }
                     }
                 }
+                else
+                    f_index = (frames.end() - frames.begin()) - 1;
             }
             return f_index;
         }
@@ -1014,30 +1012,26 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                 {
                     // Get current frame
                     double _active_frame = static_cast<double>(d.currentFrame());
-                    
                     if (current_frame != _active_frame)
                         current_frame = _active_frame;
                     
                     // Create FrameBuffer
-                    node->m_mutex.lock();
                     if (std::find(node->m_frames.begin(),
                                   node->m_frames.end(),
                                   _active_frame) == node->m_frames.end())
                     {
                         FrameBuffer fB(_active_frame, d.width(), d.height());
+                        node->m_mutex.lock();
                         node->m_frames.push_back(_active_frame);
                         node->m_framebuffers.push_back(fB);
+                        node->m_mutex.unlock();
                     }
+                    
                     if (!node->m_multiframes)
                     {
-                        std::reverse(node->m_frames.begin(),
-                                     node->m_frames.end());
-                        std::reverse(node->m_framebuffers.begin(),
-                                     node->m_framebuffers.end());
                         node->m_frames.resize(1);
                         node->m_framebuffers.resize(1);
                     }
-                    node->m_mutex.unlock();
                     
                     // Get current FrameBuffer
                     f_index = node->getFrameIndex(_active_frame);
@@ -1046,18 +1040,28 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     // Reset Buffers and Channels if needed
                     if (!active_aovs.empty() && !fB.empty())
                     {
-                        switch (fB.compare(d.width(), d.height(), active_aovs))
+                        switch (fB.compare(d.width(),
+                                           d.height(), _active_frame,
+                                                        active_aovs))
                         {
-                            case 1: // Only AOVs changed
+                            case 1: // Frame missmatch
+                            {
+                                node->m_mutex.lock();
+                                fB.setFrame(_active_frame);
+                                node->m_mutex.unlock();
+                            }
+                            
+                            case 2: // AOVs mismatch
                             {
                                 node->m_mutex.lock();
                                 fB.resize(1);
                                 fB.ready(false);
+                                fB.setFrame(_active_frame);
                                 node->resetChannels(node->m_channels);
                                 node->m_mutex.unlock();
                                 break;
                             }
-                            case 2: // All changed
+                            case 3: // All mismatch
                             {
                                 node->m_mutex.lock();
                                 fB.clearAll();
