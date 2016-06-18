@@ -1044,21 +1044,20 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                            d.height(), _active_frame,
                                                         active_aovs))
                         {
-                            case 1: // Frame missmatch
+                            case 1: // Frame mismatch
                             {
                                 node->m_mutex.lock();
                                 fB.setFrame(_active_frame);
-                                node->m_mutex.unlock();
+                                break;
                             }
                             
-                            case 2: // AOVs mismatch
+                            case 2: // Frame and AOVs mismatch
                             {
                                 node->m_mutex.lock();
                                 fB.resize(1);
                                 fB.ready(false);
                                 fB.setFrame(_active_frame);
                                 node->resetChannels(node->m_channels);
-                                node->m_mutex.unlock();
                                 break;
                             }
                             case 3: // All mismatch
@@ -1069,10 +1068,10 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                 fB.setHeight(d.height());
                                 fB.ready(false);
                                 node->resetChannels(node->m_channels);
-                                node->m_mutex.unlock();
                                 break;
                             }
                         }
+                        node->m_mutex.unlock();
                     }
                     
                     // Get image area to calculate the progress
