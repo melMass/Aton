@@ -248,7 +248,7 @@ void FrameBuffer::setProgress(long long progress)
 void FrameBuffer::setRAM(long long ram)
 {
     ram /= 1048576;
-    _pram = _ram < ram ? ram : _ram;
+    _pram = ram > _ram ? ram : _ram;
     _ram = ram;
 }
 void FrameBuffer::setTime(int time) { _time = time; }
@@ -274,10 +274,7 @@ void FrameBuffer::setArnoldVersion(int version)
 const std::string& FrameBuffer::getArnoldVersion() { return _version; }
 
 // Set the frame number of this framebuffer
-void FrameBuffer::setFrame(double frame)
-{
-    _frame = frame;
-}
+void FrameBuffer::setFrame(double frame) { _frame = frame; }
 
 // Get the frame number of this framebuffer
 const double& FrameBuffer::getFrame() { return _frame; }
