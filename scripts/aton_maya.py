@@ -72,10 +72,14 @@ class Aton(QtGui.QDialog):
 
     def setupUi(self):
 
-        def updateUi():
-            self.portSpinBox.setValue(portSlider.value()+self.defaultPort)
+        def resUpdateUi():
             self.resolutionSpinBox.setValue(resolutionSlider.value()*5)
+            
+        def camUpdateUi():
             self.cameraAaSpinBox.setValue(cameraAaSlider.value())
+
+        def portUpdateUi():
+            self.portSpinBox.setValue(portSlider.value()+self.defaultPort)
 
         def regionUpdateUi():
             self.renderRegionRSpinBox.setValue(self.getSceneOptions()["width"] *
@@ -282,11 +286,11 @@ class Aton(QtGui.QDialog):
         mainLayout.addWidget(ignoresGroupBox)
         mainLayout.addLayout(mainButtonslayout)
 
-        self.connect(portSlider, QtCore.SIGNAL("valueChanged(int)"), updateUi)
-        self.connect(resolutionSlider, QtCore.SIGNAL("valueChanged(int)"), updateUi)
+        self.connect(portSlider, QtCore.SIGNAL("valueChanged(int)"), portUpdateUi)
+        self.connect(resolutionSlider, QtCore.SIGNAL("valueChanged(int)"), resUpdateUi)
         self.connect(self.resolutionSpinBox, QtCore.SIGNAL("valueChanged(int)"), regionUpdateUi)
         self.connect(self.resolutionSpinBox, QtCore.SIGNAL("editingFinished()"), regionUpdateUi)
-        self.connect(cameraAaSlider, QtCore.SIGNAL("valueChanged(int)"), updateUi)
+        self.connect(cameraAaSlider, QtCore.SIGNAL("valueChanged(int)"), camUpdateUi)
 
         self.setLayout(mainLayout)
 
