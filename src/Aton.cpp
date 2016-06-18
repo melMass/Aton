@@ -926,8 +926,7 @@ class Aton: public Iop
             size_t f_count = m_node->m_framebuffers.size();
 
             std::string str_status = (boost::format("Arnold: %s | "
-                                                    "Used Memory: %sMB | "
-                                                    "Peak Memory: %sMB | "
+                                                    "Memory: %sMB / %sMB | "
                                                     "Time: %02ih:%02im:%02is | "
                                                     "Frame: %04i (%s) | "
                                                     "Progress: %s%%")%version%ram%p_ram
