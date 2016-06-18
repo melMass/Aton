@@ -287,29 +287,18 @@ class Aton: public Iop
             // Handle any connection error
             if (m_inError)
                 error(m_connectionError.c_str());
-            
-            // Reseting channels
-            ChannelSet& channels = m_node->m_channels;
-            if (m_node->m_framebuffers.empty() || !m_enable_aovs)
-            {
-                if (channels.size() > 4)
-                {
-                    channels.clear();
-                    channels.insert(Chan_Red);
-                    channels.insert(Chan_Green);
-                    channels.insert(Chan_Blue);
-                    channels.insert(Chan_Alpha);
-                }
-            }
 
             if (!m_node->m_framebuffers.empty())
             {
-                // Get the frame and set the format
-                long f_index = getFrameIndex(uiContext().frame());
+                long f_index = 0;
+                if (m_multiframes)
+                    f_index = getFrameIndex(uiContext().frame());
+                
                 FrameBuffer& fB = m_node->m_framebuffers[f_index];
                 
                 if (!fB.empty())
                 {
+                    // Set the progress
                     if (fB.getProgress() > 0)
                         setStatus(fB.getProgress(),
                                   fB.getRAM(),
@@ -329,11 +318,11 @@ class Aton: public Iop
                         if (m_node->m_formatExists)
                         {
                             // If the format is already exist we need to get its pointer
-                            for (int i=0; i < Format::size(); i++)
+                            for (int i=0; i < Format::size(); ++i)
                             {
-                                m_fmt_exist = Format::index(i);
-                                if (std::string(m_fmt_exist->name()).compare(m_node->m_node_name) == 0)
-                                    break;
+                                const char* f_name = Format::index(i)->name();
+                                if (strcmp(f_name, m_node->m_node_name) == 0)
+                                    m_fmt_exist = Format::index(i);
                             }
                         }
                         
@@ -343,7 +332,9 @@ class Aton: public Iop
                         knob("formats_knob")->set_text(m_node->m_node_name);
                     }
                     
-                    // Adding channels
+                    // Set the channels
+                    ChannelSet& channels = m_node->m_channels;
+                    
                     if (m_enable_aovs)
                     {
                         size_t fb_size = fB.size();
@@ -384,6 +375,8 @@ class Aton: public Iop
                             }
                         }
                     }
+                    else
+                        resetChannels(channels);
                 }
             }
             
@@ -524,6 +517,18 @@ class Aton: public Iop
             return 0;
         }
     
+        void resetChannels(ChannelSet& channels)
+        {
+            if (channels.size() > 4)
+            {
+                channels.clear();
+                channels.insert(Chan_Red);
+                channels.insert(Chan_Green);
+                channels.insert(Chan_Blue);
+                channels.insert(Chan_Alpha);
+            }
+        }
+    
         bool isVersionValid()
         {
             // Check the Nuke version to be minimum 9.0v7 in order
@@ -558,7 +563,7 @@ class Aton: public Iop
             long f_index = 0;
             std::vector<double>& frames = m_node->m_frames;
 
-            if (m_multiframes && !frames.empty())
+            if (!frames.empty())
             {
                 int nearFIndex = INT_MIN;
                 int minFIndex = INT_MAX;
@@ -728,6 +733,7 @@ class Aton: public Iop
             
                 fBs =  std::vector<FrameBuffer>();
                 frames = std::vector<double>();
+                resetChannels(m_node->m_channels);
                
                 m_node->m_legit = true;
                 flagForUpdate();
@@ -945,7 +951,7 @@ static void timeChange(unsigned index, unsigned nthreads, void* data)
 {
     using namespace boost;
     Aton* node = reinterpret_cast<Aton*>(data);
-    std::vector<FrameBuffer>& fBs = node->m_node->m_framebuffers;
+    std::vector<FrameBuffer>& fBs = node->m_framebuffers;
     
     double uiFrame = 0;
     double prevFrame = 0;
@@ -1045,13 +1051,13 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     // Reset Buffers and Channels if needed
                     if (!active_aovs.empty() && !fB.empty())
                     {
-                        int fBCompare = fB.compareAll(d.width(), d.height(),
-                                                      active_aovs);
+                        int fBCompare = fB.compare(d.width(), d.height(),
+                                                   active_aovs);
                         switch (fBCompare)
                         {
                             case 0: // Nothing changed
                                 break;
-                            case 1: // Only AOVs count changed
+                            case 1: // Only AOVs changed
                             {
                                 node->m_mutex.lock();
                                 fB.resize(1);
@@ -1069,15 +1075,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
 
                         if (fBCompare > 0)
                         {
-                            if (node->m_channels.size() > 4)
-                            {
-                                node->m_channels.clear();
-                                node->m_channels.insert(Chan_Red);
-                                node->m_channels.insert(Chan_Green);
-                                node->m_channels.insert(Chan_Blue);
-                                node->m_channels.insert(Chan_Alpha);
-                            }
-                            
+                            node->resetChannels(node->m_channels);
                             fB.ready(false);
                             node->m_mutex.unlock();
                         }

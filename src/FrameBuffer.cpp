@@ -174,9 +174,9 @@ const std::string& FrameBuffer::getFirstBufferName()
 }
 
 // Compare buffers with given buffer/aov names and dimensoions
-int FrameBuffer::compareAll(const unsigned int& width,
-                            const unsigned int& height,
-                            const std::vector<std::string>& aovs)
+int FrameBuffer::compare(const unsigned int& width,
+                         const unsigned int& height,
+                         const std::vector<std::string>& aovs)
 {
     if (!_buffers.empty() && !_aovs.empty())
     {

@@ -83,9 +83,9 @@ namespace aton
             const std::string& getFirstBufferName();
         
             // Compare buffers with given buffer/aov names and dimensoions
-            int compareAll(const unsigned int& width,
-                           const unsigned int& height,
-                           const std::vector<std::string>& aovs);
+            int compare(const unsigned int& width,
+                        const unsigned int& height,
+                        const std::vector<std::string>& aovs);
         
             // Clear buffers and aovs
             void clearAll();
