@@ -82,6 +82,7 @@ class Aton: public Iop
         std::string               m_status;           // Status bar text
         bool                      m_multiframes;      // Enable Multiple Frames toogle
         bool                      m_all_frames;       // Capture All Frames toogle
+        double                    m_current_frame;
         const char*               m_comment;          // Comment for the frame stamp
         bool                      m_stamp;            // Enable Frame stamp toogle
         bool                      m_enable_aovs;      // Enable AOVs toogle
@@ -107,6 +108,7 @@ class Aton: public Iop
                           m_status(""),
                           m_multiframes(true),
                           m_all_frames(false),
+                          m_current_frame(0),
                           m_comment(""),
                           m_stamp(isVersionValid()),
                           m_enable_aovs(true),
@@ -472,6 +474,11 @@ class Aton: public Iop
                 clearAllCmd();
                 return 1;
             }
+            if (_knob->is("multi_frame_knob"))
+            {
+                m_node->m_current_frame = uiContext().frame();
+                return 1;
+            }
             if (_knob->is("capture_knob"))
             {
                 captureCmd();
@@ -552,33 +559,32 @@ class Aton: public Iop
 
             if (frames.size() > 1)
             {
-                if (m_multiframes)
+                if (!m_multiframes)
+                    currentFrame = m_node->m_current_frame;
+                
+                int nearFIndex = INT_MIN;
+                int minFIndex = INT_MAX;
+                std::vector<double>::iterator it;
+                for( it = frames.begin(); it != frames.end(); ++it)
                 {
-                    int nearFIndex = INT_MIN;
-                    int minFIndex = INT_MAX;
-                    std::vector<double>::iterator it;
-                    for( it = frames.begin(); it != frames.end(); ++it)
+                    if (currentFrame == *it)
                     {
-                        if (currentFrame == *it)
-                        {
-                            f_index = it - frames.begin();
-                            break;
-                        }
-                        else if (currentFrame > *it && nearFIndex < *it)
-                        {
-                            nearFIndex = static_cast<int>(*it);
-                            f_index = it - frames.begin();
-                            continue;
-                        }
-                        else if (*it < minFIndex && nearFIndex == INT_MIN)
-                        {
-                            minFIndex = static_cast<int>(*it);
-                            f_index = it - frames.begin();
-                        }
+                        f_index = it - frames.begin();
+                        break;
+                    }
+                    else if (currentFrame > *it && nearFIndex < *it)
+                    {
+                        nearFIndex = static_cast<int>(*it);
+                        f_index = it - frames.begin();
+                        continue;
+                    }
+                    else if (*it < minFIndex && nearFIndex == INT_MIN)
+                    {
+                        minFIndex = static_cast<int>(*it);
+                        f_index = it - frames.begin();
                     }
                 }
-                else
-                    f_index = (frames.end() - frames.begin()) - 1;
+
             }
             return f_index;
         }
@@ -1132,11 +1138,9 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         const int& w = fB.getWidth();
                         const int& h = fB.getHeight();
                         unsigned int x, y, c, offset;
-                    
-                        // Lock buffer
-                        node->m_mutex.lock();
                         
                         // Adding buffer
+                        node->m_mutex.lock();
                         if(!fB.bufferNameExists(_aov_name) &&
                            (node->m_enable_aovs || fB.size() == 0))
                             fB.addBuffer(_aov_name, _spp);
@@ -1161,8 +1165,6 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                 }
                             }
                         }
-
-                        // Release lock
                         node->m_mutex.unlock();
 
                         // Update only on first aov
