@@ -381,9 +381,9 @@ class Aton: public Iop
 
         void engine(int y, int x, int r, ChannelMask channels, Row& out)
         {
-            std::vector<FrameBuffer>& fBs = m_node->m_framebuffers;
             long f = getFrameIndex(uiContext().frame());
             unsigned int xx = static_cast<unsigned int>(x);
+            std::vector<FrameBuffer>& fBs = m_node->m_framebuffers;
             
             foreach(z, channels)
             {
@@ -565,6 +565,7 @@ class Aton: public Iop
                 int nearFIndex = INT_MIN;
                 int minFIndex = INT_MAX;
                 std::vector<double>::iterator it;
+                m_mutex.lock();
                 for( it = frames.begin(); it != frames.end(); ++it)
                 {
                     if (currentFrame == *it)
@@ -584,7 +585,7 @@ class Aton: public Iop
                         f_index = it - frames.begin();
                     }
                 }
-
+                m_mutex.unlock();
             }
             return f_index;
         }
@@ -1093,7 +1094,6 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                 break;
                             }
                         }
-                        
                     }
                     
                     // Get image area to calculate the progress
