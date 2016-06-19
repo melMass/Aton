@@ -1021,22 +1021,36 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         current_frame = _frame;
                     
                     // Create FrameBuffer
-                    if (std::find(node->m_frames.begin(),
-                                  node->m_frames.end(),
-                                  _frame) == node->m_frames.end())
+                    if (node->m_multiframes)
+                    {
+                        if (std::find(node->m_frames.begin(),
+                                      node->m_frames.end(),
+                                      _frame) == node->m_frames.end())
+                        {
+                            FrameBuffer fB(_frame, _width, _height);
+                            if (!node->m_frames.empty())
+                                fB = node->m_framebuffers.back();
+                            node->m_mutex.lock();
+                            node->m_frames.push_back(_frame);
+                            node->m_framebuffers.push_back(fB);
+                            node->m_mutex.unlock();
+                        }
+                    }
+                    else
                     {
                         FrameBuffer fB(_frame, _width, _height);
                         if (!node->m_frames.empty())
-                            fB = node->m_framebuffers.back();
+                        {
+                            long i = node->getFrameIndex(node->m_current_frame);
+                            fB = node->m_framebuffers[i];
+                        }
+                            
                         node->m_mutex.lock();
+                        node->m_frames = std::vector<double>();
+                        node->m_framebuffers = std::vector<FrameBuffer>();
                         node->m_frames.push_back(_frame);
                         node->m_framebuffers.push_back(fB);
                         node->m_mutex.unlock();
-                    }
-                    if (!node->m_multiframes)
-                    {
-                        node->m_frames.resize(1);
-                        node->m_framebuffers.resize(1);
                     }
                     
                     // Get current FrameBuffer
