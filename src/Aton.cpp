@@ -381,22 +381,22 @@ class Aton: public Iop
 
         void engine(int y, int x, int r, ChannelMask channels, Row& out)
         {
-            std::vector<FrameBuffer>& fBs = m_node->m_framebuffers;
             long f = getFrameIndex(uiContext().frame());
+            std::vector<FrameBuffer>& fBs = m_node->m_framebuffers;
             unsigned int xx = static_cast<unsigned int>(x);
             
             foreach(z, channels)
             {
-                long b = 0;
-                if (m_enable_aovs && !fBs.empty() && fBs[f].isReady())
-                    b = fBs[f].getBufferIndex(z);
-                
                 x = xx;
+                long b = 0;
                 int c = colourIndex(z);
                 float* cOut = out.writable(z) + x;
                 const float* END = cOut + (r - x);
                 
                 m_mutex.lock();
+                if (m_enable_aovs && !fBs.empty() && fBs[f].isReady())
+                    b = fBs[f].getBufferIndex(z);
+                
                 while (cOut < END)
                 {
                     if (fBs.empty() || !fBs[f].isReady() ||
