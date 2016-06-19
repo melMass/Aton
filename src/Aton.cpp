@@ -1048,6 +1048,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                             {
                                 node->m_mutex.lock();
                                 fB.setFrame(_frame);
+                                node->m_mutex.unlock();
                                 break;
                             }
                             
@@ -1058,6 +1059,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                 fB.ready(false);
                                 fB.setFrame(_frame);
                                 node->resetChannels(node->m_channels);
+                                node->m_mutex.unlock();
                                 break;
                             }
                             case 3: // All mismatch
@@ -1068,10 +1070,11 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                 fB.setHeight(_height);
                                 fB.ready(false);
                                 node->resetChannels(node->m_channels);
+                                node->m_mutex.unlock();
                                 break;
                             }
                         }
-                        node->m_mutex.unlock();
+                        
                     }
                     
                     // Get image area to calculate the progress
@@ -1107,9 +1110,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                  active_aovs.end(),
                                  _aov_name) == active_aovs.end())
                     {
-                        if (node->m_enable_aovs)
-                            active_aovs.push_back(_aov_name);
-                        else if (active_aovs.size() == 0)
+                        if (node->m_enable_aovs || active_aovs.empty())
                             active_aovs.push_back(_aov_name);
                         else if (active_aovs.size() > 1)
                             active_aovs.resize(1);
