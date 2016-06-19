@@ -183,7 +183,7 @@ class Aton: public Iop
             script_unlock();
             
             // Checking if the format is already exist
-            if (result.compare("True") != 0)
+            if (result != "True")
                 m_fmt.add(m_node_name);
             else
                 m_formatExists = true;
@@ -339,18 +339,18 @@ class Aton: public Iop
                             using namespace chStr;
                             const std::string& bfName = fB.getBufferName(i);
                             
-                            if (bfName.compare(RGBA) == 0 && !channels.contains(Chan_Red))
+                            if (bfName == RGBA && !channels.contains(Chan_Red))
                             {
                                 channels.insert(Chan_Red);
                                 channels.insert(Chan_Green);
                                 channels.insert(Chan_Blue);
                                 channels.insert(Chan_Alpha);
                             }
-                            else if (bfName.compare(Z) == 0 && !channels.contains(Chan_Z))
+                            else if (bfName == Z && !channels.contains(Chan_Z))
                             {
                                 channels.insert(Chan_Z);
                             }
-                            else if (bfName.compare(N) == 0 || bfName.compare(P) == 0)
+                            else if (bfName == N || bfName == P)
                             {
                                 if (!channels.contains(channel((bfName + _X).c_str())))
                                 {
@@ -381,8 +381,8 @@ class Aton: public Iop
 
         void engine(int y, int x, int r, ChannelMask channels, Row& out)
         {
-            long f = getFrameIndex(uiContext().frame());
             std::vector<FrameBuffer>& fBs = m_node->m_framebuffers;
+            long f = getFrameIndex(uiContext().frame());
             unsigned int xx = static_cast<unsigned int>(x);
             
             foreach(z, channels)
@@ -534,7 +534,7 @@ class Aton: public Iop
             std::string result = script_result();
             script_unlock();
                 
-            return (result.compare("True") == 0);
+            return (result == "True");
         }
     
         bool isPathValid(std::string path)
@@ -1071,7 +1071,6 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                 node->m_mutex.unlock();
                                 break;
                             }
-                            
                             case 2: // Frame and AOVs mismatch
                             {
                                 node->m_mutex.lock();
@@ -1183,7 +1182,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
 
                         // Update only on first aov
                         if(!node->m_capturing &&
-                           fB.getFirstBufferName().compare(_aov_name) == 0)
+                           fB.getFirstBufferName() == _aov_name)
                         {
                             // Calculate the progress percentage
                             _regionArea -= (_width*_height);
