@@ -1041,8 +1041,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         FrameBuffer fB(_frame, _width, _height);
                         if (!node->m_frames.empty())
                         {
-                            long i = node->getFrameIndex(node->m_current_frame);
-                            fB = node->m_framebuffers[i];
+                            f_index = node->getFrameIndex(node->m_current_frame);
+                            fB = node->m_framebuffers[f_index];
                         }
                             
                         node->m_mutex.lock();
@@ -1116,7 +1116,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         active_aovs.clear();
                     break;
                 }
-                case 1: // image data
+                case 1: // Write image data
                 {
                     // Get frame buffer
                     FrameBuffer& fB = node->m_framebuffers[f_index];
