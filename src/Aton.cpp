@@ -1045,7 +1045,6 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                             f_index = node->getFrameIndex(node->m_current_frame);
                             fB = node->m_framebuffers[f_index];
                         }
-                            
                         node->m_mutex.lock();
                         node->m_frames = std::vector<double>();
                         node->m_framebuffers = std::vector<FrameBuffer>();
@@ -1059,40 +1058,31 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     FrameBuffer& fB = node->m_framebuffers[f_index];
                     
                     // Reset Buffers and Channels if needed
-                    if (!active_aovs.empty() && !fB.empty())
+                    if (!fB.empty() && !active_aovs.empty())
                     {
-                        switch (fB.compare(_width,
-                                           _height,
-                                           _frame, active_aovs))
+                        if (fB.isFrameChanged(_frame))
                         {
-                            case 1: // Frame mismatch
-                            {
-                                node->m_mutex.lock();
-                                fB.setFrame(_frame);
-                                node->m_mutex.unlock();
-                                break;
-                            }
-                            case 2: // Frame and AOVs mismatch
-                            {
-                                node->m_mutex.lock();
-                                fB.resize(1);
-                                fB.ready(false);
-                                fB.setFrame(_frame);
-                                node->resetChannels(node->m_channels);
-                                node->m_mutex.unlock();
-                                break;
-                            }
-                            case 3: // All mismatch
-                            {
-                                node->m_mutex.lock();
-                                fB.clearAll();
-                                fB.setWidth(_width);
-                                fB.setHeight(_height);
-                                fB.ready(false);
-                                node->resetChannels(node->m_channels);
-                                node->m_mutex.unlock();
-                                break;
-                            }
+                            node->m_mutex.lock();
+                            fB.setFrame(_frame);
+                            node->m_mutex.unlock();
+                        }
+                        if(fB.isAovsChanged(active_aovs))
+                        {
+                            node->m_mutex.lock();
+                            fB.resize(1);
+                            fB.ready(false);
+                            node->resetChannels(node->m_channels);
+                            node->m_mutex.unlock();
+                        }
+                        if(fB.isResolutionChanged(_width, _height))
+                        {
+                            node->m_mutex.lock();
+                            fB.clearAll();
+                            fB.setWidth(_width);
+                            fB.setHeight(_height);
+                            fB.ready(false);
+                            node->resetChannels(node->m_channels);
+                            node->m_mutex.unlock();
                         }
                     }
                     

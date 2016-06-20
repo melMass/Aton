@@ -167,30 +167,24 @@ const std::string& FrameBuffer::getFirstBufferName()
     return _aovs.front();
 }
 
-// Compare buffers with given buffer/aov names and dimensoions
-int FrameBuffer::compare(const unsigned int& width,
-                         const unsigned int& height,
-                         const double& frame,
-                         const std::vector<std::string>& aovs)
+// Check if Frame has been changed
+bool FrameBuffer::isFrameChanged(const double& frame)
 {
-    if (!_buffers.empty() && !_aovs.empty())
-    {
-        bool aov = (aovs == _aovs);
-        bool fra = (frame == _frame);
-        bool res = (width == _buffers[0]._width &&
-                    height == _buffers[0]._height);
-        
-        if (aov && fra && res)
-            return 0;
-        else if (aov && !fra && res)
-            return 1;
-        else if (!aov && !fra && res)
-            return 2;
-        else
-            return 3;
-    }
-    else
-        return -1;
+    return frame != _frame;
+}
+
+// Check if Aovs has been changed
+bool FrameBuffer::isAovsChanged(const std::vector<std::string>& aovs)
+{
+    return (aovs != _aovs);
+}
+
+// Check if Resolution has been changed
+bool FrameBuffer::isResolutionChanged(const unsigned int& width,
+                                      const unsigned int& height)
+{
+    return (width != _buffers[0]._width &&
+            height != _buffers[0]._height);
 }
 
 // Clear buffers and aovs

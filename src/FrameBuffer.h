@@ -80,11 +80,15 @@ namespace aton
             // Get last buffer/aov name
             const std::string& getFirstBufferName();
         
-            // Compare buffers with given buffer/aov names and dimensoions
-            int compare(const unsigned int& width,
-                        const unsigned int& height,
-                        const double& frame,
-                        const std::vector<std::string>& aovs);
+            // Check if Frame has been changed
+            bool isFrameChanged(const double& frame);
+        
+            // Check if Aovs have been changed
+            bool isAovsChanged(const std::vector<std::string>& aovs);
+        
+            // Check if Resolution has been changed
+            bool isResolutionChanged(const unsigned int& width,
+                                     const unsigned int& height);
         
             // Clear buffers and aovs
             void clearAll();
