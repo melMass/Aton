@@ -145,7 +145,7 @@ class Aton: public Iop
             m_legit = true;
             
             // Disable caching
-            m_node->slowness(0);
+            slowness(0);
 
             // Default status bar
             setStatus();
@@ -169,24 +169,22 @@ class Aton: public Iop
             // Construct full path for capturing
             using namespace boost::filesystem;
             path dir = getPath();
-            path file = (boost::format("%s.exr")%m_node_name).str();
+            path file = m_node_name + std::string(".exr");
             path fullPath = dir / file;
             std::string str_path = fullPath.string();
             boost::replace_all(str_path, "\\", "/");
             knob("path_knob")->set_text(str_path.c_str());
             
-            // Running python code to check if we've already our format in the script
-            std::string cmd; // Our python command buffer
-            cmd = (boost::format("bool([i.name() for i in nuke.formats() if i.name()=='%s'])")%m_node_name).str();
-            script_command(cmd.c_str());
-            std::string result = script_result();
-            script_unlock();
+            // Check if the format is already exist
+            for (int i=0; i < Format::size(); ++i)
+            {
+                const char* f_name = Format::index(i)->name();
+                if (strcmp(f_name, m_node_name) == 0)
+                    m_formatExists = true;
+            }
             
-            // Checking if the format is already exist
-            if (result != "True")
+            if (!m_formatExists)
                 m_fmt.add(m_node_name);
-            else
-                m_formatExists = true;
         }
 
         void detach()
