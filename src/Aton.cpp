@@ -992,7 +992,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
         double current_frame = 0;
         
         // For time to reset per every IPR iteration
-        static int active_time = 0;
+        static int _active_time = 0;
         static int delta_time = 0;
 
         // Loop over incoming data
@@ -1086,7 +1086,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     _regionArea = d.rArea();
                     
                     // Get delta time per IPR iteration
-                    delta_time = active_time;
+                    delta_time = _active_time;
                     
                     // Set Arnold Core version
                     fB.setArnoldVersion(d.version());
@@ -1108,7 +1108,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     const char* _aov_name = d.aovName();
                     
                     // Get active time
-                    active_time = d.time();
+                    _active_time = d.time();
 
                     // Get active aov names
                     if(std::find(active_aovs.begin(),
