@@ -162,9 +162,9 @@ const char* FrameBuffer::getBufferName(size_t index)
 }
 
 // Get last buffer/aov name
-const std::string& FrameBuffer::getFirstBufferName()
+const char* FrameBuffer::getFirstBufferName()
 {
-    return _aovs.front();
+    return _aovs.front().c_str();
 }
 
 // Check if Frame has been changed
@@ -265,7 +265,7 @@ void FrameBuffer::setArnoldVersion(int version)
 }
 
 // Get Arnold core version
-const std::string& FrameBuffer::getArnoldVersion() { return _version; }
+const char* FrameBuffer::getArnoldVersion() { return _version.c_str(); }
 
 // Set the frame number of this framebuffer
 void FrameBuffer::setFrame(double frame) { _frame = frame; }

@@ -78,7 +78,7 @@ namespace aton
             const char* getBufferName(size_t index = 0);
         
             // Get last buffer/aov name
-            const std::string& getFirstBufferName();
+            const char* getFirstBufferName();
         
             // Check if Frame has been changed
             bool isFrameChanged(const double& frame);
@@ -135,7 +135,7 @@ namespace aton
             void setArnoldVersion(int version);
         
             // Get Arnold core version
-            const std::string& getArnoldVersion();
+            const char* getArnoldVersion();
         
             // Set the frame number of this framebuffer
             void setFrame(double frame);

@@ -917,7 +917,7 @@ class Aton: public Iop
                        const long long& p_ram = 0,
                        const int& time = 0,
                        const double& frame = 0,
-                       const std::string& version = "")
+                       const char* version = "")
         {
             int hour = time / 3600000;
             int minute = (time % 3600000) / 60000;
@@ -1166,7 +1166,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
 
                         // Update only on first aov
                         if(!node->m_capturing &&
-                           fB.getFirstBufferName() == _aov_name)
+                           strcmp(fB.getFirstBufferName(), _aov_name) == 0)
                         {
                             // Calculate the progress percentage
                             _regionArea -= (_width*_height);
