@@ -332,7 +332,7 @@ class Aton: public Iop
                         if (channels.size() != fb_size)
                             channels.clear();
 
-                        for(int i = 0; i < fb_size; ++i)
+                        for(int i=0; i < fb_size; ++i)
                         {
                             using namespace chStr;
                             const std::string& bfName = fB.getBufferName(i);
@@ -721,6 +721,7 @@ class Aton: public Iop
             if (!fBs.empty() && !frames.empty())
             {
                 std::vector<FrameBuffer>::iterator it;
+                m_mutex.lock();
                 for(it = fBs.begin(); it != fBs.end(); ++it)
                     it->ready(false);
                 
@@ -732,6 +733,7 @@ class Aton: public Iop
                 resetChannels(m_node->m_channels);
                
                 m_node->m_legit = true;
+                m_mutex.unlock();
                 flagForUpdate();
                 setStatus();
             }
