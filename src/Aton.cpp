@@ -274,7 +274,7 @@ class Aton: public Iop
         void _validate(bool for_real)
         {
             // Do we need to open a port?
-            if (m_node->m_server.isConnected() == false && !m_inError && m_legit)
+            if (!m_node->m_server.isConnected() && !m_inError && m_legit)
                 changePort(m_port);
             
             // Handle any connection error
