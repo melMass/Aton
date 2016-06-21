@@ -201,7 +201,7 @@ class Aton: public Iop
             m_path = NULL;
         }
 
-        void flagForUpdate(long f_index = 0)
+        void flagForUpdate(Box BBox = Box(0, 0, 0, 0))
         {
             if (m_hash_count == UINT_MAX)
                 m_hash_count = 0;
@@ -209,8 +209,7 @@ class Aton: public Iop
                 m_hash_count++;
             
             // Update the image with current bucket if given
-            FrameBuffer& fB = m_node->m_framebuffers[f_index];
-            asapUpdate(fB.getBucketBBox());
+            asapUpdate(BBox);
         }
 
         // We can use this to change our tcp port
@@ -593,7 +592,8 @@ class Aton: public Iop
             char* aton_path = getenv("ATON_CAPTURE_PATH");
             
             // Get OS specific tmp directory path
-            std::string def_path = boost::filesystem::temp_directory_path().string();
+            using namespace boost::filesystem;
+            std::string def_path = temp_directory_path().string();
 
             if (aton_path != NULL)
                 def_path = aton_path;
@@ -720,20 +720,21 @@ class Aton: public Iop
         
             if (!fBs.empty() && !frames.empty())
             {
-                std::vector<FrameBuffer>::iterator it;
                 m_mutex.lock();
+                std::vector<FrameBuffer>::iterator it;
                 for(it = fBs.begin(); it != fBs.end(); ++it)
                     it->ready(false);
                 
                 m_node->m_legit = false;
                 m_node->disconnect();
-            
+                
                 fBs =  std::vector<FrameBuffer>();
                 frames = std::vector<double>();
+                
                 resetChannels(m_node->m_channels);
-               
                 m_node->m_legit = true;
                 m_mutex.unlock();
+                
                 flagForUpdate();
                 setStatus();
             }
@@ -1189,7 +1190,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                             node->m_mutex.unlock();
                             
                             // Update the image
-                            node->flagForUpdate(f_index);
+                            node->flagForUpdate(fB.getBucketBBox());
                         }
                     }
                     
