@@ -1177,8 +1177,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                            
                              // Set bucket size
                             node->m_mutex.lock();
-                            fB.setBucketBBox(_x, h - _y - _height, _x + _width,
-                                             h - _y);
+                            fB.setBucketBBox(_x, h - _y - _height,
+                                             _x + _width, h - _y);
                             
                             // Set status parameters
                             fB.setProgress(progress);
