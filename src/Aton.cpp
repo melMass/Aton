@@ -196,9 +196,6 @@ class Aton: public Iop
             disconnect();
             m_node->m_frames = std::vector<double>();
             m_node->m_framebuffers = std::vector<FrameBuffer>();
-            
-            delete[] m_path;
-            m_path = NULL;
         }
 
         void flagForUpdate(Box BBox = Box(0, 0, 0, 0))
