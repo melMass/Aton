@@ -35,9 +35,9 @@ namespace aton
     {
         friend class FrameBuffer;
         public:
-            RenderBuffer(unsigned int width = 0,
-                         unsigned int height = 0,
-                         int spp = 0);
+            RenderBuffer(const unsigned int& width = 0,
+                         const unsigned int& height = 0,
+                         const int& spp = 0);
         
             // Data
             std::vector<RenderColor> _color_data;
@@ -50,32 +50,35 @@ namespace aton
     class FrameBuffer
     {
         public:
-            FrameBuffer(double currentFrame = 0, int w = 0, int h = 0);
+            FrameBuffer(const double& currentFrame = 0,
+                        const int& w = 0,
+                        const int& h = 0);
         
             // Add new buffer
-            void addBuffer(const char* aov = NULL, int spp = 0);
+            void addBuffer(const char* aov = NULL,
+                           const int& spp = 0);
         
             // Set writable buffer's pixel
-            float& setBufferPix(long b,
-                                unsigned int x,
-                                unsigned int y,
-                                int spp,
-                                int c);
+            float& setBufferPix(const long& b,
+                                const unsigned int& x,
+                                const unsigned int& y,
+                                const int& spp,
+                                const int& c);
         
             // Get read only buffer's pixel
-            const float& getBufferPix(long b,
-                                      unsigned int x,
-                                      unsigned int y,
-                                      int c) const;
+            const float& getBufferPix(const long& b,
+                                      const unsigned int& x,
+                                      const unsigned int& y,
+                                      const int& c) const;
         
             // Get the current buffer index
-            long getBufferIndex(Channel z);
+            long getBufferIndex(const Channel& z);
         
             // Get the current buffer index
             long getBufferIndex(const char * aovName);
         
             // Get N buffer/aov name name
-            const char* getBufferName(size_t index = 0);
+            const char* getBufferName(const size_t& index = 0);
         
             // Get last buffer/aov name
             const char* getFirstBufferName();
@@ -97,10 +100,10 @@ namespace aton
             bool bufferNameExists(const char* aovName);
         
             // Set width of the buffer
-            void setWidth(int w);
+            void setWidth(const int& w);
 
             // Set height of the buffer
-            void setHeight(int h);
+            void setHeight(const int& h);
         
             // Get width of the buffer
             const int& getWidth();
@@ -112,18 +115,21 @@ namespace aton
             size_t size();
         
             // Resize the buffers
-            void resize(size_t s);
+            void resize(const size_t& s);
         
             // Set current bucket BBox for asapUpdate()
-            void setBucketBBox(int x = 0, int y = 0, int r = 1, int t = 1);
+            void setBucketBBox(const int& x = 0,
+                               const int& y = 0,
+                               const int& r = 1,
+                               const int& t = 1);
         
             // Get current bucket BBox for asapUpdate()
             const Box& getBucketBBox();
         
             // Set status parameters
-            void setProgress(long long progress = 0);
-            void setRAM(long long ram = 0);
-            void setTime(int time = 0);
+            void setProgress(const long long& progress = 0);
+            void setRAM(const long long& ram = 0);
+            void setTime(const int& time = 0);
         
             // Get status parameters
             const long long& getProgress();
@@ -132,13 +138,13 @@ namespace aton
             const int& getTime();
         
             // Set Arnold core version
-            void setArnoldVersion(int version);
+            void setArnoldVersion(const int& version);
         
             // Get Arnold core version
             const char* getArnoldVersion();
         
             // Set the frame number of this framebuffer
-            void setFrame(double frame);
+            void setFrame(const double& frame);
         
             // Get the frame number of this framebuffer
             const double& getFrame();
@@ -147,7 +153,7 @@ namespace aton
             bool empty();
         
             // To keep False while writing the buffer
-            void ready(bool ready);
+            void ready(const bool& ready);
             const bool& isReady();
         
         private:

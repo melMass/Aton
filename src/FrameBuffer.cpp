@@ -25,9 +25,9 @@ const float& RenderColor::operator[](int i) const { return _val[i]; }
 
 
 // RenderBuffer class
-RenderBuffer::RenderBuffer(unsigned int width,
-                           unsigned int height,
-                           int spp)
+RenderBuffer::RenderBuffer(const unsigned int& width,
+                           const unsigned int& height,
+                           const int& spp)
 {
     _width = width;
     _height = height;
@@ -54,15 +54,15 @@ RenderBuffer::RenderBuffer(unsigned int width,
 }
 
 // FrameBuffer class
-FrameBuffer::FrameBuffer(double currentFrame,
-                         int w,
-                         int h): _frame(0),
-                                 _bucket(0,0,1,1),
-                                 _progress(0),
-                                 _time(0),
-                                 _ram(0),
-                                 _pram(0),
-                                 _ready(false)
+FrameBuffer::FrameBuffer(const double& currentFrame,
+                         const int& w,
+                         const int& h): _frame(0),
+                                        _bucket(0,0,1,1),
+                                        _progress(0),
+                                        _time(0),
+                                        _ram(0),
+                                        _pram(0),
+                                        _ready(false)
 {
     _frame = currentFrame;
     _width = w;
@@ -70,7 +70,8 @@ FrameBuffer::FrameBuffer(double currentFrame,
 }
 
 // Add new buffer
-void FrameBuffer::addBuffer(const char* aov, int spp)
+void FrameBuffer::addBuffer(const char* aov,
+                            const int& spp)
 {
     RenderBuffer buffer(_width, _height, spp);
     
@@ -79,11 +80,11 @@ void FrameBuffer::addBuffer(const char* aov, int spp)
 }
 
 // Get writable buffer object
-float& FrameBuffer::setBufferPix(long b,
-                                 unsigned int x,
-                                 unsigned int y,
-                                 int spp,
-                                 int c)
+float& FrameBuffer::setBufferPix(const long& b,
+                                 const unsigned int& x,
+                                 const unsigned int& y,
+                                 const int& spp,
+                                 const int& c)
 {
     RenderBuffer& rb = _buffers[b];
     unsigned int index = (rb._width * y) + x;
@@ -94,10 +95,10 @@ float& FrameBuffer::setBufferPix(long b,
 }
 
 // Get read only buffer object
-const float& FrameBuffer::getBufferPix(long b,
-                                       unsigned int x,
-                                       unsigned int y,
-                                       int c) const
+const float& FrameBuffer::getBufferPix(const long& b,
+                                       const unsigned int& x,
+                                       const unsigned int& y,
+                                       const int& c) const
 {
     const RenderBuffer& rb = _buffers[b];
     unsigned int index = (rb._width * y) + x;
@@ -108,7 +109,7 @@ const float& FrameBuffer::getBufferPix(long b,
 }
 
 // Get the current buffer index
-long FrameBuffer::getBufferIndex(Channel z)
+long FrameBuffer::getBufferIndex(const Channel& z)
 {
     long b_index = 0;    
     if (_aovs.size() > 1)
@@ -156,7 +157,7 @@ long FrameBuffer::getBufferIndex(const char* aovName)
 }
 
 // Get N buffer/aov name name
-const char* FrameBuffer::getBufferName(size_t index)
+const char* FrameBuffer::getBufferName(const size_t& index)
 {
     return _aovs[index].c_str();
 }
@@ -198,15 +199,14 @@ void FrameBuffer::clearAll()
 bool FrameBuffer::bufferNameExists(const char* aovName)
 {
     return std::find(_aovs.begin(),
-                     _aovs.end(),
-                     aovName) != _aovs.end();
+                     _aovs.end(), aovName) != _aovs.end();
 }
 
 // Set width of the buffer
-void FrameBuffer::setWidth(int w) { _width = w; }
+void FrameBuffer::setWidth(const int& w) { _width = w; }
 
 // Set height of the buffer
-void FrameBuffer::setHeight(int h) { _height = h; }
+void FrameBuffer::setHeight(const int& h) { _height = h; }
 
 // Get width of the buffer
 const int& FrameBuffer::getWidth() { return _width; }
@@ -218,14 +218,17 @@ const int& FrameBuffer::getHeight() { return _height; }
 size_t FrameBuffer::size() { return _aovs.size(); }
 
 // Resize the buffers
-void FrameBuffer::resize(size_t s)
+void FrameBuffer::resize(const size_t& s)
 {
     _buffers.resize(s);
     _aovs.resize(s);
 }
 
 // Set current bucket BBox for asapUpdate()
-void FrameBuffer::setBucketBBox(int x, int y, int r, int t)
+void FrameBuffer::setBucketBBox(const int& x,
+                                const int& y,
+                                const int& r,
+                                const int& t)
 {
     _bucket.set(x, y, r, t);
 }
@@ -234,18 +237,18 @@ void FrameBuffer::setBucketBBox(int x, int y, int r, int t)
 const Box& FrameBuffer::getBucketBBox() { return _bucket; }
 
 // Set status parameters
-void FrameBuffer::setProgress(long long progress)
+void FrameBuffer::setProgress(const long long& progress)
 {
     _progress = progress > 100 ? 100 : progress;
 }
 
-void FrameBuffer::setRAM(long long ram)
+void FrameBuffer::setRAM(const long long& ram)
 {
-    ram /= 1048576;
-    _pram = ram > _ram ? ram : _ram;
-    _ram = ram;
+    int ramGb = static_cast<int>(ram / 1048576);
+    _pram = ramGb > _ram ? ramGb : _ram;
+    _ram = ramGb;
 }
-void FrameBuffer::setTime(int time) { _time = time; }
+void FrameBuffer::setTime(const int& time) { _time = time; }
 
 // Get status parameters
 const long long& FrameBuffer::getProgress() { return _progress; }
@@ -254,7 +257,7 @@ const long long& FrameBuffer::getPRAM() { return _pram; }
 const int& FrameBuffer::getTime() { return _time; }
 
 // Set Arnold core version
-void FrameBuffer::setArnoldVersion(int version)
+void FrameBuffer::setArnoldVersion(const int& version)
 {
     // Construct a string from the version number passed
     int archV = (version % 10000000) / 1000000;
@@ -268,7 +271,7 @@ void FrameBuffer::setArnoldVersion(int version)
 const char* FrameBuffer::getArnoldVersion() { return _version.c_str(); }
 
 // Set the frame number of this framebuffer
-void FrameBuffer::setFrame(double frame) { _frame = frame; }
+void FrameBuffer::setFrame(const double& frame) { _frame = frame; }
 
 // Get the frame number of this framebuffer
 const double& FrameBuffer::getFrame() { return _frame; }
@@ -277,5 +280,5 @@ const double& FrameBuffer::getFrame() { return _frame; }
 bool FrameBuffer::empty() { return (_buffers.empty() && _aovs.empty()) ; }
 
 // To keep False while writing the buffer
-void FrameBuffer::ready(bool ready) { _ready = ready; }
+void FrameBuffer::ready(const bool& ready) { _ready = ready; }
 const bool& FrameBuffer::isReady() { return _ready; }

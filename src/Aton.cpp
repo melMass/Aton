@@ -290,13 +290,12 @@ class Aton: public Iop
                 if (!fB.empty())
                 {
                     // Set the progress
-                    if (fB.getProgress() > 0)
-                        setStatus(fB.getProgress(),
-                                  fB.getRAM(),
-                                  fB.getPRAM(),
-                                  fB.getTime(),
-                                  fB.getFrame(),
-                                  fB.getArnoldVersion());
+                    setStatus(fB.getProgress(),
+                              fB.getRAM(),
+                              fB.getPRAM(),
+                              fB.getTime(),
+                              fB.getFrame(),
+                              fB.getArnoldVersion());
                     
                     // Set the format
                     const int& width = fB.getWidth();
@@ -333,7 +332,7 @@ class Aton: public Iop
                         if (channels.size() != fb_size)
                             channels.clear();
 
-                        for(int i=0; i < fb_size; ++i)
+                        for(size_t i=0; i < fb_size; ++i)
                         {
                             using namespace chStr;
                             const std::string& bfName = fB.getBufferName(i);
