@@ -209,7 +209,8 @@ class Aton: public Iop
                 m_hash_count++;
             
             // Update the image with current bucket if given
-            asapUpdate(m_node->m_framebuffers[f_index].getBucketBBox());
+            FrameBuffer& fB = m_node->m_framebuffers[f_index];
+            asapUpdate(fB.getBucketBBox());
         }
 
         // We can use this to change our tcp port
@@ -224,7 +225,7 @@ class Aton: public Iop
 
             try
             {
-                m_node->m_server.connect(port, true);
+                m_server.connect(port, true);
                 m_legit = true;
             }
             catch ( ... )
@@ -245,10 +246,10 @@ class Aton: public Iop
                 Thread::spawn(::timeChange, 1, this);
                 
                 // Update port in the UI
-                if (m_node->m_port != m_node->m_server.getPort())
+                if (m_port != m_server.getPort())
                 {
                     std::stringstream str;
-                    str << (m_node->m_server.getPort());
+                    str << (m_server.getPort());
                     std::string port = str.str();
                     knob("port_number")->set_text(port.c_str());
                 }
