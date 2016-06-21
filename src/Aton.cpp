@@ -328,7 +328,7 @@ class Aton: public Iop
                         if (channels.size() != fb_size)
                             channels.clear();
 
-                        for(size_t i=0; i < fb_size; ++i)
+                        for(size_t i = 0; i < fb_size; ++i)
                         {
                             using namespace chStr;
                             const std::string& bfName = fB.getBufferName(i);
@@ -560,7 +560,7 @@ class Aton: public Iop
                 int minFIndex = INT_MAX;
                 std::vector<double>::iterator it;
                 m_mutex.lock();
-                for( it = frames.begin(); it != frames.end(); ++it)
+                for(it = frames.begin(); it != frames.end(); ++it)
                 {
                     if (currentFrame == *it)
                     {
