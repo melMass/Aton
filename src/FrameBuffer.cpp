@@ -28,7 +28,6 @@ RenderColor::RenderColor() { _val[0] = _val[1] = _val[2] = 0.0f; }
 float& RenderColor::operator[](int i){ return _val[i]; }
 const float& RenderColor::operator[](int i) const { return _val[i]; }
 
-
 // RenderBuffer class
 RenderBuffer::RenderBuffer(const unsigned int& width,
                            const unsigned int& height,
@@ -39,17 +38,17 @@ RenderBuffer::RenderBuffer(const unsigned int& width,
     
     switch (spp)
     {
-        case 1:
+        case 1: // Float channels
         {
             _float_data.resize(_width * _height);
             break;
         }
-        case 3:
+        case 3: // Color Channels
         {
             _color_data.resize(_width * _height);
             break;
         }
-        case 4:
+        case 4: // Color + Alpha channels
         {
             _color_data.resize(_width * _height);
             _float_data.resize(_width * _height);
@@ -269,7 +268,10 @@ void FrameBuffer::setArnoldVersion(const int& version)
     int majorV = (version % 1000000) / 10000;
     int minorV = (version % 10000) / 100;
     int fixV = version % 100;
-    _version = (boost::format("%s.%s.%s.%s")%archV%majorV%minorV%fixV).str();
+    
+    std::stringstream stream;
+    stream << archV << "." <<  majorV << "." << minorV << "." << fixV;
+    _version = (stream.str());
 }
 
 // Get Arnold core version

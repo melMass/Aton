@@ -211,12 +211,12 @@ class Aton: public Iop
             }
             catch ( ... )
             {
-                std::stringstream ss;
-                ss << "Could not connect to port: " << port;
-                m_connectionError = ss.str();
+                std::stringstream stream;
+                stream << "Could not connect to port: " << port;
+                m_connectionError = stream.str();
                 m_inError = true;
                 print_name( std::cerr );
-                std::cerr << ": " << ss.str() << std::endl;
+                std::cerr << ": " << stream.str() << std::endl;
                 return;
             }
 
@@ -229,9 +229,9 @@ class Aton: public Iop
                 // Update port in the UI
                 if (m_port != m_server.getPort())
                 {
-                    std::stringstream str;
-                    str << (m_server.getPort());
-                    std::string port = str.str();
+                    std::stringstream stream;
+                    stream << (m_server.getPort());
+                    std::string port = stream.str();
                     knob("port_number")->set_text(port.c_str());
                 }
             }
