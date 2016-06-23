@@ -54,22 +54,6 @@ static void timeChange(unsigned index, unsigned nthreads, void* data);
 // Our listener method
 static void atonListen(unsigned index, unsigned nthreads, void* data);
 
-namespace chStr
-{
-    const std::string RGBA = "RGBA",
-                       rgb = "rgb",
-                     depth = "depth",
-                         Z = "Z",
-                         N = "N",
-                         P = "P",
-                      _red = ".red",
-                    _green = ".green",
-                     _blue = ".blue",
-                        _X = ".X",
-                        _Y = ".Y",
-                        _Z = ".Z";
-}
-
 // Nuke node
 class Aton: public Iop
 {

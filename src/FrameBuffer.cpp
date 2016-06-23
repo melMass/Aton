@@ -7,15 +7,20 @@ All rights reserved. See COPYING.txt for more details.
 #include "FrameBuffer.h"
 #include "boost/format.hpp"
 
-namespace chStr
-{
-    const std::string rgb = "rgb",
-                     rgba = "rgba",
-                    depth = "depth",
-                        Z = "Z";
-}
-
 using namespace aton;
+
+const std::string chStr::RGBA = "RGBA",
+                  chStr::rgb = "rgb",
+                  chStr::depth = "depth",
+                  chStr::Z = "Z",
+                  chStr::N = "N",
+                  chStr::P = "P",
+                  chStr::_red = ".red",
+                  chStr::_green = ".green",
+                  chStr::_blue = ".blue",
+                  chStr::_X = ".X",
+                  chStr::_Y = ".Y",
+                  chStr::_Z = ".Z";
 
 // Lightweight color pixel class
 RenderColor::RenderColor() { _val[0] = _val[1] = _val[2] = 0.0f; }
