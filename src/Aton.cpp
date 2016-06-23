@@ -18,6 +18,7 @@ All rights reserved. See COPYING.txt for more details.
 #include "DDImage/Thread.h"
 #include "DDImage/Knobs.h"
 #include "DDImage/DDMath.h"
+#include "DDImage/Version.h"
 
 using namespace DD::Image;
 
@@ -521,14 +522,10 @@ class Aton: public Iop
         {
             // Check the Nuke version to be minimum 9.0v7 in order
             // to status stamp text be consistant with Linux version
-            std::string cmd = "nuke.NUKE_VERSION_MAJOR * 100 + "
-                              "nuke.NUKE_VERSION_MINOR * 10 + "
-                              "nuke.NUKE_VERSION_RELEASE >= 907";
-            script_command(cmd.c_str());
-            std::string result = script_result();
-            script_unlock();
-                
-            return (result == "True");
+            std::string validVer = "9.0v7";
+            Version cmpVer(validVer);
+            const Version& curVer = version();
+            return curVer >= cmpVer;
         }
     
         bool isPathValid(std::string path)
