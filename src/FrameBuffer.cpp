@@ -270,8 +270,8 @@ void FrameBuffer::setArnoldVersion(const int& version)
     int fixV = version % 100;
     
     std::stringstream stream;
-    stream << archV << "." <<  majorV << "." << minorV << "." << fixV;
-    _version = (stream.str());
+    stream << archV << "." << majorV << "."<< minorV << "." << fixV;
+    _version = stream.str();
 }
 
 // Get Arnold core version
