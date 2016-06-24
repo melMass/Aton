@@ -925,11 +925,12 @@ class Aton: public Iop
 // Update on frame change thread method
 static void timeChange(unsigned index, unsigned nthreads, void* data)
 {
-
+    using namespace boost;
     Aton* node = reinterpret_cast<Aton*>(data);
     std::vector<FrameBuffer>& fBs = node->m_framebuffers;
     
     double uiFrame, prevFrame = 0;
+    int milliseconds = 10;
 
     while (node->m_legit)
     {
@@ -939,6 +940,7 @@ static void timeChange(unsigned index, unsigned nthreads, void* data)
             node->flagForUpdate();
             prevFrame = uiFrame;
         }
+        this_thread::sleep(posix_time::millisec(milliseconds));
     }
 }
 
