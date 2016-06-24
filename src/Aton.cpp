@@ -1039,26 +1039,31 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     // Reset Buffers and Channels if needed
                     if (!fB.empty() && !active_aovs.empty())
                     {
-                        node->m_mutex.lock();
+                        
                         if (fB.isFrameChanged(_frame))
                         {
+                            node->m_mutex.lock();
                             fB.setFrame(_frame);
+                            node->m_mutex.unlock();
                         }
                         if(fB.isAovsChanged(active_aovs))
                         {
+                            node->m_mutex.lock();
                             fB.resize(1);
                             fB.ready(false);
                             node->resetChannels(node->m_channels);
+                            node->m_mutex.unlock();
                         }
                         if(fB.isResolutionChanged(_width, _height))
                         {
+                            node->m_mutex.lock();
                             fB.clearAll();
                             fB.setWidth(_width);
                             fB.setHeight(_height);
                             fB.ready(false);
                             node->resetChannels(node->m_channels);
+                            node->m_mutex.unlock();
                         }
-                        node->m_mutex.unlock();
                     }
                     
                     // Get image area to calculate the progress
@@ -1157,7 +1162,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                             node->m_mutex.lock();
                             fB.setBucketBBox(_x, h - _y - _height,
                                              _x + _width, h - _y);
-                            
+                        
                             // Set status parameters
                             fB.setProgress(progress);
                             fB.setRAM(_ram);

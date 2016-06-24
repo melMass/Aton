@@ -35,23 +35,24 @@ RenderBuffer::RenderBuffer(const unsigned int& width,
 {
     _width = width;
     _height = height;
+    size_t size = width * height;
     
     switch (spp)
     {
         case 1: // Float channels
         {
-            _float_data.resize(_width * _height);
+            _float_data.resize(size);
             break;
         }
         case 3: // Color Channels
         {
-            _color_data.resize(_width * _height);
+            _color_data.resize(size);
             break;
         }
         case 4: // Color + Alpha channels
         {
-            _color_data.resize(_width * _height);
-            _float_data.resize(_width * _height);
+            _color_data.resize(size);
+            _float_data.resize(size);
             break;
         }
     }
