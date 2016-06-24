@@ -646,7 +646,7 @@ class Aton: public Iop
 
         void cleanByLimit()
         {
-            if ( !m_garbageList.empty() )
+            if (!m_garbageList.empty())
             {
                 // In windows sometimes files can't be deleted due to lack of
                 // access so we collecting a garbage list and trying to remove
@@ -663,7 +663,7 @@ class Aton: public Iop
             path dir = filepath.parent_path();
 
             // Reverse iterating through file list
-            if ( !captures.empty() )
+            if (!captures.empty())
             {
                 std::vector<std::string>::reverse_iterator it;
                 for(it = captures.rbegin(); it != captures.rend(); ++it)
@@ -922,16 +922,14 @@ class Aton: public Iop
         static const Iop::Description desc;
 };
 
-// Time change thread method
+// Update on frame change thread method
 static void timeChange(unsigned index, unsigned nthreads, void* data)
 {
-    using namespace boost;
+
     Aton* node = reinterpret_cast<Aton*>(data);
     std::vector<FrameBuffer>& fBs = node->m_framebuffers;
     
-    double uiFrame = 0;
-    double prevFrame = 0;
-    int milliseconds = 10;
+    double uiFrame, prevFrame = 0;
 
     while (node->m_legit)
     {
@@ -941,7 +939,6 @@ static void timeChange(unsigned index, unsigned nthreads, void* data)
             node->flagForUpdate();
             prevFrame = uiFrame;
         }
-        this_thread::sleep(posix_time::millisec(milliseconds));
     }
 }
 
@@ -962,17 +959,15 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
         Data d;
 
         // For progress percentage
-        long long progress = 0;
-        long long _regionArea = 0;
+        long long progress, _regionArea = 0;
         
         long f_index = 0;
         
         // Current Frame Number
         double current_frame = 0;
         
-        // For time to reset per every IPR iteration
-        static int _active_time = 0;
-        static int delta_time = 0;
+        // Time to reset per every IPR iteration
+        static int _active_time, delta_time = 0;
 
         // Loop over incoming data
         while ((d.type() == 2 || d.type() == 9) == false)
@@ -1039,7 +1034,6 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     // Reset Buffers and Channels if needed
                     if (!fB.empty() && !active_aovs.empty())
                     {
-                        
                         if (fB.isFrameChanged(_frame))
                         {
                             node->m_mutex.lock();
