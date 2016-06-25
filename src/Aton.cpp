@@ -67,7 +67,7 @@ class Aton: public Iop
         std::string               m_status;           // Status bar text
         bool                      m_multiframes;      // Enable Multiple Frames toogle
         bool                      m_all_frames;       // Capture All Frames toogle
-        double                    m_current_frame;
+        double                    m_current_frame;    // Used to hold current frame
         const char*               m_comment;          // Comment for the frame stamp
         bool                      m_stamp;            // Enable Frame stamp toogle
         bool                      m_enable_aovs;      // Enable AOVs toogle

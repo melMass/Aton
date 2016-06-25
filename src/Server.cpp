@@ -149,7 +149,7 @@ Data Server::listen()
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mTime), sizeof(int)));
 
                 // Get aov name's size
-                size_t aov_size=0;
+                size_t aov_size;
                 read(mSocket, buffer(reinterpret_cast<char*>(&aov_size), sizeof(size_t)));
 
                 // Get aov name
