@@ -928,7 +928,7 @@ static void timeChange(unsigned index, unsigned nthreads, void* data)
     using namespace boost;
     Aton* node = reinterpret_cast<Aton*>(data);
     double uiFrame, prevFrame = 0;
-    int ms = 10;
+    int ms = 20;
 
     while (node->m_legit)
     {
