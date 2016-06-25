@@ -927,20 +927,20 @@ static void timeChange(unsigned index, unsigned nthreads, void* data)
 {
     using namespace boost;
     Aton* node = reinterpret_cast<Aton*>(data);
-    std::vector<FrameBuffer>& fBs = node->m_framebuffers;
-    
     double uiFrame, prevFrame = 0;
     int milliseconds = 10;
 
     while (node->m_legit)
     {
         uiFrame = node->uiContext().frame();
-        if (!fBs.empty() && prevFrame != uiFrame)
+        const size_t fbSize = node->m_framebuffers.size();
+        if (node->m_multiframes && fbSize > 1 && prevFrame != uiFrame)
         {
             node->flagForUpdate();
             prevFrame = uiFrame;
         }
-        this_thread::sleep(posix_time::millisec(milliseconds));
+        else
+            this_thread::sleep(posix_time::millisec(milliseconds));
     }
 }
 
