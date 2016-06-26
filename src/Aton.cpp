@@ -77,9 +77,9 @@ class Aton: public Iop
         double                    m_current_frame;    // Used to hold current frame
         double                    m_stamp_scale;      // Frame stamp size
         unsigned int              m_hash_count;       // Refresh hash counter
-        const char*               m_node_name;        // Node name
         const char*               m_path;             // Default path for Write node
         const char*               m_comment;          // Comment for the frame stamp
+        std::string               m_node_name;        // Node name
         std::string               m_status;           // Status bar text
         std::string               m_connectionError;  // Connection error report
         std::vector<double>       m_frames;           // Frames holder
@@ -103,6 +103,7 @@ class Aton: public Iop
                           m_current_frame(0),
                           m_stamp_scale(1.0),
                           m_path(""),
+                          m_node_name(""),
                           m_status(""),
                           m_comment(""),
                           m_connectionError("")
@@ -146,11 +147,6 @@ class Aton: public Iop
                 knob("comment_knob")->enable(false);
             }
             
-            // Allocate node name in order to pass it to format
-            char* nodeName = new char[node_name().length() + 1];
-            strcpy(nodeName, node_name().c_str());
-            m_node_name = nodeName;
-            
             // Construct full path for capturing
             using namespace boost::filesystem;
             path dir = getPath();
@@ -161,15 +157,16 @@ class Aton: public Iop
             knob("path_knob")->set_text(str_path.c_str());
             
             // Check if the format is already exist
+            m_node_name = node_name();
             for (int i=0; i < Format::size(); ++i)
             {
                 const char* f_name = Format::index(i)->name();
-                if (strcmp(f_name, m_node_name) == 0)
+                if (m_node_name == f_name)
                     m_formatExists = true;
             }
             
             if (!m_formatExists)
-                m_fmt.add(m_node_name);
+                m_fmt.add(m_node_name.c_str());
         }
 
         void detach()
@@ -292,7 +289,7 @@ class Aton: public Iop
                             for (int i=0; i < Format::size(); ++i)
                             {
                                 const char* f_name = Format::index(i)->name();
-                                if (strcmp(f_name, m_node->m_node_name) == 0)
+                                if (m_node->m_node_name == f_name)
                                     m_fmt_exist = Format::index(i);
                             }
                         }
@@ -300,7 +297,7 @@ class Aton: public Iop
                         m_fmt_exist->set(0, 0, width, height);
                         m_fmt_exist->width(width);
                         m_fmt_exist->height(height);
-                        knob("formats_knob")->set_text(m_node->m_node_name);
+                        knob("formats_knob")->set_text(m_node->m_node_name.c_str());
                     }
                     
                     // Set the channels
