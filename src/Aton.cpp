@@ -695,7 +695,6 @@ class Aton: public Iop
         
             if (!fBs.empty() && !frames.empty())
             {
-                m_mutex.lock();
                 std::vector<FrameBuffer>::iterator it;
                 for(it = fBs.begin(); it != fBs.end(); ++it)
                     it->ready(false);
@@ -708,7 +707,6 @@ class Aton: public Iop
                 
                 resetChannels(m_node->m_channels);
                 m_node->m_legit = true;
-                m_mutex.unlock();
                 
                 flagForUpdate();
                 setStatus();
