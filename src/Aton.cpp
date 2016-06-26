@@ -1087,6 +1087,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         unsigned int x, y, c, offset;
                         
                         // Adding buffer
+                        node->m_mutex.lock();
                         if(!fB.bufferNameExists(_aov_name) &&
                            (node->m_enable_aovs || fB.size() == 0))
                             fB.addBuffer(_aov_name, _spp);
@@ -1095,9 +1096,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         
                         // Get buffer index
                         long b = fB.getBufferIndex(_aov_name);
-                       
+                    
                         // Writing to buffer
-                        node->m_mutex.lock();
                         for (x = 0; x < _width; ++x)
                         {
                             for (y = 0; y < _height; ++y)
@@ -1122,9 +1122,11 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                             progress = 100 - (_regionArea * 100) / (w * h);
 
                             // Set status parameters
+                            node->m_mutex.lock();
                             fB.setProgress(progress);
                             fB.setRAM(_ram);
                             fB.setTime(_time, delta_time);
+                            node->m_mutex.unlock();
                             
                             // Update the image
                             Box box(_x, h - _y - _height, _x + _width, h - _y);
