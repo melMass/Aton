@@ -752,7 +752,7 @@ class Aton: public Iop
 
                 timeFrameSuffix += ".";
                 std::size_t found = path.rfind(key);
-                if (found!=std::string::npos)
+                if (found != std::string::npos)
                     path.replace(found, key.length(), timeFrameSuffix);
 
                 std::string cmd; // Our python command buffer
@@ -1133,8 +1133,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                             node->flagForUpdate(box);
                         }
                     }
-                    
-                    d.deallocAovName();
+                    d.deAllocAovName();
                     break;
                 }
                 case 2: // Close image
