@@ -59,53 +59,53 @@ class Aton: public Iop
 {
     public:
         Aton*                     m_node;             // First node pointer
-        const char*               m_node_name;        // Node name
-        FormatPair                m_fmtp;             // Buffer format (knob)
+        Server                    m_server;           // Aton::Server
+        Lock                      m_mutex;            // Mutex for locking the pixel buffer
         Format                    m_fmt;              // The nuke display format
+        FormatPair                m_fmtp;             // Buffer format (knob)
+        ChannelSet                m_channels;         // Channels aka AOVs object
         int                       m_port;             // Port we're listening on (knob)
-        const char*               m_path;             // Default path for Write node
-        std::string               m_status;           // Status bar text
+        int                       m_slimit;           // The limit size
         bool                      m_multiframes;      // Enable Multiple Frames toogle
         bool                      m_all_frames;       // Capture All Frames toogle
-        double                    m_current_frame;    // Used to hold current frame
-        const char*               m_comment;          // Comment for the frame stamp
         bool                      m_stamp;            // Enable Frame stamp toogle
         bool                      m_enable_aovs;      // Enable AOVs toogle
-        double                    m_stamp_scale;      // Frame stamp size
-        int                       m_slimit;           // The limit size
-        Lock                      m_mutex;            // Mutex for locking the pixel buffer
-        unsigned int              m_hash_count;       // Refresh hash counter
-        Server                    m_server;           // Aton::Server
         bool                      m_inError;          // Error handling
         bool                      m_formatExists;     // If the format was already exist
         bool                      m_capturing;        // Capturing signal
-        std::vector<std::string>  m_garbageList;      // List of captured files to be deleted
+        bool                      m_legit;            // Used to throw the threads
+        double                    m_current_frame;    // Used to hold current frame
+        double                    m_stamp_scale;      // Frame stamp size
+        unsigned int              m_hash_count;       // Refresh hash counter
+        const char*               m_node_name;        // Node name
+        const char*               m_path;             // Default path for Write node
+        const char*               m_comment;          // Comment for the frame stamp
+        std::string               m_status;           // Status bar text
+        std::string               m_connectionError;  // Connection error report
         std::vector<double>       m_frames;           // Frames holder
         std::vector<FrameBuffer>  m_framebuffers;     // Framebuffers holder
-        std::string               m_connectionError;  // Connection error report
-        ChannelSet                m_channels;         // Channels aka AOVs object
-        bool                      m_legit;            // Used to throw the threads
+        std::vector<std::string>  m_garbageList;      // List of captured files to be deleted
 
         Aton(Node* node): Iop(node),
                           m_node(firstNode()),
+                          m_fmt(Format(0, 0, 1.0)),
+                          m_channels(Mask_RGBA),
                           m_port(getPort()),
-                          m_path(""),
-                          m_status(""),
+                          m_slimit(20),
                           m_multiframes(true),
                           m_all_frames(false),
-                          m_current_frame(0),
-                          m_comment(""),
                           m_stamp(isVersionValid()),
                           m_enable_aovs(true),
-                          m_stamp_scale(1.0),
-                          m_slimit(20),
-                          m_fmt(Format(0, 0, 1.0)),
                           m_inError(false),
                           m_formatExists(false),
                           m_capturing(false),
-                          m_connectionError(""),
-                          m_channels(Mask_RGBA),
-                          m_legit(false)
+                          m_legit(false),
+                          m_current_frame(0),
+                          m_stamp_scale(1.0),
+                          m_path(""),
+                          m_status(""),
+                          m_comment(""),
+                          m_connectionError("")
         {
             inputs(0);
         }
