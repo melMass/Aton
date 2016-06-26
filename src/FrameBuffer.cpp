@@ -243,7 +243,7 @@ void FrameBuffer::setRAM(const long long& ram)
 void FrameBuffer::setTime(const int& time,
                           const int& dtime)
 {
-    _time = dtime > time ? time : dtime;
+    _time = dtime > time ? time : time - dtime;
 }
 
 // Get status parameters
