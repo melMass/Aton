@@ -79,7 +79,7 @@ namespace aton
         const char* aovName() const { return mAovName; }
         
         // Deallocate Aov name
-        void clearAovName();
+        void deallocAovName();
         
         // Pointer to pixel data owned by the display driver (client-side)
         const float* data() const { return mpData; }

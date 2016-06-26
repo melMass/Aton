@@ -507,9 +507,9 @@ class Aton: public Iop
             // Check the Nuke version to be minimum 9.0v7 in order
             // to status stamp text be consistant with Linux version
             std::string validVer = "9.0v7";
-            Version cmpVer(validVer);
+            Version recVer(validVer);
             const Version& curVer = version();
-            return curVer >= cmpVer;
+            return curVer >= recVer;
         }
     
         bool isPathValid(std::string path)
@@ -1147,8 +1147,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         node->m_mutex.unlock();
 
                         // Update only on first aov
-                        if(!node->m_capturing &&
-                           strcmp(fB.getFirstBufferName(), _aov_name) == 0)
+                        if(!node->m_capturing && fB.isFirstBufferName(_aov_name))
                         {
                             // Calculate the progress percentage
                             _regionArea -= (_width*_height);
@@ -1162,10 +1161,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                             // Set status parameters
                             fB.setProgress(progress);
                             fB.setRAM(_ram);
-                            if (delta_time > _time)
-                                fB.setTime(_time);
-                            else
-                                fB.setTime(_time - delta_time);
+                            fB.setTime(_time, delta_time);
                             node->m_mutex.unlock();
                             
                             // Update the image
@@ -1173,8 +1169,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         }
                     }
                     
-                    // Deallocate aov name
-                    d.clearAovName();
+                    d.deallocAovName();
                     break;
                 }
                 case 2: // Close image

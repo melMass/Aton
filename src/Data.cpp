@@ -40,7 +40,7 @@ Data::Data(int x,
         mpData = const_cast<float*>(data);
 }
 
-void Data::clearAovName()
+void Data::deallocAovName()
 {
     delete[] mAovName;
     mAovName = NULL;

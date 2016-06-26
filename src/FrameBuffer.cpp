@@ -168,9 +168,9 @@ const char* FrameBuffer::getBufferName(const size_t& index)
 }
 
 // Get last buffer/aov name
-const char* FrameBuffer::getFirstBufferName()
+bool FrameBuffer::isFirstBufferName(const char* aovName)
 {
-    return _aovs.front().c_str();
+    return strcmp(_aovs.front().c_str(), aovName) == 0;;
 }
 
 // Check if Frame has been changed
@@ -253,7 +253,11 @@ void FrameBuffer::setRAM(const long long& ram)
     _pram = ramGb > _ram ? ramGb : _ram;
     _ram = ramGb;
 }
-void FrameBuffer::setTime(const int& time) { _time = time; }
+void FrameBuffer::setTime(const int& time,
+                          const int& dtime)
+{
+    _time = dtime > time ? time : dtime;
+}
 
 // Get status parameters
 const long long& FrameBuffer::getProgress() { return _progress; }

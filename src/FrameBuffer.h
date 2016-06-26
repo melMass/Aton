@@ -97,7 +97,7 @@ namespace aton
             const char* getBufferName(const size_t& index = 0);
         
             // Get last buffer/aov name
-            const char* getFirstBufferName();
+            bool isFirstBufferName(const char* aovName);
         
             // Check if Frame has been changed
             bool isFrameChanged(const double& frame);
@@ -145,7 +145,8 @@ namespace aton
             // Set status parameters
             void setProgress(const long long& progress = 0);
             void setRAM(const long long& ram = 0);
-            void setTime(const int& time = 0);
+            void setTime(const int& time = 0,
+                         const int& dtime = 0);
         
             // Get status parameters
             const long long& getProgress();
