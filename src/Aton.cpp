@@ -479,12 +479,12 @@ class Aton: public Iop
             }
             if (_knob->is("import_latest_knob"))
             {
-                importLatestCmd();
+                importCmd(false);
                 return 1;
             }
             if (_knob->is("import_all_knob"))
             {
-                importAllCmd();
+                importCmd(true);
                 return 1;
             }
             return 0;
@@ -827,58 +827,29 @@ class Aton: public Iop
             cleanByLimit();
         }
 
-        void importLatestCmd()
+        void importCmd(bool all)
         {
             std::vector<std::string> captures = getCaptures();
-            
-            using namespace boost::filesystem;
-            path filepath(m_path);
-            path dir = filepath.parent_path();
-
-            if (!captures.empty() )
-            {
-                // Getting last ellemnt of the vector
-                path file = captures.back();
-                path path = dir / file;
-                std::string str_path = path.string();
-                boost::replace_all(str_path, "\\", "/");
-
-                std::string cmd; // Our python command buffer
-                cmd = ( boost::format("exec('''readNodes = nuke.allNodes('Read')\n"
-                                              "exist = False\n"
-                                              "if len(readNodes)>0:\n\t"
-                                                  "for i in readNodes:\n\t\t"
-                                                      "if '%s' == i['file'].value():\n\t\t\t"
-                                                          "exist = True\n"
-                                               "if exist != True:\n\t"
-                                               "nuke.nodes.Read(file='%s')''')")%str_path
-                                                                                %str_path ).str();
-                script_command(cmd.c_str(), true, false);
-                script_unlock();
-            }
-        }
-
-        void importAllCmd()
-        {
-            std::vector<std::string> captures = getCaptures();
-            
-            using namespace boost::filesystem;
-            path filepath(m_path);
-            path dir = filepath.parent_path();
-
             if (!captures.empty())
             {
+                using namespace boost::filesystem;
+                path filepath(m_path);
+                path dir = filepath.parent_path();
+                
                 // Reverse iterating through vector
-                for(std::vector<std::string>::reverse_iterator it = captures.rbegin();
-                                                               it != captures.rend(); ++it)
+                std::vector<std::string>::reverse_iterator it;
+                for(it = captures.rbegin(); it != captures.rend(); ++it)
                 {
+                    if (all == false && it != captures.rbegin())
+                        continue;
+
                     path file = *it;
                     path path = dir / file;
                     std::string str_path = path.string();
                     boost::replace_all(str_path, "\\", "/");
 
                     std::string cmd; // Our python command buffer
-                    cmd = ( boost::format("exec('''readNodes = nuke.allNodes('Read')\n"
+                    cmd = (boost::format("exec('''readNodes = nuke.allNodes('Read')\n"
                                                   "exist = False\n"
                                                   "if len(readNodes)>0:\n\t"
                                                       "for i in readNodes:\n\t\t"
