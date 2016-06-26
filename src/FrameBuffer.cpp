@@ -62,7 +62,6 @@ RenderBuffer::RenderBuffer(const unsigned int& width,
 FrameBuffer::FrameBuffer(const double& currentFrame,
                          const int& w,
                          const int& h): _frame(0),
-                                        _bucket(0,0,1,1),
                                         _progress(0),
                                         _time(0),
                                         _ram(0),
@@ -228,18 +227,6 @@ void FrameBuffer::resize(const size_t& s)
     _buffers.resize(s);
     _aovs.resize(s);
 }
-
-// Set current bucket BBox for asapUpdate()
-void FrameBuffer::setBucketBBox(const int& x,
-                                const int& y,
-                                const int& r,
-                                const int& t)
-{
-    _bucket.set(x, y, r, t);
-}
-
-// Get current bucket BBox for asapUpdate()
-const Box& FrameBuffer::getBucketBBox() { return _bucket; }
 
 // Set status parameters
 void FrameBuffer::setProgress(const long long& progress)

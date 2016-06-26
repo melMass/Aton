@@ -133,15 +133,6 @@ namespace aton
             // Resize the buffers
             void resize(const size_t& s);
         
-            // Set current bucket BBox for asapUpdate()
-            void setBucketBBox(const int& x = 0,
-                               const int& y = 0,
-                               const int& r = 1,
-                               const int& t = 1);
-        
-            // Get current bucket BBox for asapUpdate()
-            const Box& getBucketBBox();
-        
             // Set status parameters
             void setProgress(const long long& progress = 0);
             void setRAM(const long long& ram = 0);
@@ -181,7 +172,6 @@ namespace aton
             long long _pram;
             int _width;
             int _height;
-            Box _bucket;
             bool _ready;
             std::string _version;
             std::vector<RenderBuffer> _buffers;
