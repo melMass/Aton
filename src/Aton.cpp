@@ -148,6 +148,7 @@ class Aton: public Iop
             }
             
             // Construct full path for capturing
+            m_node_name = node_name();
             using namespace boost::filesystem;
             path dir = getPath();
             path file = m_node_name + std::string(".exr");
@@ -157,8 +158,7 @@ class Aton: public Iop
             knob("path_knob")->set_text(str_path.c_str());
             
             // Check if the format is already exist
-            m_node_name = node_name();
-            for (int i=0; i < Format::size(); ++i)
+            for (int i = 0; i < Format::size(); ++i)
             {
                 const char* f_name = Format::index(i)->name();
                 if (m_node_name == f_name)
