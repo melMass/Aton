@@ -12,12 +12,6 @@ All rights reserved. See COPYING.txt for more details.
 #include "Data.h"
 
 #include <ai.h>
-#include <ai_critsec.h>
-#include <ai_drivers.h>
-#include <ai_filters.h>
-#include <ai_msg.h>
-#include <ai_render.h>
-#include <ai_universe.h>
 
 #include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
@@ -85,15 +79,9 @@ node_initialize
 
 node_update {}
 
-driver_supports_pixel_type
-{
-    return true;
-}
+driver_supports_pixel_type { return true; }
 
-driver_extension
-{
-    return false;
-}
+driver_extension { return NULL; }
 
 driver_open
 {
@@ -149,10 +137,7 @@ driver_open
     }
 }
 
-driver_needs_bucket
-{
-   return true;
-}
+driver_needs_bucket { return true; }
 
 driver_prepare_bucket
 {
