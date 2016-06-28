@@ -95,8 +95,8 @@ driver_open
         ivec.push_back(i);
     }
     int version = ivec[3] +
-                  ivec[2]*100 +
-                  ivec[1]*10000 +
+                  ivec[2] * 100 +
+                  ivec[1] * 10000 +
                   ivec[0] * 1000000;
 
     ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
