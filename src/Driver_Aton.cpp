@@ -13,13 +13,8 @@ All rights reserved. See COPYING.txt for more details.
 
 #include <ai.h>
 
-#include <boost/foreach.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/asio.hpp>
-#include <boost/bind.hpp>
-#include <boost/thread/thread.hpp>
-#include <boost/format.hpp>
 
 #include <stdio.h>
 #include <stdlib.h>
