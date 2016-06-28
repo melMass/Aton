@@ -40,21 +40,15 @@ RenderBuffer::RenderBuffer(const unsigned int& width,
     switch (spp)
     {
         case 1: // Float channels
-        {
             _float_data.resize(size);
             break;
-        }
         case 3: // Color Channels
-        {
             _color_data.resize(size);
             break;
-        }
         case 4: // Color + Alpha channels
-        {
             _color_data.resize(size);
             _float_data.resize(size);
             break;
-        }
     }
 }
 

@@ -580,13 +580,15 @@ class Aton: public Iop
     
         int getPort()
         {
-            char* aton_port = getenv("ATON_PORT");
-            int def_port = 9201;
+            const char* def_port = getenv("ATON_PORT");
+            int aton_port;
             
-            if (aton_port != NULL)
-                def_port = atoi(aton_port);
+            if (def_port == NULL)
+                aton_port = 9201;
+            else
+                aton_port = atoi(def_port);
             
-            return def_port;
+            return aton_port;
         }
 
         std::string getDateTime()

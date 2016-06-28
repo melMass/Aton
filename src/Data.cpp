@@ -33,7 +33,7 @@ Data::Data(int x,
                                 mRam(ram),
                                 mTime(time)
 {
-    if (aovName != 0)
+    if (aovName != NULL)
         mAovName = const_cast<char*>(aovName);
 
     if (data != 0)

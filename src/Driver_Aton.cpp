@@ -32,7 +32,6 @@ All rights reserved. See COPYING.txt for more details.
 #include <iostream>
 #include <deque>
 
-using namespace std;
 using boost::asio::ip::tcp;
 
 AI_DRIVER_NODE_EXPORT_METHODS(AtonDriverMtd);
@@ -42,37 +41,31 @@ struct ShaderData
    aton::Client* client;
 };
 
-char* getHost()
+const char* getHost()
 {
-    char* aton_host;
-    std::string def_host;
-    
-    aton_host = getenv("ATON_HOST");
+    const char* aton_host = getenv("ATON_HOST");
     
     if (aton_host == NULL)
-        def_host = "127.0.0.1";
-    else
-        def_host = aton_host;
+        aton_host = "127.0.0.1";
     
-    char* host = new char[def_host.length()+1];
-    strcpy(host, def_host.c_str());
+    char* host = new char[strlen(aton_host)+1];
+    strcpy(host, aton_host);
+    aton_host = host;
     
-    return host;
+    return aton_host;
 }
 
 int getPort()
 {
-    char* aton_port;
-    int def_port;
+    const char* def_port = getenv("ATON_PORT");
+    int aton_port;
     
-    aton_port = getenv("ATON_PORT");
-    
-    if (aton_port == NULL)
-        def_port = 9201;
+    if (def_port == NULL)
+        aton_port = 9201;
     else
-        def_port = atoi(aton_port);
+        aton_port = atoi(def_port);
     
-    return def_port;
+    return aton_port;
 }
 
 node_parameters
@@ -90,9 +83,7 @@ node_initialize
     AiDriverInitialize(node, true, AiMalloc(sizeof(ShaderData)));
 }
 
-node_update
-{
-}
+node_update {}
 
 driver_supports_pixel_type
 {
@@ -101,54 +92,61 @@ driver_supports_pixel_type
 
 driver_extension
 {
-    return NULL;
+    return false;
 }
 
 driver_open
 {
     // Construct full version number into padded interger
-    string versionString = AiGetVersion(0, 0, 0, 0);
-    vector<string> svec;
-    vector<int> ivec;
+    std::string versionString = AiGetVersion(0, 0, 0, 0);
+    
+    std::vector<std::string> svec;
     boost::split(svec, versionString, boost::is_any_of("."));
     
-    BOOST_FOREACH(std::string item, svec)
+    std::vector<int> ivec;
+    ivec.reserve(svec.size());
+    std::vector<std::string>::iterator it;
+    for(it = svec.begin(); it != svec.end(); ++it)
     {
-        int i = boost::lexical_cast<int>(item);
+        int i = boost::lexical_cast<int>(*it);
         ivec.push_back(i);
     }
-    int version = ivec[3] + ivec[2]*100 + ivec[1]*10000 + ivec[0] * 1000000;
+    int version = ivec[3] +
+                  ivec[2]*100 +
+                  ivec[1]*10000 +
+                  ivec[0] * 1000000;
 
     ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
     
+    // Get Frame number
     AtNode* options = AiUniverseGetOptions();
     float currentFrame = AiNodeGetFlt(options, "frame");
-
+    
+    // Get Host and Port
     const char* host = AiNodeGetStr(node, "host");
     int port = AiNodeGetInt(node, "port");
+    
+    // Get resolution and area
     int width = display_window.maxx - display_window.minx +1;
     int height = display_window.maxy - display_window.miny +1;
-
     int rWidth = data_window.maxx - data_window.minx +1;
     int rHeight = data_window.maxy - data_window.miny +1;
     long long rArea = rWidth * rHeight;
 
-    // Now we can connect to the server and start rendering
-    try
+    try // Now we can connect to the server and start rendering
     {
        // Create a new aton object
        data->client = new aton::Client( host, port );
 
        // Make image header & send to server
        aton::Data header( 0, 0, width, height, rArea, version, currentFrame);
-       data->client->openImage( header );
+       data->client->openImage(header);
     }
     catch (const std::exception &e)
     {
         const char *err = e.what();
-        AiMsgError("Aton display driver", "%s", err);
+        AiMsgError("Aton display driver %s", err);
     }
-
 }
 
 driver_needs_bucket
@@ -161,10 +159,7 @@ driver_prepare_bucket
     AiMsgDebug("[Aton] prepare bucket (%d, %d)", bucket_xo, bucket_yo);
 }
 
-driver_process_bucket
-{
-
-}
+driver_process_bucket { }
 
 driver_write_bucket
 {
@@ -225,7 +220,6 @@ node_finish
     // Release the driver
     ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
     delete data->client;
-    delete[] getHost();
 
     AiFree(data);
     AiDriverDestroy(node);

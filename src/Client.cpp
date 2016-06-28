@@ -80,7 +80,7 @@ void Client::sendPixels(Data& data)
     write(mSocket, buffer(reinterpret_cast<char*>(&mImageId), sizeof(int)));
 
     // Get size of aov name
-    size_t aov_size = strlen(data.mAovName)+1;
+    size_t aov_size = strlen(data.mAovName) + 1;
 
     // Get size of overall samples
     int num_samples = data.mWidth * data.mHeight * data.mSpp;

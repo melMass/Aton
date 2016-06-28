@@ -34,7 +34,7 @@ namespace aton
              int spp=0, 
              long long ram=0, 
              int time=0, 
-             const char *aovName = 0, 
+             const char *aovName = NULL,
              const float *data=0);
         
         ~Data();
