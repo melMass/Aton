@@ -80,25 +80,14 @@ driver_extension { return NULL; }
 
 driver_open
 {
-    // Construct full version number into padded interger
-    std::string versionString = AiGetVersion(0, 0, 0, 0);
+    // Construct full version number
+    char arch[3], major[3], minor[3], fix[3];
+    AiGetVersion(arch, major, minor, fix);
+    int version = boost::lexical_cast<int>(arch) +
+                  boost::lexical_cast<int>(major) * 100 +
+                  boost::lexical_cast<int>(minor) * 10000 +
+                  boost::lexical_cast<int>(fix) * 1000000;
     
-    std::vector<std::string> svec;
-    boost::split(svec, versionString, boost::is_any_of("."));
-    
-    std::vector<int> ivec;
-    ivec.reserve(svec.size());
-    std::vector<std::string>::iterator it;
-    for(it = svec.begin(); it != svec.end(); ++it)
-    {
-        int i = boost::lexical_cast<int>(*it);
-        ivec.push_back(i);
-    }
-    int version = ivec[3] +
-                  ivec[2] * 100 +
-                  ivec[1] * 10000 +
-                  ivec[0] * 1000000;
-
     ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
     
     // Get Frame number
