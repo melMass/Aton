@@ -178,7 +178,7 @@ driver_write_bucket
     while (AiOutputIteratorGetNext(iterator, &aov_name, &pixel_type, &bucket_data))
     {
         const float* ptr = reinterpret_cast<const float*> (bucket_data);
-        unsigned long long ram = AiMsgUtilGetUsedMemory();
+        long long ram = AiMsgUtilGetUsedMemory();
         unsigned int time = AiMsgUtilGetElapsedTime();
 
         switch (pixel_type)

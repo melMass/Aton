@@ -25,7 +25,7 @@ const std::string chStr::RGBA = "RGBA",
 // Lightweight color pixel class
 RenderColor::RenderColor() { _val[0] = _val[1] = _val[2] = 0.0f; }
 
-float& RenderColor::operator[](int i){ return _val[i]; }
+float& RenderColor::operator[](int i) { return _val[i]; }
 const float& RenderColor::operator[](int i) const { return _val[i]; }
 
 // RenderBuffer class
