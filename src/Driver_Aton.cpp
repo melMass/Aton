@@ -4,22 +4,10 @@ Dan Bethell, Johannes Saam, Vahan Sosoyan, Brian Scherbinski.
 All rights reserved. See COPYING.txt for more details.
 */
 
-#include <iostream>
-#include <exception>
-#include <cstring>
-
-#include "Client.h"
-#include "Data.h"
-
 #include <ai.h>
 
-#include <boost/lexical_cast.hpp>
-#include <boost/algorithm/string.hpp>
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <iostream>
-#include <deque>
+#include "Data.h"
+#include "Client.h"
 
 using boost::asio::ip::tcp;
 
@@ -83,10 +71,10 @@ driver_open
     // Construct full version number
     char arch[3], major[3], minor[3], fix[3];
     AiGetVersion(arch, major, minor, fix);
-    int version = boost::lexical_cast<int>(arch) +
-                  boost::lexical_cast<int>(major) * 100 +
-                  boost::lexical_cast<int>(minor) * 10000 +
-                  boost::lexical_cast<int>(fix) * 1000000;
+    int version = atoi(arch) +
+                  atoi(major) * 100 +
+                  atoi(minor) * 10000 +
+                  atoi(fix) * 1000000;
     
     ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
     
