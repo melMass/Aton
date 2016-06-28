@@ -5,8 +5,6 @@ All rights reserved. See COPYING.txt for more details.
 */
 
 #include "Data.h"
-#include <cstring>
-#include <iostream>
 
 using namespace aton;
 

@@ -7,9 +7,6 @@ All rights reserved. See COPYING.txt for more details.
 #include "Server.h"
 #include "Client.h"
 #include <boost/lexical_cast.hpp>
-#include <vector>
-#include <iostream>
-#include <stdexcept>
 
 using namespace aton;
 using namespace boost::asio;

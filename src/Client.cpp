@@ -6,8 +6,6 @@ All rights reserved. See COPYING.txt for more details.
 
 #include "Client.h"
 #include <boost/lexical_cast.hpp>
-#include <stdexcept>
-#include <iostream>
 
 using namespace aton;
 using namespace boost::asio;

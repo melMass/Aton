@@ -7,10 +7,6 @@ All rights reserved. See COPYING.txt for more details.
 #ifndef FrameBuffer_h
 #define FrameBuffer_h
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <vector>
-
 #include "DDImage/Iop.h"
 
 using namespace DD::Image;

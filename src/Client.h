@@ -9,7 +9,6 @@ All rights reserved. See COPYING.txt for more details.
 
 #include "Data.h"
 #include <boost/asio.hpp>
-#include <string>
 
 namespace aton
 {

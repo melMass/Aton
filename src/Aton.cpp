@@ -4,20 +4,10 @@ Dan Bethell, Johannes Saam, Vahan Sosoyan, Brian Scherbinski.
 All rights reserved. See COPYING.txt for more details.
 */
 
-#include <time.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <cstdio>
-#include <vector>
-#include <string>
-#include <sstream>
-#include <algorithm>
-
 #include "DDImage/Iop.h"
 #include "DDImage/Row.h"
 #include "DDImage/Thread.h"
 #include "DDImage/Knobs.h"
-#include "DDImage/DDMath.h"
 #include "DDImage/Version.h"
 
 using namespace DD::Image;
