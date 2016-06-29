@@ -87,19 +87,19 @@ driver_open
     int port = AiNodeGetInt(node, "port");
     
     // Get resolution and area
-    int width = display_window.maxx - display_window.minx +1;
-    int height = display_window.maxy - display_window.miny +1;
-    int rWidth = data_window.maxx - data_window.minx +1;
-    int rHeight = data_window.maxy - data_window.miny +1;
+    int width = display_window.maxx - display_window.minx + 1;
+    int height = display_window.maxy - display_window.miny + 1;
+    int rWidth = data_window.maxx - data_window.minx + 1;
+    int rHeight = data_window.maxy - data_window.miny + 1;
     long long rArea = rWidth * rHeight;
 
     try // Now we can connect to the server and start rendering
     {
        // Create a new aton object
-       data->client = new aton::Client( host, port );
+       data->client = new aton::Client(host, port);
 
        // Make image header & send to server
-       aton::Data header( 0, 0, width, height, rArea, version, currentFrame);
+       aton::Data header(0, 0, width, height, rArea, version, currentFrame);
        data->client->openImage(header);
     }
     catch (const std::exception &e)
@@ -129,7 +129,7 @@ driver_write_bucket
 
     while (AiOutputIteratorGetNext(iterator, &aov_name, &pixel_type, &bucket_data))
     {
-        const float* ptr = reinterpret_cast<const float*> (bucket_data);
+        const float* ptr = reinterpret_cast<const float*>(bucket_data);
         long long ram = AiMsgUtilGetUsedMemory();
         unsigned int time = AiMsgUtilGetElapsedTime();
 
