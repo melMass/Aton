@@ -891,7 +891,7 @@ static void timeChange(unsigned index, unsigned nthreads, void* data)
     while (node->m_legit)
     {
         uiFrame = node->uiContext().frame();
-        const size_t fbSize = node->m_framebuffers.size();
+        size_t fbSize = node->m_framebuffers.size();
         if (node->m_multiframes && fbSize > 1 && prevFrame != uiFrame)
         {
             node->flagForUpdate();

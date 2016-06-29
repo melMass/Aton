@@ -15,18 +15,8 @@ namespace aton
 {
     namespace chStr
     {
-        extern const std::string RGBA,
-                                 rgb,
-                                 depth,
-                                 Z,
-                                 N,
-                                 P,
-                                 _red,
-                                 _green,
-                                 _blue,
-                                 _X,
-                                 _Y,
-                                 _Z;
+        extern const std::string RGBA, rgb, depth, Z, N, P,
+                                 _red, _green, _blue, _X, _Y, _Z;
     }
     
     // Lightweight colour pixel class

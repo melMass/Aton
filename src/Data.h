@@ -24,18 +24,18 @@ namespace aton
     friend class Client;
     friend class Server;
     public:
-        Data(int x=0,
-             int y=0,
-             int width=0, 
-             int height=0, 
-             long long rArea=0, 
-             int version = 0, 
-             float currentFrame=0.f,
-             int spp=0, 
-             long long ram=0, 
-             int time=0, 
+        Data(const int& x = 0,
+             const int& y = 0,
+             const int& width = 0,
+             const int& height = 0,
+             const long long& rArea = 0,
+             const int& version = 0,
+             const float& currentFrame = 0.0f,
+             const int& spp = 0,
+             const long long& ram = 0,
+             const int& time = 0,
              const char *aovName = NULL,
-             const float *data=0);
+             const float *data = 0);
         
         ~Data();
         
@@ -103,9 +103,9 @@ namespace aton
         // Width, height, num channels (samples)
         unsigned int mWidth, mHeight, mSpp, mTime;
 
-        unsigned long long mRArea, mRam;
+        long long mRArea, mRam;
 
-        char *mAovName;
+        const char *mAovName;
 
         // Our pixel data pointer (for driver-owned pixels)
         float *mpData;

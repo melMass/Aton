@@ -25,7 +25,7 @@ const char* getHost()
     if (aton_host == NULL)
         aton_host = "127.0.0.1";
     
-    char* host = new char[strlen(aton_host)+1];
+    char* host = new char[strlen(aton_host) + 1];
     strcpy(host, aton_host);
     aton_host = host;
     

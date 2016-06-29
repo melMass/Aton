@@ -150,8 +150,9 @@ Data Server::listen()
                 read(mSocket, buffer(reinterpret_cast<char*>(&aov_size), sizeof(size_t)));
 
                 // Get aov name
-                d.mAovName = new char[aov_size];
-                read(mSocket, buffer(d.mAovName, aov_size));
+                char* aov_name = new char[aov_size];
+                read(mSocket, buffer(aov_name, aov_size));
+                d.mAovName = aov_name;
 
                 // Get pixels
                 int num_samples = d.width() * d.height() * d.spp();

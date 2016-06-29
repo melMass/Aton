@@ -55,17 +55,14 @@ RenderBuffer::RenderBuffer(const unsigned int& width,
 // FrameBuffer class
 FrameBuffer::FrameBuffer(const double& currentFrame,
                          const int& w,
-                         const int& h): _frame(0),
+                         const int& h): _frame(currentFrame),
+                                        _width(w),
+                                        _height(h),
                                         _progress(0),
                                         _time(0),
                                         _ram(0),
                                         _pram(0),
-                                        _ready(false)
-{
-    _frame = currentFrame;
-    _width = w;
-    _height = h;
-}
+                                        _ready(false) {}
 
 // Add new buffer
 void FrameBuffer::addBuffer(const char* aov,

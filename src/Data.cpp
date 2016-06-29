@@ -8,16 +8,16 @@ All rights reserved. See COPYING.txt for more details.
 
 using namespace aton;
 
-Data::Data(int x, 
-           int y,
-           int width, 
-           int height, 
-           long long rArea, 
-           int version, 
-           float currentFrame,
-           int spp, 
-           long long ram, 
-           int time, 
+Data::Data(const int& x,
+           const int& y,
+           const int& width,
+           const int& height,
+           const long long& rArea,
+           const int& version,
+           const float& currentFrame,
+           const int& spp,
+           const long long& ram,
+           const int& time,
            const char* aovName, 
            const float* data ): mType(-1),
                                 mX(x),
@@ -29,11 +29,9 @@ Data::Data(int x,
                                 mCurrentFrame(currentFrame),
                                 mSpp(spp),
                                 mRam(ram),
-                                mTime(time)
+                                mTime(time),
+                                mAovName(aovName)
 {
-    if (aovName != NULL)
-        mAovName = const_cast<char*>(aovName);
-
     if (data != 0)
         mpData = const_cast<float*>(data);
 }
