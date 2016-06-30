@@ -101,15 +101,9 @@ class Aton: public Iop
             inputs(0);
         }
 
-        ~Aton()
-        {
-            disconnect();
-        }
-    
-        Aton* firstNode()
-        {
-            return dynamic_cast<Aton*>(firstOp());
-        }
+        ~Aton() { disconnect(); }
+        
+        Aton* firstNode() { return dynamic_cast<Aton*>(firstOp()); }
 
         // It seems additional instances of a node get copied/constructed upon
         // very frequent calls to asapUpdate() and this causes us a few
