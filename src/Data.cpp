@@ -32,7 +32,7 @@ Data::Data(const int& x,
                                 mTime(time),
                                 mAovName(aovName)
 {
-    if (data != 0)
+    if (data != NULL)
         mpData = const_cast<float*>(data);
 }
 
