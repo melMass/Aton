@@ -1002,16 +1002,6 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                             node->resetChannels(node->m_channels);
                             node->m_mutex.unlock();
                         }
-                        if(fB.isResolutionChanged(_width, _height))
-                        {
-                            node->m_mutex.lock();
-                            fB.clearAll();
-                            fB.setWidth(_width);
-                            fB.setHeight(_height);
-                            fB.ready(false);
-                            node->resetChannels(node->m_channels);
-                            node->m_mutex.unlock();
-                        }
                     }
                     
                     // Get image area to calculate the progress
@@ -1041,6 +1031,19 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     
                     // Get active time
                     _active_time = d.time();
+                    
+                    const int& _xres = d.xres();
+                    const int& _yres = d.yres();
+                    if(fB.isResolutionChanged(_xres, _yres))
+                    {
+                        node->m_mutex.lock();
+                        fB.clearAll();
+                        fB.setWidth(_xres);
+                        fB.setHeight(_yres);
+                        fB.ready(false);
+                        node->resetChannels(node->m_channels);
+                        node->m_mutex.unlock();
+                    }
 
                     // Get active aov names
                     if(std::find(active_aovs.begin(),
