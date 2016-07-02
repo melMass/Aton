@@ -138,11 +138,11 @@ Data Server::listen()
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mY), sizeof(int)));
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mWidth), sizeof(int)));
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mHeight), sizeof(int)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mRArea), sizeof(long long)));
+                read(mSocket, buffer(reinterpret_cast<char*>(&d.mRArea), sizeof(long)));
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mVersion), sizeof(int)));
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mCurrentFrame), sizeof(float)));
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mSpp), sizeof(int)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mRam), sizeof(long long)));
+                read(mSocket, buffer(reinterpret_cast<char*>(&d.mRam), sizeof(long)));
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mTime), sizeof(int)));
 
                 // Get aov name's size

@@ -46,34 +46,34 @@ namespace aton
         const int type() const { return mType; }
 
         // Get x position
-        int x() const { return mX; }
+        const int& x() const { return mX; }
         
         // Get y position
-        int y() const { return mY; }
+        const int& y() const { return mY; }
         
         // Get width
-        int width() const { return mWidth; }
+        const int& width() const { return mWidth; }
         
         // Get height
-        int height() const { return mHeight; }
+        const int& height() const { return mHeight; }
         
         // Get area of the render region
-        long long rArea() const { return mRArea; }
+        const long long& rArea() const { return mRArea; }
         
         // Version number
-        int version() const { return mVersion; }
+        const int& version() const { return mVersion; }
         
         // Current frame
-        float currentFrame() const { return mCurrentFrame; }
+        const float& currentFrame() const { return mCurrentFrame; }
         
         // Samples-per-pixel, aka channel depth
-        int spp() const { return mSpp; }
+        const int& spp() const { return mSpp; }
         
         // Taken memory while rendering
-        long long ram() const { return mRam; }
+        const long long& ram() const { return mRam; }
         
         // Taken time while rendering
-        int time() const { return mTime; }
+        const unsigned int& time() const { return mTime; }
         
         // Get Aov name
         const char* aovName() const { return mAovName; }
@@ -84,15 +84,15 @@ namespace aton
         // Pointer to pixel data owned by the display driver (client-side)
         const float* data() const { return mpData; }
         
-        // Pointer to pixel data owned by this object (server-side)
-        const float* pixels() const { return &mPixelStore[0]; }
-
+        // Reference to pixel data owned by this object (server-side)
+        const std::vector<float>& pixels() { return mPixelStore; }
+        
     private:
         // What type of data is this?
         int mType;
 
         // X & Y position
-        int mX, mY;
+        int mX, mY, mWidth, mHeight, mSpp;
 
         // Version number
         int mVersion;
@@ -101,7 +101,7 @@ namespace aton
         float mCurrentFrame;
 
         // Width, height, num channels (samples)
-        unsigned int mWidth, mHeight, mSpp, mTime;
+        unsigned int mTime;
 
         long long mRArea, mRam;
 

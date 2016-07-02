@@ -33,8 +33,6 @@ RenderBuffer::RenderBuffer(const unsigned int& width,
                            const unsigned int& height,
                            const int& spp)
 {
-    _width = width;
-    _height = height;
     size_t size = width * height;
     
     switch (spp)
@@ -75,18 +73,19 @@ void FrameBuffer::addBuffer(const char* aov,
 }
 
 // Get writable buffer object
-float& FrameBuffer::setBufferPix(const long& b,
-                                 const unsigned int& x,
-                                 const unsigned int& y,
-                                 const int& spp,
-                                 const int& c)
+void FrameBuffer::setBufferPix(const long& b,
+                               const unsigned int& x,
+                               const unsigned int& y,
+                               const int& spp,
+                               const int& c,
+                               const float& pix)
 {
     RenderBuffer& rb = _buffers[b];
-    unsigned int index = (rb._width * y) + x;
+    unsigned int index = (_width * y) + x;
     if (c < 3 && spp != 1)
-        return rb._color_data[index][c];
+        rb._color_data[index][c] = pix;
     else
-        return rb._float_data[index];
+        rb._float_data[index] = pix;
 }
 
 // Get read only buffer object
@@ -96,7 +95,7 @@ const float& FrameBuffer::getBufferPix(const long& b,
                                        const int& c) const
 {
     const RenderBuffer& rb = _buffers[b];
-    unsigned int index = (rb._width * y) + x;
+    unsigned int index = (_width * y) + x;
     if (c < 3 && !rb._color_data.empty())
         return rb._color_data[index][c];
     else
@@ -179,8 +178,7 @@ bool FrameBuffer::isAovsChanged(const std::vector<std::string>& aovs)
 bool FrameBuffer::isResolutionChanged(const unsigned int& width,
                                       const unsigned int& height)
 {
-    return (width != _buffers[0]._width &&
-            height != _buffers[0]._height);
+    return (width != _width && height != _height);
 }
 
 // Clear buffers and aovs

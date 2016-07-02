@@ -41,11 +41,10 @@ namespace aton
                          const unsigned int& height = 0,
                          const int& spp = 0);
         
+        private:
             // Data
             std::vector<RenderColor> _color_data;
             std::vector<float> _float_data;
-            unsigned int _width;
-            unsigned int _height;
     };
     
     // Framebuffer main class
@@ -61,11 +60,12 @@ namespace aton
                            const int& spp = 0);
         
             // Set writable buffer's pixel
-            float& setBufferPix(const long& b,
-                                const unsigned int& x,
-                                const unsigned int& y,
-                                const int& spp,
-                                const int& c);
+            void setBufferPix(const long& b,
+                              const unsigned int& x,
+                              const unsigned int& y,
+                              const int& spp,
+                              const int& c,
+                              const float& pix);
         
             // Get read only buffer's pixel
             const float& getBufferPix(const long& b,

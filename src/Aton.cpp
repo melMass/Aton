@@ -1057,19 +1057,19 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     if (node->m_enable_aovs || active_aovs[0] == _aov_name)
                     {
                         // Copy data from d
-                        int _x = d.x();
-                        int _y = d.y();
-                        int _width = d.width();
-                        int _height = d.height();
-                        int _spp = d.spp();
-                        long long _ram = d.ram();
-                        int _time = d.time();
-                        const float* _pix_data = d.pixels();
+                        const int& _x = d.x();
+                        const int& _y = d.y();
+                        const int& _width = d.width();
+                        const int& _height = d.height();
+                        const int& _spp = d.spp();
+                        const long long& _ram = d.ram();
+                        const int& _time = d.time();
+                        const std::vector<float>& pix = d.pixels();
                         
                         const int& w = fB.getWidth();
                         const int& h = fB.getHeight();
                         unsigned int x, y, c, offset;
-                        
+
                         // Adding buffer
                         node->m_mutex.lock();
                         if(!fB.bufferNameExists(_aov_name) &&
@@ -1088,12 +1088,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                             {
                                 offset = (_width * y * _spp) + (x * _spp);
                                 for (c = 0; c < _spp; ++c)
-                                {
-                                    float& p = fB.setBufferPix(b, x + _x,
-                                                               h - (y + _y + 1),
-                                                               _spp, c);
-                                    p = _pix_data[offset + c];
-                                }
+                                    fB.setBufferPix(b, x + _x, h - (y + _y + 1),
+                                                    _spp, c, pix[offset + c]);
                             }
                         }
                         node->m_mutex.unlock();
