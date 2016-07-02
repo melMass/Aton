@@ -57,8 +57,8 @@ void Client::openImage(Data& header)
     read(mSocket, buffer(reinterpret_cast<char*>(&mImageId), sizeof(int)));
 
     // Send our width & height
-    write(mSocket, buffer(reinterpret_cast<char*>(&header.mWidth), sizeof(int)));
-    write(mSocket, buffer(reinterpret_cast<char*>(&header.mHeight), sizeof(int)));
+    write(mSocket, buffer(reinterpret_cast<char*>(&header.mXres), sizeof(int)));
+    write(mSocket, buffer(reinterpret_cast<char*>(&header.mYres), sizeof(int)));
     write(mSocket, buffer(reinterpret_cast<char*>(&header.mRArea), sizeof(int)));
     write(mSocket, buffer(reinterpret_cast<char*>(&header.mVersion), sizeof(int)));
     write(mSocket, buffer(reinterpret_cast<char*>(&header.mCurrentFrame), sizeof(float)));
@@ -81,13 +81,16 @@ void Client::sendPixels(Data& data)
     size_t aov_size = strlen(data.mAovName) + 1;
 
     // Get size of overall samples
-    int num_samples = data.mWidth * data.mHeight * data.mSpp;
+    int num_samples = data.mXres * data.mYres * data.mSpp;
     
     // Sending data to buffer
-    write(mSocket, buffer(reinterpret_cast<char*>(&data.mX), sizeof(int)));
-    write(mSocket, buffer(reinterpret_cast<char*>(&data.mY), sizeof(int)));
-    write(mSocket, buffer(reinterpret_cast<char*>(&data.mWidth), sizeof(int)));
-    write(mSocket, buffer(reinterpret_cast<char*>(&data.mHeight), sizeof(int)));
+        // Sending data to buffer
+    write(mSocket, buffer(reinterpret_cast<char*>(&data.mXres), sizeof(int)));
+    write(mSocket, buffer(reinterpret_cast<char*>(&data.mYres), sizeof(int)));
+    write(mSocket, buffer(reinterpret_cast<char*>(&data.mBucket_xo), sizeof(int)));
+    write(mSocket, buffer(reinterpret_cast<char*>(&data.mBucket_yo), sizeof(int)));
+    write(mSocket, buffer(reinterpret_cast<char*>(&data.mBucket_size_x), sizeof(int)));
+    write(mSocket, buffer(reinterpret_cast<char*>(&data.mBucket_size_y), sizeof(int)));
     write(mSocket, buffer(reinterpret_cast<char*>(&data.mRArea), sizeof(long long)));
     write(mSocket, buffer(reinterpret_cast<char*>(&data.mVersion), sizeof(int)));
     write(mSocket, buffer(reinterpret_cast<char*>(&data.mCurrentFrame), sizeof(float)));

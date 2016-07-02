@@ -942,8 +942,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                 case 0: // Open a new image
                 {
                     // Copy data from d
-                    int _width = d.width();
-                    int _height = d.height();
+                    int _width = d.xres();
+                    int _height = d.yres();
                     double _frame = static_cast<double>(d.currentFrame());
                     
                     if (current_frame != _frame)
@@ -1057,10 +1057,10 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     if (node->m_enable_aovs || active_aovs[0] == _aov_name)
                     {
                         // Copy data from d
-                        const int& _x = d.x();
-                        const int& _y = d.y();
-                        const int& _width = d.width();
-                        const int& _height = d.height();
+                        const int& _x = d.bucket_xo();
+                        const int& _y = d.bucket_yo();
+                        const int& _width = d.bucket_size_x();
+                        const int& _height = d.bucket_size_y();
                         const int& _spp = d.spp();
                         const long long& _ram = d.ram();
                         const int& _time = d.time();

@@ -24,10 +24,12 @@ namespace aton
     friend class Client;
     friend class Server;
     public:
-        Data(const int& x = 0,
-             const int& y = 0,
-             const int& width = 0,
-             const int& height = 0,
+        Data(const int& xres = 0,
+             const int& yres = 0,
+             const int& bucket_xo = 0,
+             const int& bucket_yo = 0,
+             const int& bucket_size_x = 0,
+             const int& bucket_size_y = 0,
              const long long& rArea = 0,
              const int& version = 0,
              const float& currentFrame = 0.0f,
@@ -44,18 +46,24 @@ namespace aton
         // 1: pixels
         // 2: image close
         const int type() const { return mType; }
+        
+        // Get X resolution
+        const int& xres() const { return mXres; }
+        
+        // Get Y resolution
+        const int& yres() const { return mYres; }
 
         // Get x position
-        const int& x() const { return mX; }
+        const int& bucket_xo() const { return mBucket_xo; }
         
         // Get y position
-        const int& y() const { return mY; }
+        const int& bucket_yo() const { return mBucket_yo; }
         
         // Get width
-        const int& width() const { return mWidth; }
+        const int& bucket_size_x() const { return mBucket_size_x; }
         
         // Get height
-        const int& height() const { return mHeight; }
+        const int& bucket_size_y() const { return mBucket_size_y; }
         
         // Get area of the render region
         const long long& rArea() const { return mRArea; }
@@ -92,7 +100,7 @@ namespace aton
         int mType;
 
         // X & Y position
-        int mX, mY, mWidth, mHeight, mSpp;
+        int mXres, mYres, mBucket_xo, mBucket_yo, mBucket_size_x, mBucket_size_y, mSpp;
 
         // Version number
         int mVersion;
