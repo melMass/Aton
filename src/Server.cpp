@@ -157,7 +157,7 @@ Data Server::listen()
                 d.mAovName = aov_name;
 
                 // Get pixels
-                int num_samples = d.width() * d.height() * d.spp();
+                int num_samples = d.bucket_size_x() * d.bucket_size_y() * d.spp();
                 d.mPixelStore.resize(num_samples);
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mPixelStore[0]), sizeof(float)*num_samples)) ;
                 break;

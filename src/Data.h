@@ -26,10 +26,10 @@ namespace aton
     public:
         Data(const int& xres = 0,
              const int& yres = 0,
-             const int& x = 0,
-             const int& y = 0,
-             const int& width = 0,
-             const int& height = 0,
+             const int& bucket_xo = 0,
+             const int& bucket_yo = 0,
+             const int& bucket_size_x = 0,
+             const int& bucket_size_y = 0,
              const long long& rArea = 0,
              const int& version = 0,
              const float& currentFrame = 0.0f,
@@ -48,16 +48,16 @@ namespace aton
         const int type() const { return mType; }
 
         // Get x position
-        const int& x() const { return mBucket_xo; }
+        const int& bucket_xo() const { return mBucket_xo; }
         
         // Get y position
-        const int& y() const { return mBucket_yo; }
+        const int& bucket_yo() const { return mBucket_yo; }
         
         // Get width
-        const int& width() const { return mBucket_size_x; }
+        const int& bucket_size_x() const { return mBucket_size_x; }
         
         // Get height
-        const int& height() const { return mBucket_size_y; }
+        const int& bucket_size_y() const { return mBucket_size_y; }
         
         // Get area of the render region
         const long long& rArea() const { return mRArea; }
