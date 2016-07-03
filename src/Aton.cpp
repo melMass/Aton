@@ -942,8 +942,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                 case 0: // Open a new image
                 {
                     // Copy data from d
-                    int _width = d.xres();
-                    int _height = d.yres();
+                    int _width = d.width();
+                    int _height = d.height();
                     double _frame = static_cast<double>(d.currentFrame());
                     
                     if (current_frame != _frame)
@@ -1002,6 +1002,16 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                             node->resetChannels(node->m_channels);
                             node->m_mutex.unlock();
                         }
+                        if(fB.isResolutionChanged(_width, _height))
+                        {
+                            node->m_mutex.lock();
+                            fB.clearAll();
+                            fB.setWidth(_width);
+                            fB.setHeight(_height);
+                            fB.ready(false);
+                            node->resetChannels(node->m_channels);
+                            node->m_mutex.unlock();
+                        }
                     }
                     
                     // Get image area to calculate the progress
@@ -1031,19 +1041,6 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     
                     // Get active time
                     _active_time = d.time();
-                    
-                    const int& _xres = d.xres();
-                    const int& _yres = d.yres();
-                    if(fB.isResolutionChanged(_xres, _yres))
-                    {
-                        node->m_mutex.lock();
-                        fB.clearAll();
-                        fB.setWidth(_xres);
-                        fB.setHeight(_yres);
-                        fB.ready(false);
-                        node->resetChannels(node->m_channels);
-                        node->m_mutex.unlock();
-                    }
 
                     // Get active aov names
                     if(std::find(active_aovs.begin(),
@@ -1060,10 +1057,10 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     if (node->m_enable_aovs || active_aovs[0] == _aov_name)
                     {
                         // Copy data from d
-                        const int& _x = d.bucket_xo();
-                        const int& _y = d.bucket_yo();
-                        const int& _width = d.bucket_size_x();
-                        const int& _height = d.bucket_size_y();
+                        const int& _x = d.x();
+                        const int& _y = d.y();
+                        const int& _width = d.width();
+                        const int& _height = d.height();
                         const int& _spp = d.spp();
                         const long long& _ram = d.ram();
                         const int& _time = d.time();

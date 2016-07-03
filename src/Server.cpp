@@ -106,20 +106,20 @@ Data Server::listen()
                 write(mSocket, buffer(reinterpret_cast<char*>(&image_id), sizeof(int)));
 
                 // Get width & height
-                int xres, yres, rArea, version;
+                int width, height, rArea, version;
                 float currentFrame;
                 
                 // Read data from the buffer
-                read(mSocket, buffer(reinterpret_cast<char*>(&xres), sizeof(int)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&yres), sizeof(int)));
+                read(mSocket, buffer(reinterpret_cast<char*>(&width), sizeof(int)));
+                read(mSocket, buffer(reinterpret_cast<char*>(&height), sizeof(int)));
                 read(mSocket, buffer(reinterpret_cast<char*>(&rArea), sizeof(int)));
                 read(mSocket, buffer(reinterpret_cast<char*>(&version), sizeof(int)));
                 read(mSocket, buffer(reinterpret_cast<char*>(&currentFrame), sizeof(int)));
 
                 // Create data object
                 d.mType = key;
-                d.mXres = xres;
-                d.mYres = yres;
+                d.mWidth = width;
+                d.mHeight = height;
                 d.mRArea = rArea;
                 d.mVersion = version;
                 d.mCurrentFrame = currentFrame;
@@ -136,10 +136,10 @@ Data Server::listen()
                 // Read data from the buffer
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mXres), sizeof(int)));
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mYres), sizeof(int)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mBucket_xo), sizeof(int)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mBucket_yo), sizeof(int)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mBucket_size_x), sizeof(int)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mBucket_size_y), sizeof(int)));
+                read(mSocket, buffer(reinterpret_cast<char*>(&d.mX), sizeof(int)));
+                read(mSocket, buffer(reinterpret_cast<char*>(&d.mY), sizeof(int)));
+                read(mSocket, buffer(reinterpret_cast<char*>(&d.mWidth), sizeof(int)));
+                read(mSocket, buffer(reinterpret_cast<char*>(&d.mHeight), sizeof(int)));
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mRArea), sizeof(long)));
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mVersion), sizeof(int)));
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mCurrentFrame), sizeof(float)));
@@ -157,7 +157,7 @@ Data Server::listen()
                 d.mAovName = aov_name;
 
                 // Get pixels
-                int num_samples = d.xres() * d.yres() * d.spp();
+                int num_samples = d.width() * d.height() * d.spp();
                 d.mPixelStore.resize(num_samples);
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mPixelStore[0]), sizeof(float)*num_samples)) ;
                 break;

@@ -85,7 +85,7 @@ driver_open
     // Get Host and Port
     const char* host = AiNodeGetStr(node, "host");
     int port = AiNodeGetInt(node, "port");
-
+    
     // Get resolution and area
     int width = display_window.maxx - display_window.minx + 1;
     int height = display_window.maxy - display_window.miny + 1;
@@ -99,7 +99,7 @@ driver_open
        data->client = new aton::Client(host, port);
 
        // Make image header & send to server
-       aton::Data header(width, height, 0, 0, 0, 0, rArea, version, currentFrame);
+       aton::Data header(0, 0, 0, 0, width, height, rArea, version, currentFrame);
        data->client->openImage(header);
     }
     catch (const std::exception &e)
@@ -121,15 +121,15 @@ driver_process_bucket { }
 driver_write_bucket
 {
     ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
-    
-    AtNode* options = AiUniverseGetOptions();
-    int xres = AiNodeGetInt(options, "xres");
-    int yres = AiNodeGetInt(options, "yres");
-    
+
     int pixel_type;
     int spp = 0;
     const void* bucket_data;
     const char* aov_name;
+    
+    AtNode* options = AiUniverseGetOptions();
+    int xres = AiNodeGetInt(options, "xres");
+    int yres = AiNodeGetInt(options, "yres");
 
     while (AiOutputIteratorGetNext(iterator, &aov_name, &pixel_type, &bucket_data))
     {

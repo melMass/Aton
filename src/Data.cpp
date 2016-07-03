@@ -10,31 +10,31 @@ using namespace aton;
 
 Data::Data(const int& xres,
            const int& yres,
-           const int& bucket_xo,
-           const int& bucket_yo,
-           const int& bucket_size_x,
-           const int& bucket_size_y,
+           const int& x,
+           const int& y,
+           const int& width,
+           const int& height,
            const long long& rArea,
            const int& version,
            const float& currentFrame,
            const int& spp,
            const long long& ram,
            const int& time,
-           const char* aovName,
-           const float* data): mType(-1),
-                                      mXres(xres),
-                                      mYres(yres),
-                                      mBucket_xo(bucket_xo),
-                                      mBucket_yo(bucket_yo),
-                                      mBucket_size_x(bucket_size_x),
-                                      mBucket_size_y(bucket_size_y),
-                                      mRArea(rArea),
-                                      mVersion(version),
-                                      mCurrentFrame(currentFrame),
-                                      mSpp(spp),
-                                      mRam(ram),
-                                      mTime(time),
-                                      mAovName(aovName)
+           const char* aovName, 
+           const float* data ): mXres(xres),
+                                mYres(yres),
+                                mType(-1),
+                                mX(x),
+                                mY(y),
+                                mWidth(width),
+                                mHeight(height),
+                                mRArea(rArea),
+                                mVersion(version),
+                                mCurrentFrame(currentFrame),
+                                mSpp(spp),
+                                mRam(ram),
+                                mTime(time),
+                                mAovName(aovName)
 {
     if (data != NULL)
         mpData = const_cast<float*>(data);
@@ -46,6 +46,4 @@ void Data::deAllocAovName()
     mAovName = NULL;
 }
 
-Data::~Data()
-{
-}
+Data::~Data() { }
