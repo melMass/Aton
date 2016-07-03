@@ -118,8 +118,8 @@ Data Server::listen()
 
                 // Create data object
                 d.mType = key;
-                d.mWidth = width;
-                d.mHeight = height;
+                d.mBucket_size_x = width;
+                d.mBucket_size_y = height;
                 d.mRArea = rArea;
                 d.mVersion = version;
                 d.mCurrentFrame = currentFrame;
@@ -136,10 +136,10 @@ Data Server::listen()
                 // Read data from the buffer
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mXres), sizeof(int)));
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mYres), sizeof(int)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mX), sizeof(int)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mY), sizeof(int)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mWidth), sizeof(int)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mHeight), sizeof(int)));
+                read(mSocket, buffer(reinterpret_cast<char*>(&d.mBucket_xo), sizeof(int)));
+                read(mSocket, buffer(reinterpret_cast<char*>(&d.mBucket_yo), sizeof(int)));
+                read(mSocket, buffer(reinterpret_cast<char*>(&d.mBucket_size_x), sizeof(int)));
+                read(mSocket, buffer(reinterpret_cast<char*>(&d.mBucket_size_y), sizeof(int)));
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mRArea), sizeof(long)));
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mVersion), sizeof(int)));
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mCurrentFrame), sizeof(float)));

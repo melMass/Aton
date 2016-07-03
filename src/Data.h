@@ -48,16 +48,16 @@ namespace aton
         const int type() const { return mType; }
 
         // Get x position
-        const int& x() const { return mX; }
+        const int& x() const { return mBucket_xo; }
         
         // Get y position
-        const int& y() const { return mY; }
+        const int& y() const { return mBucket_yo; }
         
         // Get width
-        const int& width() const { return mWidth; }
+        const int& width() const { return mBucket_size_x; }
         
         // Get height
-        const int& height() const { return mHeight; }
+        const int& height() const { return mBucket_size_y; }
         
         // Get area of the render region
         const long long& rArea() const { return mRArea; }
@@ -94,7 +94,7 @@ namespace aton
         int mType;
 
         // X & Y position
-        int mXres, mYres, mX, mY, mWidth, mHeight, mSpp;
+        int mXres, mYres, mBucket_xo, mBucket_yo, mBucket_size_x, mBucket_size_y, mSpp;
 
         // Version number
         int mVersion;
