@@ -99,7 +99,7 @@ driver_open
        data->client = new aton::Client(host, port);
 
        // Make image header & send to server
-       aton::Data header(0, 0, 0, 0, width, height, rArea, version, currentFrame);
+       aton::Data header(width, height, 0, 0, 0, 0, rArea, version, currentFrame);
        data->client->openImage(header);
     }
     catch (const std::exception &e)

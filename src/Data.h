@@ -46,8 +46,14 @@ namespace aton
         // 1: pixels
         // 2: image close
         const int type() const { return mType; }
-
-        // Get x position
+    
+        // Get x resolution
+        const int& xres() const { return mXres; }
+        
+        // Get y resolution
+        const int& yres() const { return mYres; }
+        
+        // Get y position
         const int& bucket_xo() const { return mBucket_xo; }
         
         // Get y position

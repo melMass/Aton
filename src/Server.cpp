@@ -106,20 +106,20 @@ Data Server::listen()
                 write(mSocket, buffer(reinterpret_cast<char*>(&image_id), sizeof(int)));
 
                 // Get width & height
-                int width, height, rArea, version;
+                int xres, yres, rArea, version;
                 float currentFrame;
                 
                 // Read data from the buffer
-                read(mSocket, buffer(reinterpret_cast<char*>(&width), sizeof(int)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&height), sizeof(int)));
+                read(mSocket, buffer(reinterpret_cast<char*>(&xres), sizeof(int)));
+                read(mSocket, buffer(reinterpret_cast<char*>(&yres), sizeof(int)));
                 read(mSocket, buffer(reinterpret_cast<char*>(&rArea), sizeof(int)));
                 read(mSocket, buffer(reinterpret_cast<char*>(&version), sizeof(int)));
                 read(mSocket, buffer(reinterpret_cast<char*>(&currentFrame), sizeof(int)));
 
                 // Create data object
                 d.mType = key;
-                d.mBucket_size_x = width;
-                d.mBucket_size_y = height;
+                d.mXres = xres;
+                d.mYres = yres;
                 d.mRArea = rArea;
                 d.mVersion = version;
                 d.mCurrentFrame = currentFrame;

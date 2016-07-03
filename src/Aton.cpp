@@ -942,8 +942,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                 case 0: // Open a new image
                 {
                     // Copy data from d
-                    int _width = d.bucket_size_x();
-                    int _height = d.bucket_size_y();
+                    int _width = d.xres();
+                    int _height = d.yres();
                     double _frame = static_cast<double>(d.currentFrame());
                     
                     if (current_frame != _frame)
