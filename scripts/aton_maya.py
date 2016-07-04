@@ -41,14 +41,15 @@ class Aton(QtGui.QDialog):
     def getSceneOptions(self):
         sceneOptions = {}
         if cmds.getAttr("defaultRenderGlobals.ren") == "arnold":
+            try:
+                sceneOptions["port"] = cmds.getAttr("defaultArnoldDisplayDriver.port")
+            except ValueError:
+                mel.eval("unifiedRenderGlobalsWindow;")
             sceneOptions["port"] = cmds.getAttr("defaultArnoldDisplayDriver.port")
             sceneOptions["camera"] = core.ACTIVE_CAMERA
             sceneOptions["width"]  = cmds.getAttr("defaultResolution.width")
             sceneOptions["height"] = cmds.getAttr("defaultResolution.height")
-            try:
-                sceneOptions["AASamples"] = cmds.getAttr("defaultArnoldRenderOptions.AASamples")
-            except ValueError:
-                mel.eval("unifiedRenderGlobalsWindow;")
+            sceneOptions["AASamples"] = cmds.getAttr("defaultArnoldRenderOptions.AASamples")
             sceneOptions["AASamples"] = cmds.getAttr("defaultArnoldRenderOptions.AASamples")
             sceneOptions["motionBlur"] = cmds.getAttr("defaultArnoldRenderOptions.ignoreMotionBlur")
             sceneOptions["subdivs"] = cmds.getAttr("defaultArnoldRenderOptions.ignoreSubdivision")
@@ -74,7 +75,7 @@ class Aton(QtGui.QDialog):
 
         def resUpdateUi():
             self.resolutionSpinBox.setValue(resolutionSlider.value()*5)
-            
+
         def camUpdateUi():
             self.cameraAaSpinBox.setValue(cameraAaSlider.value())
 
@@ -86,6 +87,39 @@ class Aton(QtGui.QDialog):
                                                self.resolutionSpinBox.value() / 100)
             self.renderRegionTSpinBox.setValue(self.getSceneOptions()["height"] *
                                                self.resolutionSpinBox.value() / 100)
+
+        def resRefresh():
+            xres = self.getSceneOptions()["width"] * self.resolutionSpinBox.value() / 100
+            yres = self.getSceneOptions()["height"] * self.resolutionSpinBox.value() / 100
+            options = AiUniverseGetOptions()
+            AiNodeSetInt(options, "xres", xres)
+            AiNodeSetInt(options, "yres", yres)
+
+            rMinX = self.renderRegionXSpinBox.value()
+            rMinY = yres - self.renderRegionTSpinBox.value()
+            rMaxX = self.renderRegionRSpinBox.value() -1
+            rMaxY = (yres - self.renderRegionYSpinBox.value()) - 1
+
+            if rMinX >= 0 and rMinY >= 0 and rMaxX <= xres and rMaxY <= yres:
+                AiNodeSetInt(options, "region_min_x", rMinX)
+                AiNodeSetInt(options, "region_min_y", rMinY)
+                AiNodeSetInt(options, "region_max_x", rMaxX)
+                AiNodeSetInt(options, "region_max_y", rMaxY)
+
+            try: # If render session is not started yet
+                cmds.arnoldIpr(mode='unpause')
+            except RuntimeError:
+                pass
+
+        def AARefresh():
+            cameraAA = self.cameraAaSpinBox.value()
+            options = AiUniverseGetOptions()
+            AiNodeSetInt(options, "AA_samples", cameraAA)
+
+            try: # If render session is not started yet
+                cmds.arnoldIpr(mode='unpause')
+            except RuntimeError:
+                pass
 
         def resetUi(*args):
             self.portSpinBox.setValue(self.defaultPort)
@@ -192,6 +226,7 @@ class Aton(QtGui.QDialog):
         cameraAaSlider.setOrientation(QtCore.Qt.Horizontal)
         cameraAaSlider.setValue(self.cameraAaSpinBox.value())
         cameraAaSlider.setMaximum(16)
+        cameraAaSlider.valueChanged[int].connect(self.cameraAaSpinBox.setValue)
         cameraAaLayout.addWidget(cameraAaLabel)
         cameraAaLayout.addWidget(self.cameraAaSpinBox)
         cameraAaLayout.addWidget(cameraAaSlider)
@@ -288,14 +323,14 @@ class Aton(QtGui.QDialog):
 
         self.connect(portSlider, QtCore.SIGNAL("valueChanged(int)"), portUpdateUi)
         self.connect(resolutionSlider, QtCore.SIGNAL("valueChanged(int)"), resUpdateUi)
+
         self.connect(self.resolutionSpinBox, QtCore.SIGNAL("valueChanged(int)"), regionUpdateUi)
-        self.connect(self.resolutionSpinBox, QtCore.SIGNAL("editingFinished()"), regionUpdateUi)
-        self.connect(cameraAaSlider, QtCore.SIGNAL("valueChanged(int)"), camUpdateUi)
+        self.connect(self.resolutionSpinBox, QtCore.SIGNAL("valueChanged(int)"), resRefresh)
+        self.connect(self.cameraAaSpinBox, QtCore.SIGNAL("valueChanged(int)"), AARefresh)
 
         self.setLayout(mainLayout)
 
-    def render(self, *args, **kwargs):
-
+    def getCamera(self):
         if self.cameraComboBox.currentIndex() == 0:
             camera = self.getSceneOptions()["camera"]
         else:
@@ -303,11 +338,9 @@ class Aton(QtGui.QDialog):
                 camera = cmds.listRelatives(self.cameraComboBoxDict[self.cameraComboBox.currentIndex()], s=1)[0]
             except TypeError:
                 camera = self.cameraComboBoxDict[self.cameraComboBox.currentIndex()]
+        return camera
 
-        if camera == None:
-            cmds.warning("Camera is not selected!")
-            return
-
+    def render(self):
         try:
             defaultTranslator = cmds.getAttr("defaultArnoldDisplayDriver.aiTranslator")
         except:
@@ -325,50 +358,55 @@ class Aton(QtGui.QDialog):
             cmds.warning("Aton driver for Arnold is not installed")
             return
 
-        port = self.portSpinBox.value()
-        width = self.getSceneOptions()["width"] * self.resolutionSpinBox.value() / 100
-        height = self.getSceneOptions()["height"] * self.resolutionSpinBox.value() / 100
-        AASamples = self.cameraAaSpinBox.value()
-        motionBlur = self.motionBlurCheckBox.isChecked()
-        subdivs = self.subdivsCheckBox.isChecked()
-        displace = self.displaceCheckBox.isChecked()
-        bump = self.bumpCheckBox.isChecked()
-        sss = self.sssCheckBox.isChecked()
+        camera = self.getCamera()
 
-        rMinX = self.renderRegionXSpinBox.value()
-        rMinY = height - self.renderRegionTSpinBox.value()
-        rMaxX = self.renderRegionRSpinBox.value() -1
-        rMaxY = (height - self.renderRegionYSpinBox.value()) - 1
+        if camera != None:
+            port = self.portSpinBox.value()
+            width = self.getSceneOptions()["width"] * self.resolutionSpinBox.value() / 100
+            height = self.getSceneOptions()["height"] * self.resolutionSpinBox.value() / 100
+            AASamples = self.cameraAaSpinBox.value()
+            motionBlur = self.motionBlurCheckBox.isChecked()
+            subdivs = self.subdivsCheckBox.isChecked()
+            displace = self.displaceCheckBox.isChecked()
+            bump = self.bumpCheckBox.isChecked()
+            sss = self.sssCheckBox.isChecked()
 
-        cmds.setAttr("defaultArnoldDisplayDriver.port", port)
+            rMinX = self.renderRegionXSpinBox.value()
+            rMinY = height - self.renderRegionTSpinBox.value()
+            rMaxX = self.renderRegionRSpinBox.value() -1
+            rMaxY = (height - self.renderRegionYSpinBox.value()) - 1
 
-        # Adding time changed callback
-        if self.timeChange == None:
-            self.timeChange = OM.MEventMessage.addEventCallback( "timeChanged", self.updateFrame )
+            cmds.setAttr("defaultArnoldDisplayDriver.port", port)
 
-        cmds.arnoldIpr(cam=camera, width=width, height=height, mode='start')
+            # Adding time changed callback
+            if self.timeChange == None:
+                self.timeChange = OM.MEventMessage.addEventCallback("timeChanged", self.updateFrame)
 
-        options = AiUniverseGetOptions()
+            cmds.arnoldIpr(cam=camera, width=width, height=height, mode='start')
 
-        AiNodeSetInt(options, "AA_samples", AASamples)
-        if rMinX >= 0 and rMinY>=0 and rMaxX<=width and rMaxY<=height:
-            AiNodeSetInt(options, "region_min_x", rMinX)
-            AiNodeSetInt(options, "region_min_y", rMinY)
-            AiNodeSetInt(options, "region_max_x", rMaxX)
-            AiNodeSetInt(options, "region_max_y", rMaxY)
-        AiNodeSetBool(options, "ignore_motion_blur", motionBlur)
-        AiNodeSetBool(options, "ignore_subdivision", subdivs)
-        AiNodeSetBool(options, "ignore_displacement", displace)
-        AiNodeSetBool(options, "ignore_bump", bump)
-        AiNodeSetBool(options, "ignore_sss", sss)
+            options = AiUniverseGetOptions()
 
-        # Temp trigger in order to start IPR
-        time = cmds.currentTime(q=1)
-        cmds.currentTime(time, e=1)
+            AiNodeSetInt(options, "AA_samples", AASamples)
+            if rMinX >= 0 and rMinY >= 0 and rMaxX <= width and rMaxY <= height:
+                AiNodeSetInt(options, "region_min_x", rMinX)
+                AiNodeSetInt(options, "region_min_y", rMinY)
+                AiNodeSetInt(options, "region_max_x", rMaxX)
+                AiNodeSetInt(options, "region_max_y", rMaxY)
+            AiNodeSetBool(options, "ignore_motion_blur", motionBlur)
+            AiNodeSetBool(options, "ignore_subdivision", subdivs)
+            AiNodeSetBool(options, "ignore_displacement", displace)
+            AiNodeSetBool(options, "ignore_bump", bump)
+            AiNodeSetBool(options, "ignore_sss", sss)
 
-        cmds.setAttr("defaultArnoldDisplayDriver.aiTranslator", defaultTranslator, type="string")
-        cmds.setAttr("defaultArnoldDisplayDriver.port", self.defaultPort)
-        sys.stdout.write("// Info: Aton - Render started.\n")
+            # Start IPR
+            cmds.arnoldIpr(mode='unpause')
+
+            cmds.setAttr("defaultArnoldDisplayDriver.aiTranslator", defaultTranslator, type="string")
+            cmds.setAttr("defaultArnoldDisplayDriver.port", self.defaultPort)
+            sys.stdout.write("// Info: Aton - Render started.\n")
+        else:
+            cmds.warning("Camera is not selected!")
+
 
     def stop(self):
         if self.timeChange != None:
@@ -403,7 +441,7 @@ class Aton(QtGui.QDialog):
 
         if (checkData1 in data.split('\n', 10)[0]) and \
            (checkData2 in data.split('\n', 10)[3]):
-                cropData = find_between(data.split('\n', 10)[4], " box {", "}" ).split()
+                cropData = find_between(data.split('\n', 10)[4], "box {", "}" ).split()
                 nkX, nkY, nkR, nkT = int(float(cropData[0])),\
                                      int(float(cropData[1])),\
                                      int(float(cropData[2])),\

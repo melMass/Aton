@@ -1002,16 +1002,6 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                             node->resetChannels(node->m_channels);
                             node->m_mutex.unlock();
                         }
-                        if(fB.isResolutionChanged(_width, _height))
-                        {
-                            node->m_mutex.lock();
-                            fB.clearAll();
-                            fB.setWidth(_width);
-                            fB.setHeight(_height);
-                            fB.ready(false);
-                            node->resetChannels(node->m_channels);
-                            node->m_mutex.unlock();
-                        }
                     }
                     
                     // Get image area to calculate the progress
@@ -1038,9 +1028,22 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     // Get frame buffer
                     FrameBuffer& fB = node->m_framebuffers[f_index];
                     const char* _aov_name = d.aovName();
+                    int _xres = d.xres();
+                    int _yres = d.yres();
                     
                     // Get active time
                     _active_time = d.time();
+
+                    if(fB.isResolutionChanged(_xres, _yres))
+                    {
+                        node->m_mutex.lock();
+                        fB.ready(false);
+                        fB.clearAll();
+                        fB.setWidth(_xres);
+                        fB.setHeight(_yres);
+                        node->resetChannels(node->m_channels);
+                        node->m_mutex.unlock();
+                    }
 
                     // Get active aov names
                     if(std::find(active_aovs.begin(),
@@ -1064,7 +1067,6 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         const int& _spp = d.spp();
                         const long long& _ram = d.ram();
                         const int& _time = d.time();
-                        const std::vector<float>& pix = d.pixels();
                         
                         const int& w = fB.getWidth();
                         const int& h = fB.getHeight();
@@ -1088,8 +1090,12 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                             {
                                 offset = (_width * y * _spp) + (x * _spp);
                                 for (c = 0; c < _spp; ++c)
-                                    fB.setBufferPix(b, x + _x, h - (y + _y + 1),
-                                                    _spp, c, pix[offset + c]);
+                                {
+                                    int xpos = x + _x;
+                                    int ypos = h - (y + _y + 1);
+                                    const float& _pix = d.pixel(offset + c);
+                                    fB.setBufferPix(b, xpos, ypos, _spp, c, _pix);
+                                }
                             }
                         }
                         node->m_mutex.unlock();

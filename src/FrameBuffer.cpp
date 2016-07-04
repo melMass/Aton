@@ -110,23 +110,22 @@ long FrameBuffer::getBufferIndex(const Channel& z)
     {
         using namespace chStr;
         std::string layer = getLayerName(z);
-        if (layer != rgb)
+
+        std::vector<std::string>::iterator it;
+        for(it = _aovs.begin(); it != _aovs.end(); ++it)
         {
-            std::vector<std::string>::iterator it;
-            for(it = _aovs.begin(); it != _aovs.end(); ++it)
+            if (*it == layer)
             {
-                if (*it == layer)
-                {
-                    b_index = it - _aovs.begin();
-                    break;
-                }
-                else if (*it == Z && layer == depth)
-                {
-                    b_index = it - _aovs.begin();
-                    break;
-                }
+                b_index = it - _aovs.begin();
+                break;
+            }
+            else if (*it == Z && layer == depth)
+            {
+                b_index = it - _aovs.begin();
+                break;
             }
         }
+
     }
     return b_index;
 }

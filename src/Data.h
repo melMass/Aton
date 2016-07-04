@@ -93,7 +93,7 @@ namespace aton
         const float* data() const { return mpData; }
         
         // Reference to pixel data owned by this object (server-side)
-        const std::vector<float>& pixels() { return mPixelStore; }
+        const float& pixel(int index = 0) { return mPixelStore[index]; }
         
     private:
         // What type of data is this?
