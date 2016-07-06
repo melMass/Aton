@@ -40,7 +40,6 @@ class Aton(QtGui.QDialog):
 
     def getSceneOptions(self):
         sceneOptions = {}
-        defaultCamera = "perspShape"
         if cmds.getAttr("defaultRenderGlobals.ren") == "arnold":
             try:
                 sceneOptions["port"] = cmds.getAttr("defaultArnoldDisplayDriver.port")
@@ -50,7 +49,12 @@ class Aton(QtGui.QDialog):
             if core.ACTIVE_CAMERA != None:
                 sceneOptions["camera"] = core.ACTIVE_CAMERA
             else:
-                sceneOptions["camera"] = defaultCamera
+                try:
+                    camera = cmds.modelPanel(cmds.getPanel(wf=True), q=True, cam=True)
+                    cameraShape = cmds.listRelatives(camera, s=1)[0]
+                    sceneOptions["camera"] = cameraShape
+                except RuntimeError:
+                    sceneOptions["camera"] = "perspShape"
             sceneOptions["width"]  = cmds.getAttr("defaultResolution.width")
             sceneOptions["height"] = cmds.getAttr("defaultResolution.height")
             sceneOptions["AASamples"] = cmds.getAttr("defaultArnoldRenderOptions.AASamples")
@@ -61,7 +65,7 @@ class Aton(QtGui.QDialog):
             sceneOptions["sss"] = cmds.getAttr("defaultArnoldRenderOptions.ignoreSss")
         else:
             sceneOptions["port"] = 0
-            sceneOptions["camera"] = defaultCamera
+            sceneOptions["camera"] = None
             sceneOptions["width"]  = 0
             sceneOptions["height"] = 0
             sceneOptions["AASamples"] = 0
