@@ -75,7 +75,6 @@ class Aton(QtGui.QDialog):
             sceneOptions["bump"] = 0
             sceneOptions["sss"] = 0
             cmds.warning("Current renderer is not set to Arnold.")
-
         return sceneOptions
 
     def setupUi(self):
@@ -421,7 +420,7 @@ class Aton(QtGui.QDialog):
             hiddenCams = []
             for i in cmds.listCameras():
                 cam = cmds.listRelatives(i, s=1)[0]
-                isHidden = cmds.getAttr("%s.visibility"%cam)
+                isHidden = not cmds.getAttr("%s.visibility"%cam)
                 if isHidden:
                     hiddenCams.append(i)
                     cmds.showHidden(i)
