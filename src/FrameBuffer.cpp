@@ -188,7 +188,7 @@ void FrameBuffer::clearAll()
 }
 
 // Check if the given buffer/aov name name is exist
-bool FrameBuffer::bufferNameExists(const char* aovName)
+bool FrameBuffer::isBufferExist(const char* aovName)
 {
     return std::find(_aovs.begin(),
                      _aovs.end(), aovName) != _aovs.end();

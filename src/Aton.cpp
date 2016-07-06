@@ -942,8 +942,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                 case 0: // Open a new image
                 {
                     // Copy data from d
-                    int _width = d.xres();
-                    int _height = d.yres();
+                    int _xres = d.xres();
+                    int _yres = d.yres();
                     double _frame = static_cast<double>(d.currentFrame());
                     
                     if (current_frame != _frame)
@@ -956,7 +956,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                       node->m_frames.end(),
                                       _frame) == node->m_frames.end())
                         {
-                            FrameBuffer fB(_frame, _width, _height);
+                            FrameBuffer fB(_frame, _xres, _yres);
                             if (!node->m_frames.empty())
                                 fB = node->m_framebuffers.back();
                             node->m_mutex.lock();
@@ -967,7 +967,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     }
                     else
                     {
-                        FrameBuffer fB(_frame, _width, _height);
+                        FrameBuffer fB(_frame, _xres, _yres);
                         if (!node->m_frames.empty())
                         {
                             f_index = node->getFrameIndex(node->m_current_frame);
@@ -985,7 +985,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     f_index = node->getFrameIndex(_frame);
                     FrameBuffer& fB = node->m_framebuffers[f_index];
                     
-                    // Reset Buffers and Channels if needed
+                    // Reset Frame and Buffers if changed
                     if (!fB.empty() && !active_aovs.empty())
                     {
                         if (fB.isFrameChanged(_frame))
@@ -1030,9 +1030,6 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     const char* _aov_name = d.aovName();
                     int _xres = d.xres();
                     int _yres = d.yres();
-                    
-                    // Get active time
-                    _active_time = d.time();
 
                     if(fB.isResolutionChanged(_xres, _yres))
                     {
@@ -1059,7 +1056,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     // Skip non RGBA buckets if AOVs are disabled
                     if (node->m_enable_aovs || active_aovs[0] == _aov_name)
                     {
-                        // Copy data from d
+                        // Get data from d
                         const int& _x = d.bucket_xo();
                         const int& _y = d.bucket_yo();
                         const int& _width = d.bucket_size_x();
@@ -1067,15 +1064,18 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         const int& _spp = d.spp();
                         const long long& _ram = d.ram();
                         const int& _time = d.time();
+                        unsigned int x, y, xpos, ypos, c, offset;
+
+                        // Set active time
+                        _active_time = _time;
                         
+                        // Get framebuffer width and height
                         const int& w = fB.getWidth();
                         const int& h = fB.getHeight();
-                        unsigned int x, y, c, offset;
 
                         // Adding buffer
                         node->m_mutex.lock();
-                        if(!fB.bufferNameExists(_aov_name) &&
-                           (node->m_enable_aovs || fB.size() == 0))
+                        if(!fB.isBufferExist(_aov_name) && (node->m_enable_aovs || fB.empty()))
                             fB.addBuffer(_aov_name, _spp);
                         else
                             fB.ready(true);
@@ -1091,8 +1091,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                 offset = (_width * y * _spp) + (x * _spp);
                                 for (c = 0; c < _spp; ++c)
                                 {
-                                    int xpos = x + _x;
-                                    int ypos = h - (y + _y + 1);
+                                    xpos = x + _x;
+                                    ypos = h - (y + _y + 1);
                                     const float& _pix = d.pixel(offset + c);
                                     fB.setBufferPix(b, xpos, ypos, _spp, c, _pix);
                                 }

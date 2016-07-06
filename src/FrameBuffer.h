@@ -99,7 +99,7 @@ namespace aton
             void clearAll();
         
             // Check if the given buffer/aov name name is exist
-            bool bufferNameExists(const char* aovName);
+            bool isBufferExist(const char* aovName);
         
             // Set width of the buffer
             void setWidth(const int& w);
