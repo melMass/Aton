@@ -38,7 +38,7 @@ class Aton(QtGui.QDialog):
             OM.MEventMessage.removeCallback(self.timeChange)
             self.timeChange = None
 
-    def getActiveCamera(self, s=1):
+    def getActiveCamera(self):
         ''' Returns active view camera name '''
         modelviewPanels = [x for x in cmds.lsUI(dw=1) if re.search(r"viewPanes\|modelPanel[0-9]+$", x)]
         for item in modelviewPanels:
@@ -46,7 +46,9 @@ class Aton(QtGui.QDialog):
                 model_editor = cmds.modelPanel(item.split("|")[-1], q=1, me=1)
                 if cmds.modelEditor(model_editor, q=1, av=1):
                     cam = cmds.modelEditor(model_editor, q=1, cam=1)
-                    return cam if s == 0 else cmds.listRelatives(cam)[0]
+                    if cmds.listRelatives(cam) != None:
+                        cam = cmds.listRelatives(cam)[0]
+                    return cam
             except RuntimeError:
                 pass
 
