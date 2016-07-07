@@ -418,12 +418,12 @@ class Aton(QtGui.QDialog):
 
             # Temporary make default cameras visible before scene export
             hiddenCams = []
-            for i in cmds.listCameras():
-                cam = cmds.listRelatives(i, s=1)[0]
-                isHidden = not cmds.getAttr("%s.visibility"%cam)
-                if isHidden:
-                    hiddenCams.append(i)
-                    cmds.showHidden(i)
+            for cam in cmds.listCameras():
+                camShape = cmds.listRelatives(cam, s=1)[0]
+                visible = cmds.getAttr("%s.visibility"%cam) and cmds.getAttr("%s.visibility"%camShape)
+                if not visible:
+                    hiddenCams.append(cam)
+                    cmds.showHidden(cam)
 
             # Start IPR
             cmds.arnoldIpr(cam=camera, mode='start')
