@@ -39,26 +39,24 @@ class Aton(QtGui.QDialog):
             self.timeChange = None
 
     def getActiveCamera(self):
-        ''' Returns active view camera name '''
-        modelviewPanels = [x for x in cmds.lsUI(dw=1) if re.search(r"viewPanes\|modelPanel[0-9]+$", x)]
-        for item in modelviewPanels:
-            try:
-                model_editor = cmds.modelPanel(item.split("|")[-1], q=1, me=1)
-                if cmds.modelEditor(model_editor, q=1, av=1):
-                    cam = cmds.modelEditor(model_editor, q=1, cam=1)
-                    if cmds.listRelatives(cam) != None:
+        ''' Returns active camera shape name '''
+        modelPanels = [x for x in cmds.lsUI(p=1) if 'modelPanel' in x]
+        for i in modelPanels:
+            if  cmds.modelEditor(i, q=1, av=1):
+                cam = cmds.modelEditor(i, q=1, cam=1)
+                if cmds.listRelatives(cam) != None:
                         cam = cmds.listRelatives(cam)[0]
-                    return cam
-            except RuntimeError:
-                pass
+                return cam
 
     def getSceneOptions(self):
         sceneOptions = {}
         if cmds.getAttr("defaultRenderGlobals.ren") == "arnold":
-            try:
+
+            try: # To init Arnold Render settings
                 cmds.getAttr("defaultArnoldDisplayDriver.port")
             except ValueError:
                 mel.eval("unifiedRenderGlobalsWindow;")
+
             sceneOptions["port"] = cmds.getAttr("defaultArnoldDisplayDriver.port")
             sceneOptions["camera"] = self.getActiveCamera()
             sceneOptions["width"]  = cmds.getAttr("defaultResolution.width")
@@ -82,7 +80,7 @@ class Aton(QtGui.QDialog):
             sceneOptions["sss"] = 0
             cmds.warning("Current renderer is not set to Arnold.")
         return sceneOptions
-        
+
     def setupUi(self):
 
         sceneOptions = self.getSceneOptions()
@@ -302,7 +300,7 @@ class Aton(QtGui.QDialog):
         self.connect(resolutionSlider, QtCore.SIGNAL("valueChanged(int)"), resUpdateUi)
 
         # IPR Updates
-        self.connect(self.cameraComboBox, QtCore.SIGNAL("activated(int)"), self.IPRUpdate)
+        self.connect(self.cameraComboBox, QtCore.SIGNAL("currentIndexChanged(int)"), self.IPRUpdate)
         self.connect(self.resolutionSpinBox, QtCore.SIGNAL("valueChanged(int)"), self.IPRUpdate)
         self.connect(self.cameraAaSpinBox, QtCore.SIGNAL("valueChanged(int)"), self.IPRUpdate)
         self.connect(self.renderRegionXSpinBox, QtCore.SIGNAL("valueChanged(int)"), self.IPRUpdate)
@@ -322,20 +320,20 @@ class Aton(QtGui.QDialog):
         if self.cameraComboBox.currentIndex() == 0:
             camera = self.getSceneOptions()["camera"]
         else:
-            try:
-                camera = cmds.listRelatives(self.cameraComboBoxDict[self.cameraComboBox.currentIndex()], s=1)[0]
-            except TypeError:
-                camera = self.cameraComboBoxDict[self.cameraComboBox.currentIndex()]
+            camera = self.cameraComboBoxDict[self.cameraComboBox.currentIndex()]
+            if cmds.listRelatives(camera, s=1) != None:
+                camera = cmds.listRelatives(camera, s=1)[0]
         return camera
 
     def IPRUpdate(self):
 
         try: # If render session is not started yet
             cmds.arnoldIpr(mode='pause')
-        except (AttributeError, RuntimeError):
+        except RuntimeError:
             return
 
         options = AiUniverseGetOptions()
+        sceneOptions = self.getSceneOptions()
 
         # Camera Update
         camera = self.getCamera()
@@ -346,8 +344,8 @@ class Aton(QtGui.QDialog):
                 AiNodeSetPtr(options, "camera", node)
 
         # Resolution and Region Update
-        xres = self.getSceneOptions()["width"] * self.resolutionSpinBox.value() / 100
-        yres = self.getSceneOptions()["height"] * self.resolutionSpinBox.value() / 100
+        xres = sceneOptions["width"] * self.resolutionSpinBox.value() / 100
+        yres = sceneOptions["height"] * self.resolutionSpinBox.value() / 100
 
         AiNodeSetInt(options, "xres", xres)
         AiNodeSetInt(options, "yres", yres)
