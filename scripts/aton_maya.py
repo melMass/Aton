@@ -2,7 +2,7 @@ __author__ = "Vahan Sosoyan"
 __copyright__ = "2016 All rights reserved. See Copyright.txt for more details."
 __version__ = "v1.1.3"
 
-import sys
+import sys, re
 import maya.mel as mel
 import maya.OpenMaya as OM
 import pymel.core as pm
@@ -38,23 +38,27 @@ class Aton(QtGui.QDialog):
             OM.MEventMessage.removeCallback(self.timeChange)
             self.timeChange = None
 
+    def getActiveCamera(self, s=1):
+        ''' Returns active view camera name '''
+        modelviewPanels = [x for x in cmds.lsUI(dw=1) if re.search(r"viewPanes\|modelPanel[0-9]+$", x)]
+        for item in modelviewPanels:
+            try:
+                model_editor = cmds.modelPanel(item.split("|")[-1], q=1, me=1)
+                if cmds.modelEditor(model_editor, q=1, av=1):
+                    cam = cmds.modelEditor(model_editor, q=1, cam=1)
+                    return cam if s == 0 else cmds.listRelatives(cam)[0]
+            except RuntimeError:
+                pass
+
     def getSceneOptions(self):
         sceneOptions = {}
         if cmds.getAttr("defaultRenderGlobals.ren") == "arnold":
             try:
-                sceneOptions["port"] = cmds.getAttr("defaultArnoldDisplayDriver.port")
+                cmds.getAttr("defaultArnoldDisplayDriver.port")
             except ValueError:
                 mel.eval("unifiedRenderGlobalsWindow;")
             sceneOptions["port"] = cmds.getAttr("defaultArnoldDisplayDriver.port")
-            if core.ACTIVE_CAMERA != None:
-                sceneOptions["camera"] = core.ACTIVE_CAMERA
-            else:
-                try:
-                    camera = cmds.modelPanel(cmds.getPanel(wf=True), q=True, cam=True)
-                    cameraShape = cmds.listRelatives(camera, s=1)[0]
-                    sceneOptions["camera"] = cameraShape
-                except RuntimeError:
-                    sceneOptions["camera"] = "perspShape"
+            sceneOptions["camera"] = self.getActiveCamera()
             sceneOptions["width"]  = cmds.getAttr("defaultResolution.width")
             sceneOptions["height"] = cmds.getAttr("defaultResolution.height")
             sceneOptions["AASamples"] = cmds.getAttr("defaultArnoldRenderOptions.AASamples")
@@ -65,9 +69,9 @@ class Aton(QtGui.QDialog):
             sceneOptions["sss"] = cmds.getAttr("defaultArnoldRenderOptions.ignoreSss")
         else:
             sceneOptions["port"] = 0
-            sceneOptions["camera"] = None
-            sceneOptions["width"]  = 0
-            sceneOptions["height"] = 0
+            sceneOptions["camera"] = self.getActiveCamera()
+            sceneOptions["width"]  = cmds.getAttr("defaultResolution.width")
+            sceneOptions["height"] = cmds.getAttr("defaultResolution.height")
             sceneOptions["AASamples"] = 0
             sceneOptions["motionBlur"] = 0
             sceneOptions["subdivs"] = 0
@@ -76,7 +80,7 @@ class Aton(QtGui.QDialog):
             sceneOptions["sss"] = 0
             cmds.warning("Current renderer is not set to Arnold.")
         return sceneOptions
-
+        
     def setupUi(self):
 
         sceneOptions = self.getSceneOptions()
