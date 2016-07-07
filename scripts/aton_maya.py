@@ -2,7 +2,8 @@ __author__ = "Vahan Sosoyan"
 __copyright__ = "2016 All rights reserved. See Copyright.txt for more details."
 __version__ = "v1.1.3"
 
-import sys, re
+import sys
+
 import maya.mel as mel
 import maya.OpenMaya as OM
 import pymel.core as pm
@@ -34,21 +35,20 @@ class Aton(QtGui.QDialog):
         self.setupUi()
 
     def closeEvent(self, event):
+        ''' Removes callback when closing the GUI '''
         if self.timeChange != None:
             OM.MEventMessage.removeCallback(self.timeChange)
             self.timeChange = None
 
     def getActiveCamera(self):
         ''' Returns active camera shape name '''
-        modelPanels = [x for x in cmds.lsUI(p=1) if 'modelPanel' in x]
-        for i in modelPanels:
-            if  cmds.modelEditor(i, q=1, av=1):
-                cam = cmds.modelEditor(i, q=1, cam=1)
-                if cmds.listRelatives(cam) != None:
-                        cam = cmds.listRelatives(cam)[0]
-                return cam
+        cam = cmds.modelEditor(cmds.playblast(ae=1), q=1, cam=1)
+        if cmds.listRelatives(cam) != None:
+            cam = cmds.listRelatives(cam)[0]
+        return cam
 
     def getSceneOptions(self):
+        ''' Return scene options dict '''
         sceneOptions = {}
         if cmds.getAttr("defaultRenderGlobals.ren") == "arnold":
 
@@ -82,7 +82,7 @@ class Aton(QtGui.QDialog):
         return sceneOptions
 
     def setupUi(self):
-
+        ''' Building the GUI '''
         sceneOptions = self.getSceneOptions()
 
         def resUpdateUi():
@@ -317,6 +317,7 @@ class Aton(QtGui.QDialog):
         self.setLayout(mainLayout)
 
     def getCamera(self):
+        ''' Returns current selected camera from GUI '''
         if self.cameraComboBox.currentIndex() == 0:
             camera = self.getSceneOptions()["camera"]
         else:
@@ -326,10 +327,10 @@ class Aton(QtGui.QDialog):
         return camera
 
     def IPRUpdate(self):
-
+        ''' This method is called during IPR session '''
         try: # If render session is not started yet
             cmds.arnoldIpr(mode='pause')
-        except RuntimeError:
+        except (AttributeError, RuntimeError):
             return
 
         options = AiUniverseGetOptions()
@@ -391,7 +392,7 @@ class Aton(QtGui.QDialog):
             pass
 
     def render(self):
-
+        ''' Starts the render '''
         try: # If MtoA was not found
             defaultTranslator = cmds.getAttr("defaultArnoldDisplayDriver.aiTranslator")
         except ValueError:
@@ -404,46 +405,45 @@ class Aton(QtGui.QDialog):
             cmds.warning("Aton driver for Arnold is not installed")
             return
 
+        # Get camera and port from UI
         camera = self.getCamera()
+        port = self.portSpinBox.value()
 
-        if camera != None:
-            # Updating the port
-            port = self.portSpinBox.value()
-            cmds.setAttr("defaultArnoldDisplayDriver.port", port)
+        # Updating the port
+        cmds.setAttr("defaultArnoldDisplayDriver.port", port)
 
-            # Adding time changed callback
-            if self.timeChange == None:
-                self.timeChange = OM.MEventMessage.addEventCallback("timeChanged", self.updateFrame)
+        # Adding time changed callback
+        if self.timeChange == None:
+            self.timeChange = OM.MEventMessage.addEventCallback("timeChanged", self.updateFrame)
 
-            try: # If render session is not started yet
-                cmds.arnoldIpr(mode='stop')
-            except RuntimeError:
-                pass
+        try: # If render session is not started yet
+            cmds.arnoldIpr(mode='stop')
+        except RuntimeError:
+            pass
 
-            # Temporary make default cameras visible before scene export
-            hiddenCams = []
-            for cam in cmds.listCameras():
-                camShape = cmds.listRelatives(cam, s=1)[0]
-                visible = cmds.getAttr("%s.visibility"%cam) and cmds.getAttr("%s.visibility"%camShape)
-                if not visible:
-                    hiddenCams.append(cam)
-                    cmds.showHidden(cam)
+        # Temporary makeing default cameras visible before scene export
+        hiddenCams = []
+        for cam in cmds.listCameras():
+            camShape = cmds.listRelatives(cam, s=1)[0]
+            visible = cmds.getAttr("%s.visibility"%cam) and cmds.getAttr("%s.visibility"%camShape)
+            if not visible:
+                hiddenCams.append(cam)
+                cmds.showHidden(cam)
 
-            # Start IPR
-            cmds.arnoldIpr(cam=camera, mode='start')
+        # Start IPR
+        cmds.arnoldIpr(cam=camera, mode='start')
 
-            # Update IPR
-            self.IPRUpdate()
-            sys.stdout.write("// Info: Aton - Render started.\n")
+        # Update IPR
+        self.IPRUpdate()
+        sys.stdout.write("// Info: Aton - Render started.\n")
 
-            # Setting back to options default
-            for i in hiddenCams: cmds.hide(i)
-            cmds.setAttr("defaultArnoldDisplayDriver.aiTranslator", defaultTranslator, type="string")
-            cmds.setAttr("defaultArnoldDisplayDriver.port", self.defaultPort)
-        else:
-            cmds.warning("Camera is not selected!")
+        # Setting back to default
+        for i in hiddenCams: cmds.hide(i)
+        cmds.setAttr("defaultArnoldDisplayDriver.aiTranslator", defaultTranslator, type="string")
+        cmds.setAttr("defaultArnoldDisplayDriver.port", self.defaultPort)
 
     def stop(self):
+        ''' Stops the render session and removes the callbacks '''
         if self.timeChange != None:
             OM.MEventMessage.removeCallback(self.timeChange)
             self.timeChange = None
@@ -454,12 +454,13 @@ class Aton(QtGui.QDialog):
             return
 
     def updateFrame(self, *args):
+        ''' Callback method to update the frame number attr '''
         options = AiUniverseGetOptions()
         time = cmds.currentTime(q=1)
         AiNodeSetFlt(options, "frame", time)
 
     def getNukeCropNode(self, *args):
-
+        ''' Get crop node data from Nuke '''
         def find_between( s, first, last ):
             try:
                 start = s.index( first ) + len( first )
@@ -490,5 +491,5 @@ class Aton(QtGui.QDialog):
                 return cropData
 
 if __name__ == "__main__":
-    rc = Aton()
-    rc.show()
+    aton = Aton()
+    aton.show()
