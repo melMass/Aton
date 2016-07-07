@@ -330,7 +330,7 @@ class Aton(QtGui.QDialog):
 
         try: # If render session is not started yet
             cmds.arnoldIpr(mode='pause')
-        except RuntimeError:
+        except (AttributeError, RuntimeError):
             return
 
         options = AiUniverseGetOptions()
@@ -450,10 +450,8 @@ class Aton(QtGui.QDialog):
         try:
             cmds.arnoldIpr(mode='stop')
             sys.stdout.write("// Info: Aton - Render stopped.\n")
-        except RuntimeError:
-            pass
-        except AttributeError:
-            cmds.warning("MtoA was not found.")
+        except (AttributeError, RuntimeError):
+            return
 
     def updateFrame(self, *args):
         options = AiUniverseGetOptions()
