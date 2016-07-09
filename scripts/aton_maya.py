@@ -34,12 +34,6 @@ class Aton(QtGui.QDialog):
 
         self.setupUi()
 
-    def closeEvent(self, event):
-        ''' Removes callback when closing the GUI '''
-        if self.timeChange != None:
-            OM.MEventMessage.removeCallback(self.timeChange)
-            self.timeChange = None
-
     def getActiveCamera(self):
         ''' Returns active camera shape name '''
         cam = cmds.modelEditor(cmds.playblast(ae=1), q=1, cam=1)
@@ -300,19 +294,18 @@ class Aton(QtGui.QDialog):
         self.connect(resolutionSlider, QtCore.SIGNAL("valueChanged(int)"), resUpdateUi)
 
         # IPR Updates
-        self.connect(self.cameraComboBox, QtCore.SIGNAL("currentIndexChanged(int)"), self.IPRUpdate)
-        self.connect(self.resolutionSpinBox, QtCore.SIGNAL("valueChanged(int)"), self.IPRUpdate)
-        self.connect(self.cameraAaSpinBox, QtCore.SIGNAL("valueChanged(int)"), self.IPRUpdate)
-        self.connect(self.renderRegionXSpinBox, QtCore.SIGNAL("valueChanged(int)"), self.IPRUpdate)
-        self.connect(self.renderRegionYSpinBox, QtCore.SIGNAL("valueChanged(int)"), self.IPRUpdate)
-        self.connect(self.renderRegionRSpinBox, QtCore.SIGNAL("valueChanged(int)"), self.IPRUpdate)
-        self.connect(self.renderRegionTSpinBox, QtCore.SIGNAL("valueChanged(int)"), self.IPRUpdate)
-        self.connect(self.cameraAaSpinBox, QtCore.SIGNAL("toggled(bool)"), self.IPRUpdate)
-        self.connect(self.motionBlurCheckBox, QtCore.SIGNAL("toggled(bool)"), self.IPRUpdate)
-        self.connect(self.subdivsCheckBox, QtCore.SIGNAL("toggled(bool)"), self.IPRUpdate)
-        self.connect(self.displaceCheckBox, QtCore.SIGNAL("toggled(bool)"), self.IPRUpdate)
-        self.connect(self.bumpCheckBox, QtCore.SIGNAL("toggled(bool)"), self.IPRUpdate)
-        self.connect(self.sssCheckBox, QtCore.SIGNAL("toggled(bool)"), self.IPRUpdate)
+        self.connect(self.cameraComboBox, QtCore.SIGNAL("currentIndexChanged(int)"), lambda: self.IPRUpdate(0))
+        self.connect(self.resolutionSpinBox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(1))
+        self.connect(self.cameraAaSpinBox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(2))
+        self.connect(self.renderRegionXSpinBox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(1))
+        self.connect(self.renderRegionYSpinBox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(1))
+        self.connect(self.renderRegionRSpinBox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(1))
+        self.connect(self.renderRegionTSpinBox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(1))
+        self.connect(self.motionBlurCheckBox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(3))
+        self.connect(self.subdivsCheckBox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(3))
+        self.connect(self.displaceCheckBox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(3))
+        self.connect(self.bumpCheckBox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(3))
+        self.connect(self.sssCheckBox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(3))
 
         self.setLayout(mainLayout)
 
@@ -326,70 +319,36 @@ class Aton(QtGui.QDialog):
                 camera = cmds.listRelatives(camera, s=1)[0]
         return camera
 
-    def IPRUpdate(self):
-        ''' This method is called during IPR session '''
-        try: # If render session is not started yet
-            cmds.arnoldIpr(mode='pause')
-        except (AttributeError, RuntimeError):
-            return
+    def getNukeCropNode(self, *args):
+        ''' Get crop node data from Nuke '''
+        def find_between( s, first, last ):
+            try:
+                start = s.index( first ) + len( first )
+                end = s.index( last, start )
+                return s[start:end]
+            except ValueError:
+                return ""
 
-        options = AiUniverseGetOptions()
-        sceneOptions = self.getSceneOptions()
+        clipboard = QtGui.QApplication.clipboard()
+        data = clipboard.text()
 
-        # Camera Update
-        camera = self.getCamera()
-        iterator = AiUniverseGetNodeIterator(AI_NODE_CAMERA);
-        while not AiNodeIteratorFinished(iterator):
-            node = AiNodeIteratorGetNext(iterator)
-            if AiNodeGetName(node) == camera:
-                AiNodeSetPtr(options, "camera", node)
+        checkData1 = "set cut_paste_input [stack 0]"
+        checkData2 = "Crop {"
 
-        # Resolution and Region Update
-        xres = sceneOptions["width"] * self.resolutionSpinBox.value() / 100
-        yres = sceneOptions["height"] * self.resolutionSpinBox.value() / 100
+        if (checkData1 in data.split('\n', 10)[0]) and \
+           (checkData2 in data.split('\n', 10)[3]):
+                cropData = find_between(data.split('\n', 10)[4], "box {", "}" ).split()
+                nkX, nkY, nkR, nkT = int(float(cropData[0])),\
+                                     int(float(cropData[1])),\
+                                     int(float(cropData[2])),\
+                                     int(float(cropData[3]))
 
-        AiNodeSetInt(options, "xres", xres)
-        AiNodeSetInt(options, "yres", yres)
+                self.renderRegionXSpinBox.setValue(nkX)
+                self.renderRegionYSpinBox.setValue(nkY)
+                self.renderRegionRSpinBox.setValue(nkR)
+                self.renderRegionTSpinBox.setValue(nkT)
 
-        rMinX = self.renderRegionXSpinBox.value()
-        rMinY = yres - self.renderRegionTSpinBox.value()
-        rMaxX = self.renderRegionRSpinBox.value() -1
-        rMaxY = (yres - self.renderRegionYSpinBox.value()) - 1
-
-        if (rMinX >= 0) and (rMinY >= 0) and (rMaxX <= xres) and (rMaxY <= yres):
-            AiNodeSetInt(options, "region_min_x", rMinX)
-            AiNodeSetInt(options, "region_min_y", rMinY)
-            AiNodeSetInt(options, "region_max_x", rMaxX)
-            AiNodeSetInt(options, "region_max_y", rMaxY)
-        else:
-            AiNodeSetInt(options, "region_min_x", 0)
-            AiNodeSetInt(options, "region_min_y", 0)
-            AiNodeSetInt(options, "region_max_x", xres-1)
-            AiNodeSetInt(options, "region_max_y", yres-1)
-
-        # Camera AA Update
-        cameraAA = self.cameraAaSpinBox.value()
-        options = AiUniverseGetOptions()
-        AiNodeSetInt(options, "AA_samples", cameraAA)
-
-        # Ignore options Update
-        AASamples = self.cameraAaSpinBox.value()
-        motionBlur = self.motionBlurCheckBox.isChecked()
-        subdivs = self.subdivsCheckBox.isChecked()
-        displace = self.displaceCheckBox.isChecked()
-        bump = self.bumpCheckBox.isChecked()
-        sss = self.sssCheckBox.isChecked()
-
-        AiNodeSetBool(options, "ignore_motion_blur", motionBlur)
-        AiNodeSetBool(options, "ignore_subdivision", subdivs)
-        AiNodeSetBool(options, "ignore_displacement", displace)
-        AiNodeSetBool(options, "ignore_bump", bump)
-        AiNodeSetBool(options, "ignore_sss", sss)
-
-        try:
-            cmds.arnoldIpr(mode='unpause')
-        except RuntimeError:
-            pass
+                return cropData
 
     def render(self):
         ''' Starts the render '''
@@ -442,6 +401,81 @@ class Aton(QtGui.QDialog):
         cmds.setAttr("defaultArnoldDisplayDriver.aiTranslator", defaultTranslator, type="string")
         cmds.setAttr("defaultArnoldDisplayDriver.port", self.defaultPort)
 
+    def IPRUpdate(self, attr = None):
+        ''' This method is called during IPR session '''
+        try: # If render session is not started yet
+            cmds.arnoldIpr(mode='pause')
+        except (AttributeError, RuntimeError):
+            return
+
+        options = AiUniverseGetOptions()
+        sceneOptions = self.getSceneOptions()
+
+        # Camera Update
+        if attr == None or attr == 0:
+            camera = self.getCamera()
+            iterator = AiUniverseGetNodeIterator(AI_NODE_CAMERA);
+            while not AiNodeIteratorFinished(iterator):
+                node = AiNodeIteratorGetNext(iterator)
+                if AiNodeGetName(node) == camera:
+                    AiNodeSetPtr(options, "camera", node)
+
+        # Resolution and Region Update
+        if attr == None or attr == 1:
+            xres = sceneOptions["width"] * self.resolutionSpinBox.value() / 100
+            yres = sceneOptions["height"] * self.resolutionSpinBox.value() / 100
+
+            AiNodeSetInt(options, "xres", xres)
+            AiNodeSetInt(options, "yres", yres)
+
+            rMinX = self.renderRegionXSpinBox.value()
+            rMinY = yres - self.renderRegionTSpinBox.value()
+            rMaxX = self.renderRegionRSpinBox.value() -1
+            rMaxY = (yres - self.renderRegionYSpinBox.value()) - 1
+
+            if (rMinX >= 0) and (rMinY >= 0) and (rMaxX <= xres) and (rMaxY <= yres):
+                AiNodeSetInt(options, "region_min_x", rMinX)
+                AiNodeSetInt(options, "region_min_y", rMinY)
+                AiNodeSetInt(options, "region_max_x", rMaxX)
+                AiNodeSetInt(options, "region_max_y", rMaxY)
+            else:
+                AiNodeSetInt(options, "region_min_x", 0)
+                AiNodeSetInt(options, "region_min_y", 0)
+                AiNodeSetInt(options, "region_max_x", xres-1)
+                AiNodeSetInt(options, "region_max_y", yres-1)
+
+        # Camera AA Update
+        if attr == None or attr == 2:
+            cameraAA = self.cameraAaSpinBox.value()
+            options = AiUniverseGetOptions()
+            AiNodeSetInt(options, "AA_samples", cameraAA)
+
+        # Ignore options Update
+        if attr == None or attr == 3:
+            AASamples = self.cameraAaSpinBox.value()
+            motionBlur = self.motionBlurCheckBox.isChecked()
+            subdivs = self.subdivsCheckBox.isChecked()
+            displace = self.displaceCheckBox.isChecked()
+            bump = self.bumpCheckBox.isChecked()
+            sss = self.sssCheckBox.isChecked()
+
+            AiNodeSetBool(options, "ignore_motion_blur", motionBlur)
+            AiNodeSetBool(options, "ignore_subdivision", subdivs)
+            AiNodeSetBool(options, "ignore_displacement", displace)
+            AiNodeSetBool(options, "ignore_bump", bump)
+            AiNodeSetBool(options, "ignore_sss", sss)
+
+        try:
+            cmds.arnoldIpr(mode='unpause')
+        except RuntimeError:
+            pass
+
+    def updateFrame(self, *args):
+        ''' Callback method to update the frame number attr '''
+        options = AiUniverseGetOptions()
+        time = cmds.currentTime(q=1)
+        AiNodeSetFlt(options, "frame", time)
+
     def stop(self):
         ''' Stops the render session and removes the callbacks '''
         if self.timeChange != None:
@@ -453,42 +487,11 @@ class Aton(QtGui.QDialog):
         except (AttributeError, RuntimeError):
             return
 
-    def updateFrame(self, *args):
-        ''' Callback method to update the frame number attr '''
-        options = AiUniverseGetOptions()
-        time = cmds.currentTime(q=1)
-        AiNodeSetFlt(options, "frame", time)
-
-    def getNukeCropNode(self, *args):
-        ''' Get crop node data from Nuke '''
-        def find_between( s, first, last ):
-            try:
-                start = s.index( first ) + len( first )
-                end = s.index( last, start )
-                return s[start:end]
-            except ValueError:
-                return ""
-
-        clipboard = QtGui.QApplication.clipboard()
-        data = clipboard.text()
-
-        checkData1 = "set cut_paste_input [stack 0]"
-        checkData2 = "Crop {"
-
-        if (checkData1 in data.split('\n', 10)[0]) and \
-           (checkData2 in data.split('\n', 10)[3]):
-                cropData = find_between(data.split('\n', 10)[4], "box {", "}" ).split()
-                nkX, nkY, nkR, nkT = int(float(cropData[0])),\
-                                     int(float(cropData[1])),\
-                                     int(float(cropData[2])),\
-                                     int(float(cropData[3]))
-
-                self.renderRegionXSpinBox.setValue(nkX)
-                self.renderRegionYSpinBox.setValue(nkY)
-                self.renderRegionRSpinBox.setValue(nkR)
-                self.renderRegionTSpinBox.setValue(nkT)
-
-                return cropData
+    def closeEvent(self, event):
+        ''' Removes callback when closing the GUI '''
+        if self.timeChange != None:
+            OM.MEventMessage.removeCallback(self.timeChange)
+            self.timeChange = None
 
 if __name__ == "__main__":
     aton = Aton()
