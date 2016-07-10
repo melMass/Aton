@@ -145,7 +145,7 @@ class Aton: public Iop
             for (int i = 0; i < Format::size(); ++i)
             {
                 const char* f_name = Format::index(i)->name();
-                if (m_node_name == f_name)
+                if (f_name != NULL && m_node_name == f_name)
                     m_formatExists = true;
             }
             
@@ -266,21 +266,26 @@ class Aton: public Iop
                     if (m_node->m_fmt.width() != width ||
                         m_node->m_fmt.height() != height)
                     {
+                        Format* m_fmt_ptr = &m_node->m_fmt;
+                        m_node->m_formatExists = false;
+                        
                         // If the format is already exist
-                        Format* m_fmt_exist = &m_node->m_fmt;
-                        if (m_node->m_formatExists)
+                        for (int i=0; i < Format::size(); ++i)
                         {
-                            for (int i=0; i < Format::size(); ++i)
+                            const char* f_name = Format::index(i)->name();
+                            if (f_name != NULL && m_node->m_node_name == f_name)
                             {
-                                const char* f_name = Format::index(i)->name();
-                                if (m_node->m_node_name == f_name)
-                                    m_fmt_exist = Format::index(i);
+                                m_fmt_ptr = Format::index(i);
+                                m_node->m_formatExists = true;
                             }
                         }
+
+                        if (!m_node->m_formatExists)
+                            m_fmt_ptr->add(m_node_name.c_str());
                         
-                        m_fmt_exist->set(0, 0, width, height);
-                        m_fmt_exist->width(width);
-                        m_fmt_exist->height(height);
+                        m_fmt_ptr->set(0, 0, width, height);
+                        m_fmt_ptr->width(width);
+                        m_fmt_ptr->height(height);
                         knob("formats_knob")->set_text(m_node->m_node_name.c_str());
                     }
                     
