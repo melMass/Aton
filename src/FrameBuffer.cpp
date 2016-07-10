@@ -225,8 +225,9 @@ void FrameBuffer::setProgress(const long long& progress)
 void FrameBuffer::setRAM(const long long& ram)
 {
     int ramGb = static_cast<int>(ram / 1048576);
-    _pram = ramGb > _ram ? ramGb : _ram;
     _ram = ramGb;
+    _pram = ramGb > _pram ? ramGb : _pram;
+
 }
 void FrameBuffer::setTime(const int& time,
                           const int& dtime)
