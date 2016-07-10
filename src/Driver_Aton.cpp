@@ -13,11 +13,10 @@ using boost::asio::ip::tcp;
 
 AI_DRIVER_NODE_EXPORT_METHODS(AtonDriverMtd);
 
-int xres, yres;
-
 struct ShaderData
 {
    aton::Client* client;
+   int xres, yres;
 };
 
 const char* getHost()
@@ -89,8 +88,8 @@ driver_open
     int port = AiNodeGetInt(node, "port");
     
     // Get resolution and area
-    xres = display_window.maxx - display_window.minx + 1;
-    yres = display_window.maxy - display_window.miny + 1;
+    data->xres = display_window.maxx - display_window.minx + 1;
+    data->yres = display_window.maxy - display_window.miny + 1;
     
     // Get area of region
     int rWidth = data_window.maxx - data_window.minx + 1;
@@ -103,7 +102,8 @@ driver_open
        data->client = new aton::Client(host, port);
 
        // Make image header & send to server
-       aton::Data header(xres, yres, 0, 0, 0, 0, rArea, version, currentFrame);
+       aton::Data header(data->xres, data->yres,
+                         0, 0, 0, 0, rArea, version, currentFrame);
        data->client->openImage(header);
     }
     catch (const std::exception &e)
@@ -150,7 +150,7 @@ driver_write_bucket
         }
         
         // Create our data object
-        aton::Data packet(xres, yres, bucket_xo, bucket_yo,
+        aton::Data packet(data->xres, data->yres, bucket_xo, bucket_yo,
                           bucket_size_x, bucket_size_y,
                           0, 0, 0, spp, ram, time, aov_name, ptr);
 
