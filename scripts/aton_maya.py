@@ -106,14 +106,16 @@ class Aton(QtGui.QDialog):
             self.displaceCheckBox.setChecked(sceneOptions["displace"])
             self.bumpCheckBox.setChecked(sceneOptions["bump"])
             self.sssCheckBox.setChecked(sceneOptions["sss"])
+            self.shaderComboBox.setCurrentIndex(0)
+            textureRepeatSlider.setValue(1)
 
         self.setObjectName(self.windowName)
         self.setWindowTitle("Aton %s"%__version__)
         self.setWindowFlags(QtCore.Qt.Tool)
         self.setAttribute(QtCore.Qt.WA_AlwaysShowToolTips)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-        self.setMinimumSize(400, 300)
-        self.setMaximumSize(400, 300)
+        self.setMinimumSize(400, 320)
+        self.setMaximumSize(400, 320)
 
         mainLayout = QtGui.QVBoxLayout()
         mainLayout.setContentsMargins(5,5,5,5)
@@ -241,10 +243,36 @@ class Aton(QtGui.QDialog):
         self.renderRegionRSpinBox.setValue(sceneOptions["width"])
         self.renderRegionTSpinBox.setValue(sceneOptions["height"])
 
-        ignoresGroupBox = QtGui.QGroupBox("Ignore")
-        ignoresLayout = QtGui.QVBoxLayout(ignoresGroupBox)
+        # Shaders layout
+        shaderLayout = QtGui.QHBoxLayout()
+        shaderLabel = QtGui.QLabel("Shader:")
+        self.shaderComboBox = QtGui.QComboBox()
+        self.shaderComboBox.addItem("Disabled")
+        self.shaderComboBox.addItem("Checker")
+        self.shaderComboBox.addItem("Grey")
+        self.shaderComboBox.addItem("Mirror")
+        self.shaderComboBox.addItem("Normal")
+        self.shaderComboBox.addItem("Occlusion")
+        self.shaderComboBox.addItem("UV")
+        textureRepeatLabel = QtGui.QLabel("Texture Repeat:")
+        self.textureRepeatSpinbox = QtGui.QSpinBox()
+        self.textureRepeatSpinbox.setValue(1)
+        self.textureRepeatSpinbox.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
+        textureRepeatSlider = QtGui.QSlider()
+        textureRepeatSlider.setMinimum(1)
+        textureRepeatSlider.setMaximum(32)
+        textureRepeatSlider.setOrientation(QtCore.Qt.Horizontal)
+        textureRepeatSlider.valueChanged[int].connect(self.textureRepeatSpinbox.setValue)
+        textureRepeatSlider.setValue(4)
+        shaderLayout.addWidget(shaderLabel)
+        shaderLayout.addWidget(self.shaderComboBox)
+        shaderLayout.addWidget(textureRepeatLabel)
+        shaderLayout.addWidget(self.textureRepeatSpinbox)
+        shaderLayout.addWidget(textureRepeatSlider)
 
         # Ignore Layout
+        ignoresGroupBox = QtGui.QGroupBox("Ignore")
+        ignoresLayout = QtGui.QVBoxLayout(ignoresGroupBox)
         ignoreLayout = QtGui.QHBoxLayout()
         ignoreLabel = QtGui.QLabel("Ignore:")
         ignoreLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
@@ -282,6 +310,7 @@ class Aton(QtGui.QDialog):
         overridesLayout.addLayout(resolutionLayout)
         overridesLayout.addLayout(cameraAaLayout)
         overridesLayout.addLayout(renderRegionLayout)
+        overridesLayout.addLayout(shaderLayout)
         ignoresLayout.addLayout(ignoreLayout)
 
         mainLayout.addWidget(generalGroupBox)
@@ -306,6 +335,8 @@ class Aton(QtGui.QDialog):
         self.connect(self.displaceCheckBox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(3))
         self.connect(self.bumpCheckBox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(3))
         self.connect(self.sssCheckBox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(3))
+        self.connect(self.shaderComboBox, QtCore.SIGNAL("currentIndexChanged(int)"), lambda: self.IPRUpdate(4))
+        self.connect(self.textureRepeatSpinbox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(5))
 
         self.setLayout(mainLayout)
 
@@ -321,10 +352,10 @@ class Aton(QtGui.QDialog):
 
     def getNukeCropNode(self, *args):
         ''' Get crop node data from Nuke '''
-        def find_between( s, first, last ):
+        def find_between(s, first, last):
             try:
-                start = s.index( first ) + len( first )
-                end = s.index( last, start )
+                start = s.index(first) + len(first)
+                end = s.index(last, start)
                 return s[start:end]
             except ValueError:
                 return ""
@@ -401,6 +432,33 @@ class Aton(QtGui.QDialog):
         cmds.setAttr("defaultArnoldDisplayDriver.aiTranslator", defaultTranslator, type="string")
         cmds.setAttr("defaultArnoldDisplayDriver.port", self.defaultPort)
 
+    def initOvrShaders(self):
+        ''' Initilize override shaders '''
+        # Checker shader
+        self.checkerShader = AiNode("standard")
+        self.checkerTexture = AiNode("MayaChecker")
+        self.placeTexture = AiNode("MayaPlace2DTexture")
+        AiNodeLink(self.placeTexture, "uvCoord", self.checkerTexture)
+        AiNodeLink(self.checkerTexture, "Kd", self.checkerShader)
+        # Grey Shader
+        self.greyShader = AiNode("standard")
+        # Mirror Shader
+        self.mirrorShader = AiNode("standard")
+        AiNodeSetFlt(self.mirrorShader, "Kd", 0)
+        AiNodeSetFlt(self.mirrorShader, "Ks", 1)
+        AiNodeSetFlt(self.mirrorShader, "specular_roughness", 0)
+        # Normal Shader
+        self.normalShader = AiNode("utility")
+        AiNodeSetInt(self.normalShader, "shade_mode", 2)
+        AiNodeSetInt(self.normalShader, "color_mode", 2)
+        # Occlusion Shader
+        self.occlusionShader = AiNode("utility")
+        AiNodeSetInt(self.occlusionShader, "shade_mode", 3)
+        # UV Shader
+        self.uvShader = AiNode("utility")
+        AiNodeSetInt(self.uvShader, "shade_mode", 2)
+        AiNodeSetInt(self.uvShader, "color_mode", 5)
+
     def IPRUpdate(self, attr = None):
         ''' This method is called during IPR session '''
         try: # If render session is not started yet
@@ -414,7 +472,7 @@ class Aton(QtGui.QDialog):
         # Camera Update
         if attr == None or attr == 0:
             camera = self.getCamera()
-            iterator = AiUniverseGetNodeIterator(AI_NODE_CAMERA);
+            iterator = AiUniverseGetNodeIterator(AI_NODE_CAMERA)
             while not AiNodeIteratorFinished(iterator):
                 node = AiNodeIteratorGetNext(iterator)
                 if AiNodeGetName(node) == camera:
@@ -452,7 +510,6 @@ class Aton(QtGui.QDialog):
 
         # Ignore options Update
         if attr == None or attr == 3:
-            AASamples = self.cameraAaSpinBox.value()
             motionBlur = self.motionBlurCheckBox.isChecked()
             subdivs = self.subdivsCheckBox.isChecked()
             displace = self.displaceCheckBox.isChecked()
@@ -464,6 +521,46 @@ class Aton(QtGui.QDialog):
             AiNodeSetBool(options, "ignore_displacement", displace)
             AiNodeSetBool(options, "ignore_bump", bump)
             AiNodeSetBool(options, "ignore_sss", sss)
+
+        # Storing default assignments
+        if attr == None:
+            # Initilize override shaders
+            self.initOvrShaders()
+            # Store shader assignments
+            self.shadersAssign = {}
+            iterator = AiUniverseGetNodeIterator(AI_NODE_SHAPE)
+            while not AiNodeIteratorFinished(iterator):
+                node = AiNodeIteratorGetNext(iterator)
+                name = AiNodeGetName(node)
+                self.shadersAssign[name] = AiNodeGetPtr(node, "shader")
+
+        # Shader overrides Update
+        shaderIndex = self.shaderComboBox.currentIndex()
+        if attr == 4 or shaderIndex > 0:
+            iterator = AiUniverseGetNodeIterator(AI_NODE_SHAPE)
+            while not AiNodeIteratorFinished(iterator):
+                node = AiNodeIteratorGetNext(iterator)
+                # Setting overrides
+                if shaderIndex == 0:
+                    defShader = self.shadersAssign[AiNodeGetName(node)]
+                    AiNodeSetPtr(node, "shader", defShader)
+                elif shaderIndex == 1:
+                    AiNodeSetPtr(node, "shader", self.checkerShader)
+                elif shaderIndex == 2:
+                    AiNodeSetPtr(node, "shader", self.greyShader)
+                elif shaderIndex == 3:
+                    AiNodeSetPtr(node, "shader", self.mirrorShader)
+                elif shaderIndex == 4:
+                    AiNodeSetPtr(node, "shader", self.normalShader)
+                elif shaderIndex == 5:
+                    AiNodeSetPtr(node, "shader", self.occlusionShader)
+                elif shaderIndex == 6:
+                    AiNodeSetPtr(node, "shader", self.uvShader)
+
+        # Texture Repeat Udpate
+        if attr == None or attr == 5:
+            texRepeat = self.textureRepeatSpinbox.value()
+            AiNodeSetPnt2(self.placeTexture, "repeatUV", texRepeat, texRepeat)
 
         try:
             cmds.arnoldIpr(mode='unpause')
