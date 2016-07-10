@@ -267,22 +267,22 @@ class Aton: public Iop
                         m_node->m_fmt.height() != height)
                     {
                         Format* m_fmt_ptr = &m_node->m_fmt;
-                        m_node->m_formatExists = false;
-                        
-                        // If the format is already exist
-                        for (int i=0; i < Format::size(); ++i)
+                        if (m_node->m_formatExists)
                         {
-                            const char* f_name = Format::index(i)->name();
-                            if (f_name != NULL && m_node->m_node_name == f_name)
+                            bool fmtFound = false;
+                            for (int i=0; i < Format::size(); ++i)
                             {
-                                m_fmt_ptr = Format::index(i);
-                                m_node->m_formatExists = true;
+                                const char* f_name = Format::index(i)->name();
+                                if (f_name != NULL && m_node->m_node_name == f_name)
+                                {
+                                    m_fmt_ptr = Format::index(i);
+                                    fmtFound = true;
+                                }
                             }
+                            if (!fmtFound)
+                                m_fmt_ptr->add(m_node->m_node_name.c_str());
                         }
-
-                        if (!m_node->m_formatExists)
-                            m_fmt_ptr->add(m_node_name.c_str());
-                        
+                            
                         m_fmt_ptr->set(0, 0, width, height);
                         m_fmt_ptr->width(width);
                         m_fmt_ptr->height(height);
