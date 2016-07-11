@@ -88,6 +88,11 @@ class Aton(QtGui.QDialog):
         def portUpdateUi():
             self.portSpinBox.setValue(portSlider.value() + self.defaultPort)
 
+        def regionUpdateUi():
+            sceneOptions = self.getSceneOptions()
+            self.renderRegionRSpinBox.setValue(sceneOptions["width"] * self.resolutionSpinBox.value() / 100)
+            self.renderRegionTSpinBox.setValue(sceneOptions["height"] * self.resolutionSpinBox.value() / 100)
+
         def resetUi(*args):
             sceneOptions = self.getSceneOptions()
             self.portSpinBox.setValue(self.defaultPort)
@@ -321,6 +326,7 @@ class Aton(QtGui.QDialog):
         # UI Updates
         self.connect(portSlider, QtCore.SIGNAL("valueChanged(int)"), portUpdateUi)
         self.connect(resolutionSlider, QtCore.SIGNAL("valueChanged(int)"), resUpdateUi)
+        self.connect(self.resolutionSpinBox, QtCore.SIGNAL("valueChanged(int)"), regionUpdateUi)
 
         # IPR Updates
         self.connect(self.cameraComboBox, QtCore.SIGNAL("currentIndexChanged(int)"), lambda: self.IPRUpdate(0))
