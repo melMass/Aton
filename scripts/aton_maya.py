@@ -533,12 +533,12 @@ class Aton(QtGui.QDialog):
             # Initilize override shaders
             self.initOvrShaders()
             # Store shader assignments
-            self.shadersAssign = {}
+            self.shadersDict = {}
             iterator = AiUniverseGetNodeIterator(AI_NODE_SHAPE)
             while not AiNodeIteratorFinished(iterator):
                 node = AiNodeIteratorGetNext(iterator)
                 name = AiNodeGetName(node)
-                self.shadersAssign[name] = AiNodeGetPtr(node, "shader")
+                self.shadersDict[name] = AiNodeGetPtr(node, "shader")
 
         # Shader overrides Update
         shaderIndex = self.shaderComboBox.currentIndex()
@@ -546,10 +546,12 @@ class Aton(QtGui.QDialog):
             iterator = AiUniverseGetNodeIterator(AI_NODE_SHAPE)
             while not AiNodeIteratorFinished(iterator):
                 node = AiNodeIteratorGetNext(iterator)
+                name = AiNodeGetName(node)
                 # Setting overrides
                 if shaderIndex == 0:
-                    defShader = self.shadersAssign[AiNodeGetName(node)]
-                    AiNodeSetPtr(node, "shader", defShader)
+                    if name in self.shadersDict:
+                        defShader = self.shadersDict[AiNodeGetName(node)]
+                        AiNodeSetPtr(node, "shader", defShader)
                 elif shaderIndex == 1:
                     AiNodeSetPtr(node, "shader", self.checkerShader)
                 elif shaderIndex == 2:
