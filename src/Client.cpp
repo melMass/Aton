@@ -59,7 +59,7 @@ void Client::openImage(Data& header)
     // Send our width & height
     write(mSocket, buffer(reinterpret_cast<char*>(&header.mXres), sizeof(int)));
     write(mSocket, buffer(reinterpret_cast<char*>(&header.mYres), sizeof(int)));
-    write(mSocket, buffer(reinterpret_cast<char*>(&header.mRArea), sizeof(int)));
+    write(mSocket, buffer(reinterpret_cast<char*>(&header.mRArea), sizeof(long long)));
     write(mSocket, buffer(reinterpret_cast<char*>(&header.mVersion), sizeof(int)));
     write(mSocket, buffer(reinterpret_cast<char*>(&header.mCurrentFrame), sizeof(float)));
 }

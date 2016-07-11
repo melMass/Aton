@@ -94,41 +94,26 @@ Data Server::listen()
     // Read the key from the incoming data
     try
     {
-        int key = -1;
-        read(mSocket, buffer(reinterpret_cast<char*>(&key), sizeof(int)));
+        read(mSocket, buffer(reinterpret_cast<char*>(&d.mType), sizeof(int)));
 
-        switch( key )
+        switch(d.mType)
         {
             case 0: // Open image
             {
                 // Send back an image id
                 int image_id = 1;
                 write(mSocket, buffer(reinterpret_cast<char*>(&image_id), sizeof(int)));
-
-                // Get width & height
-                int xres, yres, rArea, version;
-                float currentFrame;
                 
                 // Read data from the buffer
-                read(mSocket, buffer(reinterpret_cast<char*>(&xres), sizeof(int)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&yres), sizeof(int)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&rArea), sizeof(int)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&version), sizeof(int)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&currentFrame), sizeof(int)));
-
-                // Create data object
-                d.mType = key;
-                d.mXres = xres;
-                d.mYres = yres;
-                d.mRArea = rArea;
-                d.mVersion = version;
-                d.mCurrentFrame = currentFrame;
+                read(mSocket, buffer(reinterpret_cast<char*>(&d.mXres), sizeof(int)));
+                read(mSocket, buffer(reinterpret_cast<char*>(&d.mYres), sizeof(int)));
+                read(mSocket, buffer(reinterpret_cast<char*>(&d.mRArea), sizeof(long long)));
+                read(mSocket, buffer(reinterpret_cast<char*>(&d.mVersion), sizeof(int)));
+                read(mSocket, buffer(reinterpret_cast<char*>(&d.mCurrentFrame), sizeof(int)));
                 break;
             }
             case 1: // Image data
             {
-                d.mType = key;
-
                 // Receive image id
                 int image_id;
                 read(mSocket, buffer(reinterpret_cast<char*>(&image_id), sizeof(int)) );
@@ -140,11 +125,11 @@ Data Server::listen()
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mBucket_yo), sizeof(int)));
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mBucket_size_x), sizeof(int)));
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mBucket_size_y), sizeof(int)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mRArea), sizeof(long)));
+                read(mSocket, buffer(reinterpret_cast<char*>(&d.mRArea), sizeof(long long)));
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mVersion), sizeof(int)));
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mCurrentFrame), sizeof(float)));
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mSpp), sizeof(int)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mRam), sizeof(long)));
+                read(mSocket, buffer(reinterpret_cast<char*>(&d.mRam), sizeof(long long)));
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mTime), sizeof(int)));
 
                 // Get aov name's size
@@ -165,17 +150,14 @@ Data Server::listen()
             case 2: // Close image
             {
                 int image_id;
-                d.mType = key;
                 read(mSocket, buffer(reinterpret_cast<char*>(&image_id), sizeof(int)));
                 mSocket.close();
                 break;
             }
             case 9: // quit
             {
-                d.mType = 9;
-
                 mSocket.close();
-
+                
                 // This fixes all nuke destructor issues on windows
                 mAcceptor.close();
                 break;
