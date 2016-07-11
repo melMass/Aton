@@ -103,9 +103,9 @@ const float& FrameBuffer::getBufferPix(const long& b,
 }
 
 // Get the current buffer index
-long FrameBuffer::getBufferIndex(const Channel& z)
+int FrameBuffer::getBufferIndex(const Channel& z)
 {
-    long b_index = 0;    
+    int b_index = 0;
     if (_aovs.size() > 1)
     {
         using namespace chStr;
@@ -116,12 +116,12 @@ long FrameBuffer::getBufferIndex(const Channel& z)
         {
             if (*it == layer)
             {
-                b_index = it - _aovs.begin();
+                b_index = static_cast<int>(it - _aovs.begin());
                 break;
             }
             else if (*it == Z && layer == depth)
             {
-                b_index = it - _aovs.begin();
+                b_index = static_cast<int>(it - _aovs.begin());
                 break;
             }
         }
@@ -131,9 +131,9 @@ long FrameBuffer::getBufferIndex(const Channel& z)
 }
 
 // Get the current buffer index
-long FrameBuffer::getBufferIndex(const char* aovName)
+int FrameBuffer::getBufferIndex(const char* aovName)
 {
-    long b_index = 0;
+    int b_index = 0;
     if (_aovs.size() > 1)
     {
         std::vector<std::string>::iterator it;
@@ -141,7 +141,7 @@ long FrameBuffer::getBufferIndex(const char* aovName)
         {
             if (*it == aovName)
             {
-                b_index = it - _aovs.begin();
+                b_index = static_cast<int>(it - _aovs.begin());
                 break;
             }
         }

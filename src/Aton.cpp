@@ -142,7 +142,8 @@ class Aton: public Iop
             knob("path_knob")->set_text(str_path.c_str());
             
             // Check if the format is already exist
-            for (int i = 0; i < Format::size(); ++i)
+            unsigned int i;
+            for (i = 0; i < Format::size(); ++i)
             {
                 const char* f_name = Format::index(i)->name();
                 if (f_name != NULL && m_node_name == f_name)
@@ -246,7 +247,7 @@ class Aton: public Iop
 
             if (!m_node->m_framebuffers.empty())
             {
-                long f_index = getFrameIndex(uiContext().frame());
+                int f_index = getFrameIndex(uiContext().frame());
                 FrameBuffer& fB = m_node->m_framebuffers[f_index];
                 
                 if (!fB.empty())
@@ -270,7 +271,8 @@ class Aton: public Iop
                         if (m_node->m_formatExists)
                         {
                             bool fmtFound = false;
-                            for (int i=0; i < Format::size(); ++i)
+                            unsigned int i;
+                            for (i=0; i < Format::size(); ++i)
                             {
                                 const char* f_name = Format::index(i)->name();
                                 if (f_name != NULL && m_node->m_node_name == f_name)
@@ -346,14 +348,14 @@ class Aton: public Iop
 
         void engine(int y, int x, int r, ChannelMask channels, Row& out)
         {
-            long f = getFrameIndex(uiContext().frame());
+            int f = getFrameIndex(uiContext().frame());
             unsigned int xx = static_cast<unsigned int>(x);
             std::vector<FrameBuffer>& fBs = m_node->m_framebuffers;
             
             foreach(z, channels)
             {
                 x = xx;
-                long b = 0;
+                int b = 0;
                 int c = colourIndex(z);
                 float* cOut = out.writable(z) + x;
                 const float* END = cOut + (r - x);
@@ -513,9 +515,9 @@ class Aton: public Iop
             gotoContext(ctxt, true);
         }
     
-        long getFrameIndex(double currentFrame)
+        int getFrameIndex(double currentFrame)
         {
-            long f_index = 0;
+            int f_index = 0;
             std::vector<double>& frames = m_node->m_frames;
 
             if (frames.size() > 1)
@@ -531,19 +533,19 @@ class Aton: public Iop
                 {
                     if (currentFrame == *it)
                     {
-                        f_index = it - frames.begin();
+                        f_index = static_cast<int>(it - frames.begin());
                         break;
                     }
                     else if (currentFrame > *it && nearFIndex < *it)
                     {
                         nearFIndex = static_cast<int>(*it);
-                        f_index = it - frames.begin();
+                        f_index = static_cast<int>(it - frames.begin());
                         continue;
                     }
                     else if (*it < minFIndex && nearFIndex == INT_MIN)
                     {
                         minFIndex = static_cast<int>(*it);
-                        f_index = it - frames.begin();
+                        f_index = static_cast<int>(it - frames.begin());
                     }
                 }
                 m_mutex.unlock();
@@ -920,7 +922,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
         // For progress percentage
         long long progress, _regionArea = 0;
         
-        long f_index = 0;
+        int f_index = 0;
         
         // Current Frame Number
         double current_frame = 0;
@@ -1069,7 +1071,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         const int& _spp = d.spp();
                         const long long& _ram = d.ram();
                         const int& _time = d.time();
-                        unsigned int x, y, xpos, ypos, c, offset;
+                        
+                        int x, y, xpos, ypos, c, offset;
 
                         // Set active time
                         _active_time = _time;
@@ -1086,7 +1089,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                             fB.ready(true);
                         
                         // Get buffer index
-                        long b = fB.getBufferIndex(_aov_name);
+                        int b = fB.getBufferIndex(_aov_name);
                     
                         // Writing to buffer
                         for (x = 0; x < _width; ++x)
