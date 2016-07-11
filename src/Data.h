@@ -99,8 +99,15 @@ namespace aton
         // What type of data is this?
         int mType;
 
-        // X & Y position
-        int mXres, mYres, mBucket_xo, mBucket_yo, mBucket_size_x, mBucket_size_y, mSpp;
+        // Resolution, X & Y position,
+        // bucket width height, num channels (samples)
+        int mXres,
+            mYres,
+            mBucket_xo,
+            mBucket_yo,
+            mBucket_size_x,
+            mBucket_size_y,
+            mSpp;
 
         // Version number
         int mVersion;
