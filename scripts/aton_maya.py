@@ -112,7 +112,7 @@ class Aton(QtGui.QDialog):
             self.bumpCheckBox.setChecked(sceneOptions["bump"])
             self.sssCheckBox.setChecked(sceneOptions["sss"])
             self.shaderComboBox.setCurrentIndex(0)
-            textureRepeatSlider.setValue(1)
+            textureRepeatSlider.setValue(4)
 
         self.setObjectName(self.windowName)
         self.setWindowTitle("Aton %s"%__version__)
