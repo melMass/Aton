@@ -100,7 +100,7 @@ namespace aton
         int mType;
 
         // Resolution, X & Y position,
-        // bucket width height, num channels (samples)
+        // Bucket width height, Num of channels (samples)
         int mXres,
             mYres,
             mBucket_xo,
@@ -117,7 +117,8 @@ namespace aton
 
         // Width, height, num channels (samples)
         unsigned int mTime;
-
+        
+        // Region area, Memory
         long long mRArea, mRam;
 
         const char *mAovName;
