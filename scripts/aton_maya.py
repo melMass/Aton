@@ -32,6 +32,9 @@ class Aton(QtGui.QDialog):
         if cmds.window(self.windowName, exists = True):
             cmds.deleteUI(self.windowName, wnd = True)
 
+        self.timeChangedCB = None
+        self.selectionChangedCB = None
+
         self.setupUi()
 
     def getActiveCamera(self):
@@ -113,14 +116,15 @@ class Aton(QtGui.QDialog):
             self.sssCheckBox.setChecked(sceneOptions["sss"])
             self.shaderComboBox.setCurrentIndex(0)
             textureRepeatSlider.setValue(4)
+            self.selectedShaderCheckbox.setChecked(0)
 
         self.setObjectName(self.windowName)
         self.setWindowTitle("Aton %s"%__version__)
         self.setWindowFlags(QtCore.Qt.Tool)
         self.setAttribute(QtCore.Qt.WA_AlwaysShowToolTips)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-        self.setMinimumSize(400, 320)
-        self.setMaximumSize(400, 320)
+        self.setMinimumSize(400, 350)
+        self.setMaximumSize(400, 350)
 
         mainLayout = QtGui.QVBoxLayout()
         mainLayout.setContentsMargins(5,5,5,5)
@@ -146,7 +150,6 @@ class Aton(QtGui.QDialog):
         portSlider.setMinimum(0)
         portSlider.setMaximum(15)
         portSlider.setValue(0)
-        self.timeChange = None
         portLayout.addWidget(portLabel)
         portLayout.addWidget(self.portSpinBox)
         portLayout.addWidget(portSlider)
@@ -250,7 +253,8 @@ class Aton(QtGui.QDialog):
 
         # Shaders layout
         shaderLayout = QtGui.QHBoxLayout()
-        shaderLabel = QtGui.QLabel("Shader:")
+        shaderLabel = QtGui.QLabel("Shader override:")
+        shaderLabel.setMaximumSize(85, 20)
         self.shaderComboBox = QtGui.QComboBox()
         self.shaderComboBox.addItem("Disabled")
         self.shaderComboBox.addItem("Checker")
@@ -259,21 +263,26 @@ class Aton(QtGui.QDialog):
         self.shaderComboBox.addItem("Normal")
         self.shaderComboBox.addItem("Occlusion")
         self.shaderComboBox.addItem("UV")
-        textureRepeatLabel = QtGui.QLabel("Texture Repeat:")
+        self.selectedShaderCheckbox = QtGui.QCheckBox("Selected objects only")
+        shaderLayout.addWidget(shaderLabel)
+        shaderLayout.addWidget(self.shaderComboBox)
+        shaderLayout.addWidget(self.selectedShaderCheckbox)
+
+        textureRepeatLayout = QtGui.QHBoxLayout()
+        textureRepeatLabel = QtGui.QLabel("Texture repeat:")
+        textureRepeatLabel.setMaximumSize(85, 20)
         self.textureRepeatSpinbox = QtGui.QSpinBox()
         self.textureRepeatSpinbox.setValue(1)
         self.textureRepeatSpinbox.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
         textureRepeatSlider = QtGui.QSlider()
         textureRepeatSlider.setMinimum(1)
-        textureRepeatSlider.setMaximum(32)
+        textureRepeatSlider.setMaximum(64)
         textureRepeatSlider.setOrientation(QtCore.Qt.Horizontal)
         textureRepeatSlider.valueChanged[int].connect(self.textureRepeatSpinbox.setValue)
         textureRepeatSlider.setValue(4)
-        shaderLayout.addWidget(shaderLabel)
-        shaderLayout.addWidget(self.shaderComboBox)
-        shaderLayout.addWidget(textureRepeatLabel)
-        shaderLayout.addWidget(self.textureRepeatSpinbox)
-        shaderLayout.addWidget(textureRepeatSlider)
+        textureRepeatLayout.addWidget(textureRepeatLabel)
+        textureRepeatLayout.addWidget(self.textureRepeatSpinbox)
+        textureRepeatLayout.addWidget(textureRepeatSlider)
 
         # Ignore Layout
         ignoresGroupBox = QtGui.QGroupBox("Ignore")
@@ -316,6 +325,7 @@ class Aton(QtGui.QDialog):
         overridesLayout.addLayout(cameraAaLayout)
         overridesLayout.addLayout(renderRegionLayout)
         overridesLayout.addLayout(shaderLayout)
+        overridesLayout.addLayout(textureRepeatLayout)
         ignoresLayout.addLayout(ignoreLayout)
 
         mainLayout.addWidget(generalGroupBox)
@@ -343,6 +353,7 @@ class Aton(QtGui.QDialog):
         self.connect(self.sssCheckBox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(3))
         self.connect(self.shaderComboBox, QtCore.SIGNAL("currentIndexChanged(int)"), lambda: self.IPRUpdate(4))
         self.connect(self.textureRepeatSpinbox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(5))
+        self.connect(self.selectedShaderCheckbox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(4))
 
         self.setLayout(mainLayout)
 
@@ -409,8 +420,12 @@ class Aton(QtGui.QDialog):
         cmds.setAttr("defaultArnoldDisplayDriver.port", port)
 
         # Adding time changed callback
-        if self.timeChange == None:
-            self.timeChange = OM.MEventMessage.addEventCallback("timeChanged", self.updateFrame)
+        if self.timeChangedCB == None:
+            self.timeChangedCB = OM.MEventMessage.addEventCallback("timeChanged", self.timeChnaged)
+
+        # Adding selection changed callback
+        if self.selectionChangedCB == None:
+            self.selectionChangedCB = OM.MEventMessage.addEventCallback('SelectionChanged', self.selectionChanged)
 
         try: # If render session is not started yet
             cmds.arnoldIpr(mode='stop')
@@ -547,6 +562,17 @@ class Aton(QtGui.QDialog):
             while not AiNodeIteratorFinished(iterator):
                 node = AiNodeIteratorGetNext(iterator)
                 name = AiNodeGetName(node)
+
+                selChecked = self.selectedShaderCheckbox.isChecked()
+
+                if shaderIndex != 0 and selChecked:
+                    selectionList = cmds.ls(dag=1, sl=1, s=1)
+                    if selectionList > 0 and name not in selectionList:
+                        if name in self.shadersDict:
+                            defShader = self.shadersDict[AiNodeGetName(node)]
+                            AiNodeSetPtr(node, "shader", defShader)
+                        continue
+
                 # Setting overrides
                 if shaderIndex == 0:
                     if name in self.shadersDict:
@@ -575,17 +601,26 @@ class Aton(QtGui.QDialog):
         except RuntimeError:
             pass
 
-    def updateFrame(self, *args):
+    def timeChnaged(self, *args):
         ''' Callback method to update the frame number attr '''
         options = AiUniverseGetOptions()
         time = cmds.currentTime(q=1)
         AiNodeSetFlt(options, "frame", time)
 
+    def selectionChanged(self, *args):
+        ''' Callback method to update the frame number attr '''
+        self.IPRUpdate(4)
+
     def stop(self):
         ''' Stops the render session and removes the callbacks '''
-        if self.timeChange != None:
-            OM.MEventMessage.removeCallback(self.timeChange)
-            self.timeChange = None
+        if self.timeChangedCB != None:
+            OM.MEventMessage.removeCallback(self.timeChangedCB)
+            self.timeChangedCB = None
+
+        if self.selectionChangedCB != None:
+            OM.MEventMessage.removeCallback(self.selectionChangedCB)
+            self.selectionChangedCB = None
+
         try:
             cmds.arnoldIpr(mode='stop')
             sys.stdout.write("// Info: Aton - Render stopped.\n")
@@ -594,9 +629,13 @@ class Aton(QtGui.QDialog):
 
     def closeEvent(self, event):
         ''' Removes callback when closing the GUI '''
-        if self.timeChange != None:
-            OM.MEventMessage.removeCallback(self.timeChange)
-            self.timeChange = None
+        if self.timeChangedCB != None:
+            OM.MEventMessage.removeCallback(self.timeChangedCB)
+            self.timeChangedCB = None
+
+        if self.selectionChangedCB != None:
+            OM.MEventMessage.removeCallback(self.selectionChangedCB)
+            self.selectionChangedCB = None
 
 if __name__ == "__main__":
     aton = Aton()
