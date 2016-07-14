@@ -453,20 +453,25 @@ class Aton(QtGui.QDialog):
         self.placeTexture = AiNode("MayaPlace2DTexture")
         AiNodeLink(self.placeTexture, "uvCoord", self.checkerTexture)
         AiNodeLink(self.checkerTexture, "Kd", self.checkerShader)
+
         # Grey Shader
         self.greyShader = AiNode("standard")
+
         # Mirror Shader
         self.mirrorShader = AiNode("standard")
         AiNodeSetFlt(self.mirrorShader, "Kd", 0)
         AiNodeSetFlt(self.mirrorShader, "Ks", 1)
         AiNodeSetFlt(self.mirrorShader, "specular_roughness", 0)
+
         # Normal Shader
         self.normalShader = AiNode("utility")
         AiNodeSetInt(self.normalShader, "shade_mode", 2)
         AiNodeSetInt(self.normalShader, "color_mode", 2)
+
         # Occlusion Shader
         self.occlusionShader = AiNode("utility")
         AiNodeSetInt(self.occlusionShader, "shade_mode", 3)
+
         # UV Shader
         self.uvShader = AiNode("utility")
         AiNodeSetInt(self.uvShader, "shade_mode", 2)
@@ -575,9 +580,9 @@ class Aton(QtGui.QDialog):
                               1: lambda: AiNodeSetPtr(node, "shader", self.checkerShader),
                               2: lambda: AiNodeSetPtr(node, "shader", self.greyShader),
                               3: lambda: AiNodeSetPtr(node, "shader", self.mirrorShader),
-                              4: lambda: AiNodeSetPtr(node, "shader", self.mirrorShader),
-                              5: lambda: AiNodeSetPtr(node, "shader", self.mirrorShader),
-                              6: lambda: AiNodeSetPtr(node, "shader", self.mirrorShader)}[shaderIndex]()
+                              4: lambda: AiNodeSetPtr(node, "shader", self.normalShader),
+                              5: lambda: AiNodeSetPtr(node, "shader", self.occlusionShader),
+                              6: lambda: AiNodeSetPtr(node, "shader", self.uvShader)}[shaderIndex]()
 
         # Texture Repeat Udpate
         if attr == None or attr == 5:
