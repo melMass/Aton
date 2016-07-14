@@ -72,10 +72,11 @@ driver_open
     // Construct full version number
     char arch[3], major[3], minor[3], fix[3];
     AiGetVersion(arch, major, minor, fix);
-    int version = atoi(arch) +
-                  atoi(major) * 100 +
-                  atoi(minor) * 10000 +
-                  atoi(fix) * 1000000;
+    
+    int version = atoi(arch) * 1000000 +
+                  atoi(major) * 10000 +
+                  atoi(minor) * 100 +
+                  atoi(fix);
     
     ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
     
