@@ -553,7 +553,12 @@ class Aton(QtGui.QDialog):
             while not AiNodeIteratorFinished(iterator):
                 node = AiNodeIteratorGetNext(iterator)
                 name = AiNodeGetName(node)
-                self.shadersDict[name] = AiNodeGetPtr(node, "shader")
+                try: # If object name is not exist i.e. "root"
+                    sgList = cmds.listConnections(name, type='shadingEngine')
+                    if sgList > 0:
+                        self.shadersDict[name] = AiNodeGetPtr(node, "shader")
+                except ValueError:
+                    continue
 
         # Shader overrides Update
         shaderIndex = self.shaderComboBox.currentIndex()
@@ -564,7 +569,6 @@ class Aton(QtGui.QDialog):
                 name = AiNodeGetName(node)
 
                 selChecked = self.selectedShaderCheckbox.isChecked()
-
                 if shaderIndex != 0 and selChecked:
                     selectionList = cmds.ls(dag=1, sl=1, s=1)
                     if selectionList > 0 and name not in selectionList:
@@ -574,22 +578,15 @@ class Aton(QtGui.QDialog):
                         continue
 
                 # Setting overrides
-                if shaderIndex == 0:
-                    if name in self.shadersDict:
-                        defShader = self.shadersDict[AiNodeGetName(node)]
-                        AiNodeSetPtr(node, "shader", defShader)
-                elif shaderIndex == 1:
-                    AiNodeSetPtr(node, "shader", self.checkerShader)
-                elif shaderIndex == 2:
-                    AiNodeSetPtr(node, "shader", self.greyShader)
-                elif shaderIndex == 3:
-                    AiNodeSetPtr(node, "shader", self.mirrorShader)
-                elif shaderIndex == 4:
-                    AiNodeSetPtr(node, "shader", self.normalShader)
-                elif shaderIndex == 5:
-                    AiNodeSetPtr(node, "shader", self.occlusionShader)
-                elif shaderIndex == 6:
-                    AiNodeSetPtr(node, "shader", self.uvShader)
+                if name in self.shadersDict:
+                    defShader = self.shadersDict[AiNodeGetName(node)]
+                    result = {0: lambda: AiNodeSetPtr(node, "shader", defShader),
+                              1: lambda: AiNodeSetPtr(node, "shader", self.checkerShader),
+                              2: lambda: AiNodeSetPtr(node, "shader", self.greyShader),
+                              3: lambda: AiNodeSetPtr(node, "shader", self.mirrorShader),
+                              4: lambda: AiNodeSetPtr(node, "shader", self.mirrorShader),
+                              5: lambda: AiNodeSetPtr(node, "shader", self.mirrorShader),
+                              6: lambda: AiNodeSetPtr(node, "shader", self.mirrorShader)}[shaderIndex]()
 
         # Texture Repeat Udpate
         if attr == None or attr == 5:
@@ -609,7 +606,10 @@ class Aton(QtGui.QDialog):
 
     def selectionChanged(self, *args):
         ''' Callback method to update the frame number attr '''
-        self.IPRUpdate(4)
+        shaderIndex = self.shaderComboBox.currentIndex()
+        selectedObjects = self.selectedShaderCheckbox.isChecked()
+        if shaderIndex > 0 and selectedObjects:
+            self.IPRUpdate(4)
 
     def stop(self):
         ''' Stops the render session and removes the callbacks '''
