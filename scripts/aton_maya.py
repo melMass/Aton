@@ -514,26 +514,6 @@ class Aton(QtGui.QDialog):
                 AiNodeSetInt(options, "region_max_x", xres-1)
                 AiNodeSetInt(options, "region_max_y", yres-1)
 
-        # # Region Update
-        # if attr == None or attr == 7:
-        #     xres = self.scnOpt["width"] * self.resolutionSpinBox.value() / 100
-        #     yres = self.scnOpt["height"] * self.resolutionSpinBox.value() / 100
-        #     rMinX = self.renderRegionXSpinBox.value()
-        #     rMinY = yres - self.renderRegionTSpinBox.value()
-        #     rMaxX = self.renderRegionRSpinBox.value() -1
-        #     rMaxY = (yres - self.renderRegionYSpinBox.value()) - 1
-        #
-        #     if (rMinX >= 0) and (rMinY >= 0) and (rMaxX <= xres) and (rMaxY <= yres):
-        #         AiNodeSetInt(options, "region_min_x", rMinX)
-        #         AiNodeSetInt(options, "region_min_y", rMinY)
-        #         AiNodeSetInt(options, "region_max_x", rMaxX)
-        #         AiNodeSetInt(options, "region_max_y", rMaxY)
-        #     else:
-        #         AiNodeSetInt(options, "region_min_x", 0)
-        #         AiNodeSetInt(options, "region_min_y", 0)
-        #         AiNodeSetInt(options, "region_max_x", xres-1)
-        #         AiNodeSetInt(options, "region_max_y", yres-1)
-
         # Camera AA Update
         if attr == None or attr == 2:
             cameraAA = self.cameraAaSpinBox.value()
