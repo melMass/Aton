@@ -396,13 +396,13 @@ class Aton(QtGui.QDialog):
             cmds.warning("Aton driver for Arnold is not installed")
             return
 
-        # Get camera and port from UI
-        camera = self.getCamera()
-        port = self.portSpinBox.value()
-
         # Updating the port
         if self.defaultPort != 0:
+            port = self.portSpinBox.value()
             cmds.setAttr("defaultArnoldDisplayDriver.port", port)
+        else:
+            cmds.warning("Current renderer is not set to Arnold.")
+            return
 
         # Adding time changed callback
         if self.timeChangedCB == None:
@@ -428,6 +428,7 @@ class Aton(QtGui.QDialog):
 
         # Start IPR
         try:
+            camera = self.getCamera()
             cmds.arnoldIpr(cam=camera, mode='start')
         except RuntimeError:
             cmds.warning("Current renderer is not set to Arnold.")
