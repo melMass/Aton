@@ -396,7 +396,7 @@ class Aton(QtGui.QDialog):
             cmds.warning("Aton driver for Arnold is not installed")
             return
 
-        # Updating the port
+        # Updating the port from UI
         if self.defaultPort != 0:
             port = self.portSpinBox.value()
             cmds.setAttr("defaultArnoldDisplayDriver.port", port)
@@ -456,7 +456,7 @@ class Aton(QtGui.QDialog):
         self.greyShader = AiNode("standard")
         AiNodeSetFlt(self.greyShader, "Kd", 0.225)
         AiNodeSetFlt(self.greyShader, "Ks", 1)
-        AiNodeSetFlt(self.greyShader, "specular_roughness", 0.5)
+        AiNodeSetFlt(self.greyShader, "specular_roughness", 0.6)
         AiNodeSetBool(self.greyShader, "specular_Fresnel", True)
         AiNodeSetBool(self.greyShader, "Fresnel_use_IOR", True)
         AiNodeSetFlt(self.greyShader, "IOR", 1.1)
@@ -545,7 +545,7 @@ class Aton(QtGui.QDialog):
             AiNodeSetBool(options, "ignore_bump", bump)
             AiNodeSetBool(options, "ignore_sss", sss)
 
-        # Storing default assignments
+        # Storing default shader assignments
         if attr == None:
             # Initilize override shaders
             self.initOvrShaders()
