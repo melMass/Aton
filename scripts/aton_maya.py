@@ -34,7 +34,7 @@ class Aton(QtGui.QDialog):
 
         self.timeChangedCB = None
         self.selectionChangedCB = None
-        self.defaultPort = self.getSceneOption("port")
+        self.defaultPort = self.getSceneOption(0)
         self.setupUi()
 
     def getActiveCamera(self):
@@ -57,16 +57,16 @@ class Aton(QtGui.QDialog):
                 mel.eval("unifiedRenderGlobalsWindow;")
 
             try:
-                result = {"port" : lambda: cmds.getAttr("defaultArnoldDisplayDriver.port"),
-                          "camera" : lambda: self.getActiveCamera(),
-                          "width" : lambda: cmds.getAttr("defaultResolution.width"),
-                          "height" : lambda: cmds.getAttr("defaultResolution.height"),
-                          "AASamples" : lambda: cmds.getAttr("defaultArnoldRenderOptions.AASamples"),
-                          "motionBlur" : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreMotionBlur"),
-                          "subdivs" : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreSubdivision"),
-                          "displace" : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreDisplacement"),
-                          "bump" : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreBump"),
-                          "sss" : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreSss")}[attr]()
+                result = {0 : lambda: cmds.getAttr("defaultArnoldDisplayDriver.port"),
+                          1 : lambda: self.getActiveCamera(),
+                          2 : lambda: cmds.getAttr("defaultResolution.width"),
+                          3 : lambda: cmds.getAttr("defaultResolution.height"),
+                          4 : lambda: cmds.getAttr("defaultArnoldRenderOptions.AASamples"),
+                          5 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreMotionBlur"),
+                          6 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreSubdivision"),
+                          7 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreDisplacement"),
+                          8 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreBump"),
+                          9 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreSss")}[attr]()
             except KeyError:
                 pass
 
@@ -89,17 +89,17 @@ class Aton(QtGui.QDialog):
             self.cameraComboBox.setCurrentIndex(0)
             self.resolutionSpinBox.setValue(100)
             resolutionSlider.setValue(20)
-            self.cameraAaSpinBox.setValue(self.getSceneOption("AASamples"))
-            cameraAaSlider.setValue(self.getSceneOption("AASamples"))
+            self.cameraAaSpinBox.setValue(self.getSceneOption(4))
+            cameraAaSlider.setValue(self.getSceneOption(4))
             self.renderRegionXSpinBox.setValue(0)
             self.renderRegionYSpinBox.setValue(0)
-            self.renderRegionRSpinBox.setValue(self.getSceneOption("width"))
-            self.renderRegionTSpinBox.setValue(self.getSceneOption("height"))
-            self.motionBlurCheckBox.setChecked(self.getSceneOption("motionBlur"))
-            self.subdivsCheckBox.setChecked(self.getSceneOption("subdivs"))
-            self.displaceCheckBox.setChecked(self.getSceneOption("displace"))
-            self.bumpCheckBox.setChecked(self.getSceneOption("bump"))
-            self.sssCheckBox.setChecked(self.getSceneOption("sss"))
+            self.renderRegionRSpinBox.setValue(self.getSceneOption(2))
+            self.renderRegionTSpinBox.setValue(self.getSceneOption(3))
+            self.motionBlurCheckBox.setChecked(self.getSceneOption(5))
+            self.subdivsCheckBox.setChecked(self.getSceneOption(6))
+            self.displaceCheckBox.setChecked(self.getSceneOption(7))
+            self.bumpCheckBox.setChecked(self.getSceneOption(8))
+            self.sssCheckBox.setChecked(self.getSceneOption(9))
             self.shaderComboBox.setCurrentIndex(0)
             textureRepeatSlider.setValue(4)
             self.selectedShaderCheckbox.setChecked(0)
@@ -147,7 +147,7 @@ class Aton(QtGui.QDialog):
         cameraLabel.setMinimumSize(75, 20)
         self.cameraComboBox = QtGui.QComboBox()
         self.cameraComboBoxDict = {}
-        self.cameraComboBox.addItem("Current (%s)"%self.getSceneOption("camera"))
+        self.cameraComboBox.addItem("Current (%s)"%self.getSceneOption(1))
         for i in cmds.listCameras():
             self.cameraComboBox.addItem(i)
             self.cameraComboBoxDict[cmds.listCameras().index(i)+1] = i
@@ -184,7 +184,7 @@ class Aton(QtGui.QDialog):
         self.cameraAaSpinBox.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
         self.cameraAaSpinBox.setMaximum(64)
         self.cameraAaSpinBox.setMinimum(-64)
-        self.cameraAaSpinBox.setValue(self.getSceneOption("AASamples"))
+        self.cameraAaSpinBox.setValue(self.getSceneOption(4))
         cameraAaSlider = QtGui.QSlider()
         cameraAaSlider.setOrientation(QtCore.Qt.Horizontal)
         cameraAaSlider.setValue(self.cameraAaSpinBox.value())
@@ -233,8 +233,8 @@ class Aton(QtGui.QDialog):
             i.setMaximumSize(60,25)
             i.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
 
-        self.renderRegionRSpinBox.setValue(self.getSceneOption("width"))
-        self.renderRegionTSpinBox.setValue(self.getSceneOption("height"))
+        self.renderRegionRSpinBox.setValue(self.getSceneOption(2))
+        self.renderRegionTSpinBox.setValue(self.getSceneOption(3))
 
         # Shaders layout
         shaderLayout = QtGui.QHBoxLayout()
@@ -276,15 +276,15 @@ class Aton(QtGui.QDialog):
         ignoreLabel = QtGui.QLabel("Ignore:")
         ignoreLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
         self.motionBlurCheckBox = QtGui.QCheckBox("Motion Blur")
-        self.motionBlurCheckBox.setChecked(self.getSceneOption("motionBlur"))
+        self.motionBlurCheckBox.setChecked(self.getSceneOption(5))
         self.subdivsCheckBox = QtGui.QCheckBox("Subdivs")
-        self.subdivsCheckBox.setChecked(self.getSceneOption("subdivs"))
+        self.subdivsCheckBox.setChecked(self.getSceneOption(6))
         self.displaceCheckBox = QtGui.QCheckBox("Displace")
-        self.displaceCheckBox.setChecked(self.getSceneOption("displace"))
+        self.displaceCheckBox.setChecked(self.getSceneOption(7))
         self.bumpCheckBox = QtGui.QCheckBox("Bump")
-        self.bumpCheckBox.setChecked(self.getSceneOption("bump"))
+        self.bumpCheckBox.setChecked(self.getSceneOption(8))
         self.sssCheckBox = QtGui.QCheckBox("SSS")
-        self.sssCheckBox.setChecked(self.getSceneOption("sss"))
+        self.sssCheckBox.setChecked(self.getSceneOption(9))
         ignoreLayout.addWidget(self.motionBlurCheckBox)
         ignoreLayout.addWidget(self.subdivsCheckBox)
         ignoreLayout.addWidget(self.displaceCheckBox)
@@ -344,7 +344,7 @@ class Aton(QtGui.QDialog):
     def getCamera(self):
         ''' Returns current selected camera from GUI '''
         if self.cameraComboBox.currentIndex() == 0:
-            camera = self.getSceneOption("camera")
+            camera = self.getSceneOption(1)
         else:
             camera = self.cameraComboBoxDict[self.cameraComboBox.currentIndex()]
             if cmds.listRelatives(camera, s=1) != None:
@@ -503,8 +503,8 @@ class Aton(QtGui.QDialog):
 
         # Resolution and Region Update
         if attr == None or attr == 1:
-            xres = self.getSceneOption("width") * self.resolutionSpinBox.value() / 100
-            yres = self.getSceneOption("height") * self.resolutionSpinBox.value() / 100
+            xres = self.getSceneOption(2) * self.resolutionSpinBox.value() / 100
+            yres = self.getSceneOption(3) * self.resolutionSpinBox.value() / 100
 
             AiNodeSetInt(options, "xres", xres)
             AiNodeSetInt(options, "yres", yres)
