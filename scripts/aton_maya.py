@@ -46,9 +46,7 @@ class Aton(QtGui.QDialog):
 
     def getSceneOption(self, attr):
         ''' Returns requested scene options attribute value'''
-
         result = 0
-
         if cmds.getAttr("defaultRenderGlobals.ren") == "arnold":
 
             try: # To init Arnold Render settings
@@ -56,20 +54,16 @@ class Aton(QtGui.QDialog):
             except ValueError:
                 mel.eval("unifiedRenderGlobalsWindow;")
 
-            try:
-                result = {0 : lambda: cmds.getAttr("defaultArnoldDisplayDriver.port"),
-                          1 : lambda: self.getActiveCamera(),
-                          2 : lambda: cmds.getAttr("defaultResolution.width"),
-                          3 : lambda: cmds.getAttr("defaultResolution.height"),
-                          4 : lambda: cmds.getAttr("defaultArnoldRenderOptions.AASamples"),
-                          5 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreMotionBlur"),
-                          6 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreSubdivision"),
-                          7 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreDisplacement"),
-                          8 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreBump"),
-                          9 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreSss")}[attr]()
-            except KeyError:
-                pass
-
+            result = {0 : lambda: cmds.getAttr("defaultArnoldDisplayDriver.port"),
+                      1 : lambda: self.getActiveCamera(),
+                      2 : lambda: cmds.getAttr("defaultResolution.width"),
+                      3 : lambda: cmds.getAttr("defaultResolution.height"),
+                      4 : lambda: cmds.getAttr("defaultArnoldRenderOptions.AASamples"),
+                      5 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreMotionBlur"),
+                      6 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreSubdivision"),
+                      7 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreDisplacement"),
+                      8 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreBump"),
+                      9 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreSss")}[attr]()
         return result
 
     def setupUi(self):
@@ -147,7 +141,7 @@ class Aton(QtGui.QDialog):
         cameraLabel.setMinimumSize(75, 20)
         self.cameraComboBox = QtGui.QComboBox()
         self.cameraComboBoxDict = {}
-        self.cameraComboBox.addItem("Current (%s)"%self.getSceneOption(1))
+        self.cameraComboBox.addItem("Current view")
         for i in cmds.listCameras():
             self.cameraComboBox.addItem(i)
             self.cameraComboBoxDict[cmds.listCameras().index(i)+1] = i
@@ -417,17 +411,12 @@ class Aton(QtGui.QDialog):
         except RuntimeError:
             pass
 
-        # Temporary makeing default cameras visible before scene export
-        hiddenCams = []
-        for cam in cmds.listCameras():
-            camShape = cmds.listRelatives(cam, s=1)[0]
-            visible = cmds.getAttr("%s.visibility"%cam) and cmds.getAttr("%s.visibility"%camShape)
-            if not visible:
-                hiddenCams.append(cam)
-                cmds.showHidden(cam)
+        # Temporary makeing hidden cameras visible before scene export
+        hCams = [x for x in cmds.listCameras() if not cmds.getAttr("%s.visibility"%x) or
+                                                  not cmds.getAttr("%s.visibility"%cmds.listRelatives(x, s=1)[0])]
+        for i in hCams: cmds.showHidden(i)
 
-        # Start IPR
-        try:
+        try: # Start IPR
             camera = self.getCamera()
             cmds.arnoldIpr(cam=camera, mode='start')
         except RuntimeError:
@@ -438,13 +427,12 @@ class Aton(QtGui.QDialog):
         sys.stdout.write("// Info: Aton - Render started.\n")
 
         # Setting back to default
-        for i in hiddenCams: cmds.hide(i)
+        for i in hCams: cmds.hide(i)
         cmds.setAttr("defaultArnoldDisplayDriver.aiTranslator", defaultTranslator, type="string")
         cmds.setAttr("defaultArnoldDisplayDriver.port", self.defaultPort)
 
     def initOvrShaders(self):
         ''' Initilize override shaders '''
-
         # Checker shader
         self.checkerShader = AiNode("standard")
         checkerTexture = AiNode("MayaChecker")
@@ -547,9 +535,7 @@ class Aton(QtGui.QDialog):
 
         # Storing default shader assignments
         if attr == None:
-            # Initilize override shaders
             self.initOvrShaders()
-            # Store shader assignments
             self.shadersDict = {}
             iterator = AiUniverseGetNodeIterator(AI_NODE_SHAPE)
             while not AiNodeIteratorFinished(iterator):
@@ -562,7 +548,7 @@ class Aton(QtGui.QDialog):
                 except ValueError:
                     continue
 
-        # Shader overrides Update
+        # Shader override Update
         shaderIndex = self.shaderComboBox.currentIndex()
         if attr == 4 or shaderIndex > 0:
             iterator = AiUniverseGetNodeIterator(AI_NODE_SHAPE)
