@@ -444,16 +444,16 @@ class Aton(QtGui.QDialog):
         self.greyShader = AiNode("standard")
         AiNodeSetFlt(self.greyShader, "Kd", 0.225)
         AiNodeSetFlt(self.greyShader, "Ks", 1)
-        AiNodeSetFlt(self.greyShader, "specular_roughness", 0.6)
+        AiNodeSetFlt(self.greyShader, "specular_roughness", 0.3)
         AiNodeSetBool(self.greyShader, "specular_Fresnel", True)
         AiNodeSetBool(self.greyShader, "Fresnel_use_IOR", True)
-        AiNodeSetFlt(self.greyShader, "IOR", 1.1)
+        AiNodeSetFlt(self.greyShader, "IOR", 1.3)
 
         # Mirror Shader
         self.mirrorShader = AiNode("standard")
         AiNodeSetFlt(self.mirrorShader, "Kd", 0)
         AiNodeSetFlt(self.mirrorShader, "Ks", 1)
-        AiNodeSetFlt(self.mirrorShader, "specular_roughness", 0)
+        AiNodeSetFlt(self.mirrorShader, "specular_roughness", 0.005)
         AiNodeSetBool(self.mirrorShader, "specular_Fresnel", True)
         AiNodeSetFlt(self.mirrorShader, "Ksn", 0.6)
 
