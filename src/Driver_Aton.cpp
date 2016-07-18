@@ -4,35 +4,11 @@ Dan Bethell, Johannes Saam, Vahan Sosoyan, Brian Scherbinski.
 All rights reserved. See COPYING.txt for more details.
 */
 
-#include <iostream>
-#include <exception>
-#include <cstring>
-
-#include "Client.h"
-#include "Data.h"
-
 #include <ai.h>
-#include <ai_critsec.h>
-#include <ai_drivers.h>
-#include <ai_filters.h>
-#include <ai_msg.h>
-#include <ai_render.h>
-#include <ai_universe.h>
 
-#include <boost/foreach.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/algorithm/string.hpp>
-#include <boost/asio.hpp>
-#include <boost/bind.hpp>
-#include <boost/thread/thread.hpp>
-#include <boost/format.hpp>
+#include "Data.h"
+#include "Client.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <iostream>
-#include <deque>
-
-using namespace std;
 using boost::asio::ip::tcp;
 
 AI_DRIVER_NODE_EXPORT_METHODS(AtonDriverMtd);
@@ -40,39 +16,34 @@ AI_DRIVER_NODE_EXPORT_METHODS(AtonDriverMtd);
 struct ShaderData
 {
    aton::Client* client;
+   int xres, yres;
 };
 
-char* getHost()
+const char* getHost()
 {
-    char* aton_host;
-    std::string def_host;
-    
-    aton_host = getenv("ATON_HOST");
+    const char* aton_host = getenv("ATON_HOST");
     
     if (aton_host == NULL)
-        def_host = "127.0.0.1";
-    else
-        def_host = aton_host;
+        aton_host = "127.0.0.1";
     
-    char* host = new char[def_host.length()+1];
-    strcpy(host, def_host.c_str());
+    char* host = new char[strlen(aton_host) + 1];
+    strcpy(host, aton_host);
+    aton_host = host;
     
-    return host;
+    return aton_host;
 }
 
 int getPort()
 {
-    char* aton_port;
-    int def_port;
+    const char* def_port = getenv("ATON_PORT");
+    int aton_port;
     
-    aton_port = getenv("ATON_PORT");
-    
-    if (aton_port == NULL)
-        def_port = 9201;
+    if (def_port == NULL)
+        aton_port = 9201;
     else
-        def_port = atoi(aton_port);
+        aton_port = atoi(def_port);
     
-    return def_port;
+    return aton_port;
 }
 
 node_parameters
@@ -90,81 +61,67 @@ node_initialize
     AiDriverInitialize(node, true, AiMalloc(sizeof(ShaderData)));
 }
 
-node_update
-{
-}
+node_update {}
 
-driver_supports_pixel_type
-{
-    return true;
-}
+driver_supports_pixel_type { return true; }
 
-driver_extension
-{
-    return NULL;
-}
+driver_extension { return NULL; }
 
 driver_open
 {
-    // Construct full version number into padded interger
-    string versionString = AiGetVersion(0, 0, 0, 0);
-    vector<string> svec;
-    vector<int> ivec;
-    boost::split(svec, versionString, boost::is_any_of("."));
+    // Construct full version number
+    char arch[3], major[3], minor[3], fix[3];
+    AiGetVersion(arch, major, minor, fix);
     
-    BOOST_FOREACH(std::string item, svec)
-    {
-        int i = boost::lexical_cast<int>(item);
-        ivec.push_back(i);
-    }
-    int version = ivec[3] + ivec[2]*100 + ivec[1]*10000 + ivec[0] * 1000000;
-
+    int version = atoi(arch) * 1000000 +
+                  atoi(major) * 10000 +
+                  atoi(minor) * 100 +
+                  atoi(fix);
+    
     ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
     
+    // Get Frame number
     AtNode* options = AiUniverseGetOptions();
     float currentFrame = AiNodeGetFlt(options, "frame");
-
+    
+    // Get Host and Port
     const char* host = AiNodeGetStr(node, "host");
     int port = AiNodeGetInt(node, "port");
-    int width = display_window.maxx - display_window.minx +1;
-    int height = display_window.maxy - display_window.miny +1;
-
-    int rWidth = data_window.maxx - data_window.minx +1;
-    int rHeight = data_window.maxy - data_window.miny +1;
+    
+    // Get resolution and area
+    data->xres = display_window.maxx - display_window.minx + 1;
+    data->yres = display_window.maxy - display_window.miny + 1;
+    
+    // Get area of region
+    int rWidth = data_window.maxx - data_window.minx + 1;
+    int rHeight = data_window.maxy - data_window.miny + 1;
     long long rArea = rWidth * rHeight;
 
-    // Now we can connect to the server and start rendering
-    try
+    try // Now we can connect to the server and start rendering
     {
        // Create a new aton object
-       data->client = new aton::Client( host, port );
+       data->client = new aton::Client(host, port);
 
        // Make image header & send to server
-       aton::Data header( 0, 0, width, height, rArea, version, currentFrame);
-       data->client->openImage( header );
+       aton::Data header(data->xres, data->yres,
+                         0, 0, 0, 0, rArea, version, currentFrame);
+       data->client->openImage(header);
     }
     catch (const std::exception &e)
     {
         const char *err = e.what();
-        AiMsgError("Aton display driver", "%s", err);
+        AiMsgError("Aton display driver %s", err);
     }
-
 }
 
-driver_needs_bucket
-{
-   return true;
-}
+driver_needs_bucket { return true; }
 
 driver_prepare_bucket
 {
     AiMsgDebug("[Aton] prepare bucket (%d, %d)", bucket_xo, bucket_yo);
 }
 
-driver_process_bucket
-{
-
-}
+driver_process_bucket { }
 
 driver_write_bucket
 {
@@ -174,11 +131,11 @@ driver_write_bucket
     int spp = 0;
     const void* bucket_data;
     const char* aov_name;
-
+    
     while (AiOutputIteratorGetNext(iterator, &aov_name, &pixel_type, &bucket_data))
     {
-        const float* ptr = reinterpret_cast<const float*> (bucket_data);
-        unsigned long long ram = AiMsgUtilGetUsedMemory();
+        const float* ptr = reinterpret_cast<const float*>(bucket_data);
+        long long ram = AiMsgUtilGetUsedMemory();
         unsigned int time = AiMsgUtilGetElapsedTime();
 
         switch (pixel_type)
@@ -194,7 +151,7 @@ driver_write_bucket
         }
         
         // Create our data object
-        aton::Data packet(bucket_xo, bucket_yo,
+        aton::Data packet(data->xres, data->yres, bucket_xo, bucket_yo,
                           bucket_size_x, bucket_size_y,
                           0, 0, 0, spp, ram, time, aov_name, ptr);
 
@@ -225,7 +182,6 @@ node_finish
     // Release the driver
     ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
     delete data->client;
-    delete[] getHost();
 
     AiFree(data);
     AiDriverDestroy(node);

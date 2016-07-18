@@ -24,18 +24,20 @@ namespace aton
     friend class Client;
     friend class Server;
     public:
-        Data(int x=0,
-             int y=0,
-             int width=0, 
-             int height=0, 
-             long long rArea=0, 
-             int version = 0, 
-             float currentFrame=0.f,
-             int spp=0, 
-             long long ram=0, 
-             int time=0, 
-             const char *aovName = 0, 
-             const float *data=0);
+        Data(const int& xres = 0,
+             const int& yres = 0,
+             const int& bucket_xo = 0,
+             const int& bucket_yo = 0,
+             const int& bucket_size_x = 0,
+             const int& bucket_size_y = 0,
+             const long long& rArea = 0,
+             const int& version = 0,
+             const float& currentFrame = 0.0f,
+             const int& spp = 0,
+             const long long& ram = 0,
+             const int& time = 0,
+             const char* aovName = NULL,
+             const float* data = NULL);
         
         ~Data();
         
@@ -44,55 +46,68 @@ namespace aton
         // 1: pixels
         // 2: image close
         const int type() const { return mType; }
-
-        // Get x position
-        int x() const { return mX; }
+    
+        // Get x resolution
+        const int& xres() const { return mXres; }
+        
+        // Get y resolution
+        const int& yres() const { return mYres; }
         
         // Get y position
-        int y() const { return mY; }
+        const int& bucket_xo() const { return mBucket_xo; }
+        
+        // Get y position
+        const int& bucket_yo() const { return mBucket_yo; }
         
         // Get width
-        int width() const { return mWidth; }
+        const int& bucket_size_x() const { return mBucket_size_x; }
         
         // Get height
-        int height() const { return mHeight; }
+        const int& bucket_size_y() const { return mBucket_size_y; }
         
         // Get area of the render region
-        long long rArea() const { return mRArea; }
+        const long long& rArea() const { return mRArea; }
         
         // Version number
-        int version() const { return mVersion; }
+        const int& version() const { return mVersion; }
         
         // Current frame
-        float currentFrame() const { return mCurrentFrame; }
+        const float& currentFrame() const { return mCurrentFrame; }
         
         // Samples-per-pixel, aka channel depth
-        int spp() const { return mSpp; }
+        const int& spp() const { return mSpp; }
         
         // Taken memory while rendering
-        long long ram() const { return mRam; }
+        const long long& ram() const { return mRam; }
         
         // Taken time while rendering
-        int time() const { return mTime; }
+        const unsigned int& time() const { return mTime; }
         
         // Get Aov name
         const char* aovName() const { return mAovName; }
         
         // Deallocate Aov name
-        void clearAovName();
+        void deAllocAovName();
         
         // Pointer to pixel data owned by the display driver (client-side)
         const float* data() const { return mpData; }
         
-        // Pointer to pixel data owned by this object (server-side)
-        const float* pixels() const { return &mPixelStore[0]; }
-
+        // Reference to pixel data owned by this object (server-side)
+        const float& pixel(int index = 0) { return mPixelStore[index]; }
+        
     private:
         // What type of data is this?
         int mType;
 
-        // X & Y position
-        int mX, mY;
+        // Resolution, X & Y position,
+        // Bucket width height, Num of channels (samples)
+        int mXres,
+            mYres,
+            mBucket_xo,
+            mBucket_yo,
+            mBucket_size_x,
+            mBucket_size_y,
+            mSpp;
 
         // Version number
         int mVersion;
@@ -101,11 +116,12 @@ namespace aton
         float mCurrentFrame;
 
         // Width, height, num channels (samples)
-        unsigned int mWidth, mHeight, mSpp, mTime;
+        unsigned int mTime;
+        
+        // Region area, Memory
+        long long mRArea, mRam;
 
-        unsigned long long mRArea, mRam;
-
-        char *mAovName;
+        const char *mAovName;
 
         // Our pixel data pointer (for driver-owned pixels)
         float *mpData;

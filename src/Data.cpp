@@ -5,47 +5,45 @@ All rights reserved. See COPYING.txt for more details.
 */
 
 #include "Data.h"
-#include <cstring>
-#include <iostream>
 
 using namespace aton;
 
-Data::Data(int x, 
-           int y,
-           int width, 
-           int height, 
-           long long rArea, 
-           int version, 
-           float currentFrame,
-           int spp, 
-           long long ram, 
-           int time, 
+Data::Data(const int& xres,
+           const int& yres,
+           const int& bucket_xo,
+           const int& bucket_yo,
+           const int& bucket_size_x,
+           const int& bucket_size_y,
+           const long long& rArea,
+           const int& version,
+           const float& currentFrame,
+           const int& spp,
+           const long long& ram,
+           const int& time,
            const char* aovName, 
            const float* data ): mType(-1),
-                                mX(x),
-                                mY(y),
-                                mWidth(width),
-                                mHeight(height),
+                                mXres(xres),
+                                mYres(yres),
+                                mBucket_xo(bucket_xo),
+                                mBucket_yo(bucket_yo),
+                                mBucket_size_x(bucket_size_x),
+                                mBucket_size_y(bucket_size_y),
                                 mRArea(rArea),
                                 mVersion(version),
                                 mCurrentFrame(currentFrame),
                                 mSpp(spp),
                                 mRam(ram),
-                                mTime(time)
+                                mTime(time),
+                                mAovName(aovName)
 {
-    if (aovName != 0)
-        mAovName = const_cast<char*>(aovName);
-
-    if (data != 0)
+    if (data != NULL)
         mpData = const_cast<float*>(data);
 }
 
-void Data::clearAovName()
+void Data::deAllocAovName()
 {
     delete[] mAovName;
     mAovName = NULL;
 }
 
-Data::~Data()
-{
-}
+Data::~Data() { }

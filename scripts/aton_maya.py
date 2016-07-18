@@ -1,8 +1,9 @@
 __author__ = "Vahan Sosoyan"
 __copyright__ = "2016 All rights reserved. See Copyright.txt for more details."
-__version__ = "v1.1.2"
+__version__ = "v1.1.3"
 
 import sys
+
 import maya.mel as mel
 import maya.OpenMaya as OM
 import pymel.core as pm
@@ -31,57 +32,50 @@ class Aton(QtGui.QDialog):
         if cmds.window(self.windowName, exists = True):
             cmds.deleteUI(self.windowName, wnd = True)
 
+        self.timeChangedCB = None
+        self.selectionChangedCB = None
+        self.defaultPort = self.getSceneOption(0)
         self.setupUi()
 
-    def closeEvent(self, event):
-        if self.timeChange != None:
-            OM.MEventMessage.removeCallback(self.timeChange)
-            self.timeChange = None
+    def getActiveCamera(self):
+        ''' Returns active camera shape name '''
+        cam = cmds.modelEditor(cmds.playblast(ae=1), q=1, cam=1)
+        if cmds.listRelatives(cam) != None:
+            cam = cmds.listRelatives(cam)[0]
+        return cam
 
-    def getSceneOptions(self):
-        sceneOptions = {}
+    def getSceneOption(self, attr):
+        ''' Returns requested scene options attribute value'''
+        result = 0
         if cmds.getAttr("defaultRenderGlobals.ren") == "arnold":
-            sceneOptions["port"] = cmds.getAttr("defaultArnoldDisplayDriver.port")
-            sceneOptions["camera"] = core.ACTIVE_CAMERA
-            sceneOptions["width"]  = cmds.getAttr("defaultResolution.width")
-            sceneOptions["height"] = cmds.getAttr("defaultResolution.height")
-            try:
-                sceneOptions["AASamples"] = cmds.getAttr("defaultArnoldRenderOptions.AASamples")
+
+            try: # To init Arnold Render settings
+                cmds.getAttr("defaultArnoldDisplayDriver.port")
             except ValueError:
                 mel.eval("unifiedRenderGlobalsWindow;")
-            sceneOptions["AASamples"] = cmds.getAttr("defaultArnoldRenderOptions.AASamples")
-            sceneOptions["motionBlur"] = cmds.getAttr("defaultArnoldRenderOptions.ignoreMotionBlur")
-            sceneOptions["subdivs"] = cmds.getAttr("defaultArnoldRenderOptions.ignoreSubdivision")
-            sceneOptions["displace"] = cmds.getAttr("defaultArnoldRenderOptions.ignoreDisplacement")
-            sceneOptions["bump"] = cmds.getAttr("defaultArnoldRenderOptions.ignoreBump")
-            sceneOptions["sss"] = cmds.getAttr("defaultArnoldRenderOptions.ignoreSss")
-        else:
-            sceneOptions["port"] = 0
-            sceneOptions["camera"] = "None"
-            sceneOptions["width"]  = 0
-            sceneOptions["height"] = 0
-            sceneOptions["AASamples"] = 0
-            sceneOptions["motionBlur"] = 0
-            sceneOptions["subdivs"] = 0
-            sceneOptions["displace"] = 0
-            sceneOptions["bump"] = 0
-            sceneOptions["sss"] = 0
-            cmds.warning("Current renderer is not set to Arnold.")
 
-        return sceneOptions
+            result = {0 : lambda: cmds.getAttr("defaultArnoldDisplayDriver.port"),
+                      1 : lambda: self.getActiveCamera(),
+                      2 : lambda: cmds.getAttr("defaultResolution.width"),
+                      3 : lambda: cmds.getAttr("defaultResolution.height"),
+                      4 : lambda: cmds.getAttr("defaultArnoldRenderOptions.AASamples"),
+                      5 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreMotionBlur"),
+                      6 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreSubdivision"),
+                      7 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreDisplacement"),
+                      8 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreBump"),
+                      9 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreSss")}[attr]()
+        return result
 
     def setupUi(self):
+        ''' Building the GUI '''
+        def resUpdateUi():
+            self.resolutionSpinBox.setValue(resolutionSlider.value() * 5)
 
-        def updateUi():
-            self.portSpinBox.setValue(portSlider.value()+self.defaultPort)
-            self.resolutionSpinBox.setValue(resolutionSlider.value()*5)
+        def camUpdateUi():
             self.cameraAaSpinBox.setValue(cameraAaSlider.value())
 
-        def regionUpdateUi():
-            self.renderRegionRSpinBox.setValue(self.getSceneOptions()["width"] *
-                                               self.resolutionSpinBox.value() / 100)
-            self.renderRegionTSpinBox.setValue(self.getSceneOptions()["height"] *
-                                               self.resolutionSpinBox.value() / 100)
+        def portUpdateUi():
+            self.portSpinBox.setValue(portSlider.value() + self.defaultPort)
 
         def resetUi(*args):
             self.portSpinBox.setValue(self.defaultPort)
@@ -89,25 +83,28 @@ class Aton(QtGui.QDialog):
             self.cameraComboBox.setCurrentIndex(0)
             self.resolutionSpinBox.setValue(100)
             resolutionSlider.setValue(20)
-            self.cameraAaSpinBox.setValue(self.getSceneOptions()["AASamples"])
-            cameraAaSlider.setValue(self.getSceneOptions()["AASamples"])
+            self.cameraAaSpinBox.setValue(self.getSceneOption(4))
+            cameraAaSlider.setValue(self.getSceneOption(4))
             self.renderRegionXSpinBox.setValue(0)
             self.renderRegionYSpinBox.setValue(0)
-            self.renderRegionRSpinBox.setValue(self.getSceneOptions()["width"])
-            self.renderRegionTSpinBox.setValue(self.getSceneOptions()["height"])
-            self.motionBlurCheckBox.setChecked(self.getSceneOptions()["motionBlur"])
-            self.subdivsCheckBox.setChecked(self.getSceneOptions()["subdivs"])
-            self.displaceCheckBox.setChecked(self.getSceneOptions()["displace"])
-            self.bumpCheckBox.setChecked(self.getSceneOptions()["bump"])
-            self.sssCheckBox.setChecked(self.getSceneOptions()["sss"])
+            self.renderRegionRSpinBox.setValue(self.getSceneOption(2))
+            self.renderRegionTSpinBox.setValue(self.getSceneOption(3))
+            self.motionBlurCheckBox.setChecked(self.getSceneOption(5))
+            self.subdivsCheckBox.setChecked(self.getSceneOption(6))
+            self.displaceCheckBox.setChecked(self.getSceneOption(7))
+            self.bumpCheckBox.setChecked(self.getSceneOption(8))
+            self.sssCheckBox.setChecked(self.getSceneOption(9))
+            self.shaderComboBox.setCurrentIndex(0)
+            textureRepeatSlider.setValue(4)
+            self.selectedShaderCheckbox.setChecked(0)
 
         self.setObjectName(self.windowName)
         self.setWindowTitle("Aton %s"%__version__)
         self.setWindowFlags(QtCore.Qt.Tool)
         self.setAttribute(QtCore.Qt.WA_AlwaysShowToolTips)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-        self.setMinimumSize(400, 300)
-        self.setMaximumSize(400, 300)
+        self.setMinimumSize(400, 350)
+        self.setMaximumSize(400, 350)
 
         mainLayout = QtGui.QVBoxLayout()
         mainLayout.setContentsMargins(5,5,5,5)
@@ -126,14 +123,12 @@ class Aton(QtGui.QDialog):
         self.portSpinBox.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
         self.portSpinBox.setMaximum(1024)
         self.portSpinBox.setMaximum(9999)
-        self.defaultPort = self.getSceneOptions()["port"]
         self.portSpinBox.setValue(self.defaultPort)
         portSlider = QtGui.QSlider()
         portSlider.setOrientation(QtCore.Qt.Horizontal)
         portSlider.setMinimum(0)
         portSlider.setMaximum(15)
         portSlider.setValue(0)
-        self.timeChange = None
         portLayout.addWidget(portLabel)
         portLayout.addWidget(self.portSpinBox)
         portLayout.addWidget(portSlider)
@@ -146,7 +141,7 @@ class Aton(QtGui.QDialog):
         cameraLabel.setMinimumSize(75, 20)
         self.cameraComboBox = QtGui.QComboBox()
         self.cameraComboBoxDict = {}
-        self.cameraComboBox.addItem("Current (%s)"%self.getSceneOptions()["camera"])
+        self.cameraComboBox.addItem("Current view")
         for i in cmds.listCameras():
             self.cameraComboBox.addItem(i)
             self.cameraComboBoxDict[cmds.listCameras().index(i)+1] = i
@@ -183,11 +178,12 @@ class Aton(QtGui.QDialog):
         self.cameraAaSpinBox.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
         self.cameraAaSpinBox.setMaximum(64)
         self.cameraAaSpinBox.setMinimum(-64)
-        self.cameraAaSpinBox.setValue(self.getSceneOptions()["AASamples"])
+        self.cameraAaSpinBox.setValue(self.getSceneOption(4))
         cameraAaSlider = QtGui.QSlider()
         cameraAaSlider.setOrientation(QtCore.Qt.Horizontal)
         cameraAaSlider.setValue(self.cameraAaSpinBox.value())
         cameraAaSlider.setMaximum(16)
+        cameraAaSlider.valueChanged[int].connect(self.cameraAaSpinBox.setValue)
         cameraAaLayout.addWidget(cameraAaLabel)
         cameraAaLayout.addWidget(self.cameraAaSpinBox)
         cameraAaLayout.addWidget(cameraAaSlider)
@@ -231,26 +227,58 @@ class Aton(QtGui.QDialog):
             i.setMaximumSize(60,25)
             i.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
 
-        self.renderRegionRSpinBox.setValue(self.getSceneOptions()["width"])
-        self.renderRegionTSpinBox.setValue(self.getSceneOptions()["height"])
+        self.renderRegionRSpinBox.setValue(self.getSceneOption(2))
+        self.renderRegionTSpinBox.setValue(self.getSceneOption(3))
 
-        ignoresGroupBox = QtGui.QGroupBox("Ignore")
-        ignoresLayout = QtGui.QVBoxLayout(ignoresGroupBox)
+        # Shaders layout
+        shaderLayout = QtGui.QHBoxLayout()
+        shaderLabel = QtGui.QLabel("Shader override:")
+        shaderLabel.setMaximumSize(85, 20)
+        self.shaderComboBox = QtGui.QComboBox()
+        self.shaderComboBox.addItem("Disabled")
+        self.shaderComboBox.addItem("Checker")
+        self.shaderComboBox.addItem("Grey")
+        self.shaderComboBox.addItem("Mirror")
+        self.shaderComboBox.addItem("Normal")
+        self.shaderComboBox.addItem("Occlusion")
+        self.shaderComboBox.addItem("UV")
+        self.selectedShaderCheckbox = QtGui.QCheckBox("Selected objects only")
+        shaderLayout.addWidget(shaderLabel)
+        shaderLayout.addWidget(self.shaderComboBox)
+        shaderLayout.addWidget(self.selectedShaderCheckbox)
+
+        textureRepeatLayout = QtGui.QHBoxLayout()
+        textureRepeatLabel = QtGui.QLabel("Texture repeat:")
+        textureRepeatLabel.setMaximumSize(85, 20)
+        self.textureRepeatSpinbox = QtGui.QSpinBox()
+        self.textureRepeatSpinbox.setValue(1)
+        self.textureRepeatSpinbox.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
+        textureRepeatSlider = QtGui.QSlider()
+        textureRepeatSlider.setMinimum(1)
+        textureRepeatSlider.setMaximum(64)
+        textureRepeatSlider.setOrientation(QtCore.Qt.Horizontal)
+        textureRepeatSlider.valueChanged[int].connect(self.textureRepeatSpinbox.setValue)
+        textureRepeatSlider.setValue(4)
+        textureRepeatLayout.addWidget(textureRepeatLabel)
+        textureRepeatLayout.addWidget(self.textureRepeatSpinbox)
+        textureRepeatLayout.addWidget(textureRepeatSlider)
 
         # Ignore Layout
+        ignoresGroupBox = QtGui.QGroupBox("Ignore")
+        ignoresLayout = QtGui.QVBoxLayout(ignoresGroupBox)
         ignoreLayout = QtGui.QHBoxLayout()
         ignoreLabel = QtGui.QLabel("Ignore:")
         ignoreLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
         self.motionBlurCheckBox = QtGui.QCheckBox("Motion Blur")
-        self.motionBlurCheckBox.setChecked(self.getSceneOptions()["motionBlur"])
+        self.motionBlurCheckBox.setChecked(self.getSceneOption(5))
         self.subdivsCheckBox = QtGui.QCheckBox("Subdivs")
-        self.subdivsCheckBox.setChecked(self.getSceneOptions()["subdivs"])
+        self.subdivsCheckBox.setChecked(self.getSceneOption(6))
         self.displaceCheckBox = QtGui.QCheckBox("Displace")
-        self.displaceCheckBox.setChecked(self.getSceneOptions()["displace"])
+        self.displaceCheckBox.setChecked(self.getSceneOption(7))
         self.bumpCheckBox = QtGui.QCheckBox("Bump")
-        self.bumpCheckBox.setChecked(self.getSceneOptions()["bump"])
+        self.bumpCheckBox.setChecked(self.getSceneOption(8))
         self.sssCheckBox = QtGui.QCheckBox("SSS")
-        self.sssCheckBox.setChecked(self.getSceneOptions()["sss"])
+        self.sssCheckBox.setChecked(self.getSceneOption(9))
         ignoreLayout.addWidget(self.motionBlurCheckBox)
         ignoreLayout.addWidget(self.subdivsCheckBox)
         ignoreLayout.addWidget(self.displaceCheckBox)
@@ -275,6 +303,8 @@ class Aton(QtGui.QDialog):
         overridesLayout.addLayout(resolutionLayout)
         overridesLayout.addLayout(cameraAaLayout)
         overridesLayout.addLayout(renderRegionLayout)
+        overridesLayout.addLayout(shaderLayout)
+        overridesLayout.addLayout(textureRepeatLayout)
         ignoresLayout.addLayout(ignoreLayout)
 
         mainLayout.addWidget(generalGroupBox)
@@ -282,111 +312,45 @@ class Aton(QtGui.QDialog):
         mainLayout.addWidget(ignoresGroupBox)
         mainLayout.addLayout(mainButtonslayout)
 
-        self.connect(portSlider, QtCore.SIGNAL("valueChanged(int)"), updateUi)
-        self.connect(resolutionSlider, QtCore.SIGNAL("valueChanged(int)"), updateUi)
-        self.connect(self.resolutionSpinBox, QtCore.SIGNAL("valueChanged(int)"), regionUpdateUi)
-        self.connect(self.resolutionSpinBox, QtCore.SIGNAL("editingFinished()"), regionUpdateUi)
-        self.connect(cameraAaSlider, QtCore.SIGNAL("valueChanged(int)"), updateUi)
+        # UI Updates
+        self.connect(portSlider, QtCore.SIGNAL("valueChanged(int)"), portUpdateUi)
+        self.connect(resolutionSlider, QtCore.SIGNAL("valueChanged(int)"), resUpdateUi)
+
+        # IPR Updates
+        self.connect(self.cameraComboBox, QtCore.SIGNAL("currentIndexChanged(int)"), lambda: self.IPRUpdate(0))
+        self.connect(self.resolutionSpinBox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(1))
+        self.connect(self.cameraAaSpinBox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(2))
+        self.connect(self.renderRegionXSpinBox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(1))
+        self.connect(self.renderRegionYSpinBox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(1))
+        self.connect(self.renderRegionRSpinBox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(1))
+        self.connect(self.renderRegionTSpinBox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(1))
+        self.connect(self.motionBlurCheckBox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(3))
+        self.connect(self.subdivsCheckBox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(3))
+        self.connect(self.displaceCheckBox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(3))
+        self.connect(self.bumpCheckBox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(3))
+        self.connect(self.sssCheckBox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(3))
+        self.connect(self.shaderComboBox, QtCore.SIGNAL("currentIndexChanged(int)"), lambda: self.IPRUpdate(4))
+        self.connect(self.textureRepeatSpinbox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(5))
+        self.connect(self.selectedShaderCheckbox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(4))
 
         self.setLayout(mainLayout)
 
-    def render(self, *args, **kwargs):
-
+    def getCamera(self):
+        ''' Returns current selected camera from GUI '''
         if self.cameraComboBox.currentIndex() == 0:
-            camera = self.getSceneOptions()["camera"]
+            camera = self.getSceneOption(1)
         else:
-            try:
-                camera = cmds.listRelatives(self.cameraComboBoxDict[self.cameraComboBox.currentIndex()], s=1)[0]
-            except TypeError:
-                camera = self.cameraComboBoxDict[self.cameraComboBox.currentIndex()]
-
-        if camera == None:
-            cmds.warning("Camera is not selected!")
-            return
-
-        try:
-            defaultTranslator = cmds.getAttr("defaultArnoldDisplayDriver.aiTranslator")
-        except:
-            cmds.warning("MtoA was not found.")
-            return
-
-        try:
-            cmds.arnoldIpr(mode='stop')
-        except RuntimeError:
-            pass
-
-        try:
-            cmds.setAttr("defaultArnoldDisplayDriver.aiTranslator", "aton", type="string")
-        except RuntimeError:
-            cmds.warning("Aton driver for Arnold is not installed")
-            return
-
-        port = self.portSpinBox.value()
-        width = self.getSceneOptions()["width"] * self.resolutionSpinBox.value() / 100
-        height = self.getSceneOptions()["height"] * self.resolutionSpinBox.value() / 100
-        AASamples = self.cameraAaSpinBox.value()
-        motionBlur = self.motionBlurCheckBox.isChecked()
-        subdivs = self.subdivsCheckBox.isChecked()
-        displace = self.displaceCheckBox.isChecked()
-        bump = self.bumpCheckBox.isChecked()
-        sss = self.sssCheckBox.isChecked()
-
-        rMinX = self.renderRegionXSpinBox.value()
-        rMinY = height - self.renderRegionTSpinBox.value()
-        rMaxX = self.renderRegionRSpinBox.value() -1
-        rMaxY = (height - self.renderRegionYSpinBox.value()) - 1
-
-        cmds.setAttr("defaultArnoldDisplayDriver.port", port)
-
-        # Adding time changed callback
-        if self.timeChange == None:
-            self.timeChange = OM.MEventMessage.addEventCallback( "timeChanged", self.updateFrame )
-
-        cmds.arnoldIpr(cam=camera, width=width, height=height, mode='start')
-
-        options = AiUniverseGetOptions()
-
-        AiNodeSetInt(options, "AA_samples", AASamples)
-        if rMinX >= 0 and rMinY>=0 and rMaxX<=width and rMaxY<=height:
-            AiNodeSetInt(options, "region_min_x", rMinX)
-            AiNodeSetInt(options, "region_min_y", rMinY)
-            AiNodeSetInt(options, "region_max_x", rMaxX)
-            AiNodeSetInt(options, "region_max_y", rMaxY)
-        AiNodeSetBool(options, "ignore_motion_blur", motionBlur)
-        AiNodeSetBool(options, "ignore_subdivision", subdivs)
-        AiNodeSetBool(options, "ignore_displacement", displace)
-        AiNodeSetBool(options, "ignore_bump", bump)
-        AiNodeSetBool(options, "ignore_sss", sss)
-
-        # Temp trigger in order to start IPR
-        time = cmds.currentTime(q=1)
-        cmds.currentTime(time, e=1)
-
-        cmds.setAttr("defaultArnoldDisplayDriver.aiTranslator", defaultTranslator, type="string")
-        cmds.setAttr("defaultArnoldDisplayDriver.port", self.defaultPort)
-        sys.stdout.write("// Info: Aton - Render started.\n")
-
-    def stop(self):
-        if self.timeChange != None:
-            OM.MEventMessage.removeCallback(self.timeChange)
-            self.timeChange = None
-        try:
-            cmds.arnoldIpr(mode='stop')
-            sys.stdout.write("// Info: Aton - Render stopped.\n")
-        except RuntimeError:
-            pass
-
-    def updateFrame(self, *args, **kwargs):
-        options = AiUniverseGetOptions()
-        time = cmds.currentTime(q=1)
-        AiNodeSetFlt(options, "frame", time)
+            camera = self.cameraComboBoxDict[self.cameraComboBox.currentIndex()]
+            if cmds.listRelatives(camera, s=1) != None:
+                camera = cmds.listRelatives(camera, s=1)[0]
+        return camera
 
     def getNukeCropNode(self, *args):
-
-        def find_between( s, first, last ):
+        ''' Get crop node data from Nuke '''
+        def find_between(s, first, last):
             try:
-                start = s.index( first ) + len( first )
-                end = s.index( last, start )
+                start = s.index(first) + len(first)
+                end = s.index(last, start)
                 return s[start:end]
             except ValueError:
                 return ""
@@ -399,7 +363,7 @@ class Aton(QtGui.QDialog):
 
         if (checkData1 in data.split('\n', 10)[0]) and \
            (checkData2 in data.split('\n', 10)[3]):
-                cropData = find_between(data.split('\n', 10)[4], " box {", "}" ).split()
+                cropData = find_between(data.split('\n', 10)[4], "box {", "}" ).split()
                 nkX, nkY, nkR, nkT = int(float(cropData[0])),\
                                      int(float(cropData[1])),\
                                      int(float(cropData[2])),\
@@ -412,6 +376,255 @@ class Aton(QtGui.QDialog):
 
                 return cropData
 
+    def render(self):
+        ''' Starts the render '''
+        try: # If MtoA was not found
+            defaultTranslator = cmds.getAttr("defaultArnoldDisplayDriver.aiTranslator")
+        except ValueError:
+            cmds.warning("Current renderer is not set to Arnold.")
+            return
+
+        try: # If Aton driver for Arnold is not installed
+            cmds.setAttr("defaultArnoldDisplayDriver.aiTranslator", "aton", type="string")
+        except RuntimeError:
+            cmds.warning("Aton driver for Arnold is not installed")
+            return
+
+        # Updating the port from UI
+        if self.defaultPort != 0:
+            port = self.portSpinBox.value()
+            cmds.setAttr("defaultArnoldDisplayDriver.port", port)
+        else:
+            cmds.warning("Current renderer is not set to Arnold.")
+            return
+
+        # Adding time changed callback
+        if self.timeChangedCB == None:
+            self.timeChangedCB = OM.MEventMessage.addEventCallback("timeChanged", self.timeChnaged)
+
+        # Adding selection changed callback
+        if self.selectionChangedCB == None:
+            self.selectionChangedCB = OM.MEventMessage.addEventCallback('SelectionChanged', self.selectionChanged)
+
+        try: # If render session is not started yet
+            cmds.arnoldIpr(mode='stop')
+        except RuntimeError:
+            pass
+
+        # Temporary makeing hidden cameras visible before scene export
+        hCams = [x for x in cmds.listCameras() if not cmds.getAttr("%s.visibility"%x) or
+                                                  not cmds.getAttr("%s.visibility"%cmds.listRelatives(x, s=1)[0])]
+        for i in hCams: cmds.showHidden(i)
+
+        try: # Start IPR
+            camera = self.getCamera()
+            cmds.arnoldIpr(cam=camera, mode='start')
+        except RuntimeError:
+            cmds.warning("Current renderer is not set to Arnold.")
+
+        # Update IPR
+        self.IPRUpdate()
+        sys.stdout.write("// Info: Aton - Render started.\n")
+
+        # Setting back to default
+        for i in hCams: cmds.hide(i)
+        cmds.setAttr("defaultArnoldDisplayDriver.aiTranslator", defaultTranslator, type="string")
+        cmds.setAttr("defaultArnoldDisplayDriver.port", self.defaultPort)
+
+    def initOvrShaders(self):
+        ''' Initilize override shaders '''
+        # Checker shader
+        self.checkerShader = AiNode("standard")
+        checkerTexture = AiNode("MayaChecker")
+        self.placeTexture = AiNode("MayaPlace2DTexture")
+        AiNodeLink(self.placeTexture, "uvCoord", checkerTexture)
+        AiNodeLink(checkerTexture, "Kd", self.checkerShader)
+
+        # Grey Shader
+        self.greyShader = AiNode("standard")
+        AiNodeSetFlt(self.greyShader, "Kd", 0.225)
+        AiNodeSetFlt(self.greyShader, "Ks", 1)
+        AiNodeSetFlt(self.greyShader, "specular_roughness", 0.3)
+        AiNodeSetBool(self.greyShader, "specular_Fresnel", True)
+        AiNodeSetBool(self.greyShader, "Fresnel_use_IOR", True)
+        AiNodeSetFlt(self.greyShader, "IOR", 1.3)
+
+        # Mirror Shader
+        self.mirrorShader = AiNode("standard")
+        AiNodeSetFlt(self.mirrorShader, "Kd", 0)
+        AiNodeSetFlt(self.mirrorShader, "Ks", 1)
+        AiNodeSetFlt(self.mirrorShader, "specular_roughness", 0.005)
+        AiNodeSetBool(self.mirrorShader, "specular_Fresnel", True)
+        AiNodeSetFlt(self.mirrorShader, "Ksn", 0.6)
+
+        # Normal Shader
+        self.normalShader = AiNode("utility")
+        AiNodeSetInt(self.normalShader, "shade_mode", 2)
+        AiNodeSetInt(self.normalShader, "color_mode", 2)
+
+        # Occlusion Shader
+        self.occlusionShader = AiNode("utility")
+        AiNodeSetInt(self.occlusionShader, "shade_mode", 3)
+
+        # UV Shader
+        self.uvShader = AiNode("utility")
+        AiNodeSetInt(self.uvShader, "shade_mode", 2)
+        AiNodeSetInt(self.uvShader, "color_mode", 5)
+
+    def IPRUpdate(self, attr = None):
+        ''' This method is called during IPR session '''
+        try: # If render session is not started yet
+            cmds.arnoldIpr(mode='pause')
+        except (AttributeError, RuntimeError):
+            return
+
+        options = AiUniverseGetOptions()
+
+        # Camera Update
+        if attr == None or attr == 0:
+            camera = self.getCamera()
+            iterator = AiUniverseGetNodeIterator(AI_NODE_CAMERA)
+            while not AiNodeIteratorFinished(iterator):
+                node = AiNodeIteratorGetNext(iterator)
+                if AiNodeGetName(node) == camera:
+                    AiNodeSetPtr(options, "camera", node)
+
+        # Resolution and Region Update
+        if attr == None or attr == 1:
+            xres = self.getSceneOption(2) * self.resolutionSpinBox.value() / 100
+            yres = self.getSceneOption(3) * self.resolutionSpinBox.value() / 100
+
+            AiNodeSetInt(options, "xres", xres)
+            AiNodeSetInt(options, "yres", yres)
+
+            rMinX = self.renderRegionXSpinBox.value()
+            rMinY = yres - self.renderRegionTSpinBox.value()
+            rMaxX = self.renderRegionRSpinBox.value() -1
+            rMaxY = (yres - self.renderRegionYSpinBox.value()) - 1
+
+            if (rMinX >= 0) and (rMinY >= 0) and (rMaxX <= xres) and (rMaxY <= yres):
+                AiNodeSetInt(options, "region_min_x", rMinX)
+                AiNodeSetInt(options, "region_min_y", rMinY)
+                AiNodeSetInt(options, "region_max_x", rMaxX)
+                AiNodeSetInt(options, "region_max_y", rMaxY)
+            else:
+                AiNodeSetInt(options, "region_min_x", 0)
+                AiNodeSetInt(options, "region_min_y", 0)
+                AiNodeSetInt(options, "region_max_x", xres-1)
+                AiNodeSetInt(options, "region_max_y", yres-1)
+
+        # Camera AA Update
+        if attr == None or attr == 2:
+            cameraAA = self.cameraAaSpinBox.value()
+            options = AiUniverseGetOptions()
+            AiNodeSetInt(options, "AA_samples", cameraAA)
+
+        # Ignore options Update
+        if attr == None or attr == 3:
+            motionBlur = self.motionBlurCheckBox.isChecked()
+            subdivs = self.subdivsCheckBox.isChecked()
+            displace = self.displaceCheckBox.isChecked()
+            bump = self.bumpCheckBox.isChecked()
+            sss = self.sssCheckBox.isChecked()
+
+            AiNodeSetBool(options, "ignore_motion_blur", motionBlur)
+            AiNodeSetBool(options, "ignore_subdivision", subdivs)
+            AiNodeSetBool(options, "ignore_displacement", displace)
+            AiNodeSetBool(options, "ignore_bump", bump)
+            AiNodeSetBool(options, "ignore_sss", sss)
+
+        # Storing default shader assignments
+        if attr == None:
+            self.initOvrShaders()
+            self.shadersDict = {}
+            iterator = AiUniverseGetNodeIterator(AI_NODE_SHAPE)
+            while not AiNodeIteratorFinished(iterator):
+                node = AiNodeIteratorGetNext(iterator)
+                name = AiNodeGetName(node)
+                try: # If object name is not exist i.e. "root"
+                    sgList = cmds.listConnections(name, type='shadingEngine')
+                    if sgList > 0:
+                        self.shadersDict[name] = AiNodeGetPtr(node, "shader")
+                except ValueError:
+                    continue
+
+        # Shader override Update
+        shaderIndex = self.shaderComboBox.currentIndex()
+        if attr == 4 or shaderIndex > 0:
+            iterator = AiUniverseGetNodeIterator(AI_NODE_SHAPE)
+            while not AiNodeIteratorFinished(iterator):
+                node = AiNodeIteratorGetNext(iterator)
+                name = AiNodeGetName(node)
+
+                selChecked = self.selectedShaderCheckbox.isChecked()
+                if shaderIndex != 0 and selChecked:
+                    selectionList = cmds.ls(dag=1, sl=1, s=1)
+                    if selectionList > 0 and name not in selectionList:
+                        if name in self.shadersDict:
+                            defShader = self.shadersDict[AiNodeGetName(node)]
+                            AiNodeSetPtr(node, "shader", defShader)
+                        continue
+
+                # Setting overrides
+                if name in self.shadersDict:
+                    defShader = self.shadersDict[AiNodeGetName(node)]
+                    result = {0: lambda: AiNodeSetPtr(node, "shader", defShader),
+                              1: lambda: AiNodeSetPtr(node, "shader", self.checkerShader),
+                              2: lambda: AiNodeSetPtr(node, "shader", self.greyShader),
+                              3: lambda: AiNodeSetPtr(node, "shader", self.mirrorShader),
+                              4: lambda: AiNodeSetPtr(node, "shader", self.normalShader),
+                              5: lambda: AiNodeSetPtr(node, "shader", self.occlusionShader),
+                              6: lambda: AiNodeSetPtr(node, "shader", self.uvShader)}[shaderIndex]()
+
+        # Texture Repeat Udpate
+        if attr == None or attr == 5:
+            texRepeat = self.textureRepeatSpinbox.value()
+            AiNodeSetPnt2(self.placeTexture, "repeatUV", texRepeat, texRepeat)
+
+        try:
+            cmds.arnoldIpr(mode='unpause')
+        except RuntimeError:
+            pass
+
+    def timeChnaged(self, *args):
+        ''' Callback method to update the frame number attr '''
+        options = AiUniverseGetOptions()
+        time = cmds.currentTime(q=1)
+        AiNodeSetFlt(options, "frame", time)
+
+    def selectionChanged(self, *args):
+        ''' Callback method to update the frame number attr '''
+        shaderIndex = self.shaderComboBox.currentIndex()
+        selectedObjects = self.selectedShaderCheckbox.isChecked()
+        if shaderIndex > 0 and selectedObjects:
+            self.IPRUpdate(4)
+
+    def stop(self):
+        ''' Stops the render session and removes the callbacks '''
+        if self.timeChangedCB != None:
+            OM.MEventMessage.removeCallback(self.timeChangedCB)
+            self.timeChangedCB = None
+
+        if self.selectionChangedCB != None:
+            OM.MEventMessage.removeCallback(self.selectionChangedCB)
+            self.selectionChangedCB = None
+
+        try:
+            cmds.arnoldIpr(mode='stop')
+            sys.stdout.write("// Info: Aton - Render stopped.\n")
+        except (AttributeError, RuntimeError):
+            return
+
+    def closeEvent(self, event):
+        ''' Removes callback when closing the GUI '''
+        if self.timeChangedCB != None:
+            OM.MEventMessage.removeCallback(self.timeChangedCB)
+            self.timeChangedCB = None
+
+        if self.selectionChangedCB != None:
+            OM.MEventMessage.removeCallback(self.selectionChangedCB)
+            self.selectionChangedCB = None
+
 if __name__ == "__main__":
-    rc = Aton()
-    rc.show()
+    aton = Aton()
+    aton.show()

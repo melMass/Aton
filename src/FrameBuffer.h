@@ -7,21 +7,23 @@ All rights reserved. See COPYING.txt for more details.
 #ifndef FrameBuffer_h
 #define FrameBuffer_h
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <vector>
-
 #include "DDImage/Iop.h"
 
 using namespace DD::Image;
 
 namespace aton
 {
+    namespace chStr
+    {
+        extern const std::string RGBA, rgb, depth, Z, N, P,
+                                 _red, _green, _blue, _X, _Y, _Z;
+    }
+    
     // Lightweight colour pixel class
-    class RenderColour
+    class RenderColor
     {
         public:
-            RenderColour();
+            RenderColor();
 
             float& operator[](int i);
             const float& operator[](int i) const;
@@ -35,72 +37,75 @@ namespace aton
     {
         friend class FrameBuffer;
         public:
-            RenderBuffer();
-
-            void initBuffer(const unsigned int width,
-                            const unsigned int height,
-                            const unsigned int spp);
-                    
-            unsigned int width();
-            unsigned int height();
+            RenderBuffer(const unsigned int& width = 0,
+                         const unsigned int& height = 0,
+                         const int& spp = 0);
         
-            bool empty();
-
+        private:
             // Data
-            std::vector<RenderColour> _colour_data;
-            std::vector<float> _alpha_data;
-            unsigned int _width;
-            unsigned int _height;
+            std::vector<RenderColor> _color_data;
+            std::vector<float> _float_data;
     };
     
     // Framebuffer main class
     class FrameBuffer
     {
         public:
-            FrameBuffer(double currentFrame = 0, int w = 0, int h = 0);
+            FrameBuffer(const double& currentFrame = 0,
+                        const int& w = 0,
+                        const int& h = 0);
         
             // Add new buffer
-            void addBuffer(const char* aov = NULL, int spp = 0);
+            void addBuffer(const char* aov = NULL,
+                           const int& spp = 0);
         
             // Set writable buffer's pixel
-            float& setBufferPix(long b,
-                                unsigned int x,
-                                unsigned int y,
-                                int c,
-                                int spp);
+            void setBufferPix(const long& b,
+                              const unsigned int& x,
+                              const unsigned int& y,
+                              const int& spp,
+                              const int& c,
+                              const float& pix);
         
             // Get read only buffer's pixel
-            const float& getBufferPix(long b,
-                                      unsigned int x,
-                                      unsigned int y,
-                                      int c) const;
+            const float& getBufferPix(const long& b,
+                                      const unsigned int& x,
+                                      const unsigned int& y,
+                                      const int& c) const;
         
             // Get the current buffer index
-            long getBufferIndex(Channel z);
+            int getBufferIndex(const Channel& z);
         
             // Get the current buffer index
-            long getBufferIndex(const char * aovName);
+            int getBufferIndex(const char * aovName);
         
             // Get N buffer/aov name name
-            const char* getBufferName(size_t index = 0);
+            const char* getBufferName(const size_t& index = 0);
         
             // Get last buffer/aov name
-            const std::string& getFirstBufferName();
+            bool isFirstBufferName(const char* aovName);
         
-            // Compare buffers with given buffer/aov names and dimensoions
-            int compareAll(int width, int height, std::vector<std::string> aovs);
+            // Check if Frame has been changed
+            bool isFrameChanged(const double& frame);
+        
+            // Check if Aovs have been changed
+            bool isAovsChanged(const std::vector<std::string>& aovs);
+        
+            // Check if Resolution has been changed
+            bool isResolutionChanged(const unsigned int& width,
+                                     const unsigned int& height);
         
             // Clear buffers and aovs
             void clearAll();
         
             // Check if the given buffer/aov name name is exist
-            bool bufferNameExists(const char* aovName);
+            bool isBufferExist(const char* aovName);
         
             // Set width of the buffer
-            void setWidth(int w);
+            void setWidth(const int& w);
 
             // Set height of the buffer
-            void setHeight(int h);
+            void setHeight(const int& h);
         
             // Get width of the buffer
             const int& getWidth();
@@ -112,18 +117,13 @@ namespace aton
             size_t size();
         
             // Resize the buffers
-            void resize(size_t s);
-        
-            // Set current bucket BBox for asapUpdate()
-            void setBucketBBox(int x = 0, int y = 0, int r = 1, int t = 1);
-        
-            // Get current bucket BBox for asapUpdate()
-            const Box& getBucketBBox();
+            void resize(const size_t& s);
         
             // Set status parameters
-            void setProgress(long long progress = 0);
-            void setRAM(long long ram = 0);
-            void setTime(int time = 0);
+            void setProgress(const long long& progress = 0);
+            void setRAM(const long long& ram = 0);
+            void setTime(const int& time = 0,
+                         const int& dtime = 0);
         
             // Get status parameters
             const long long& getProgress();
@@ -132,10 +132,13 @@ namespace aton
             const int& getTime();
         
             // Set Arnold core version
-            void setArnoldVersion(int version);
+            void setArnoldVersion(const int& version);
         
             // Get Arnold core version
-            const std::string& getArnoldVersion();
+            const char* getArnoldVersion();
+        
+            // Set the frame number of this framebuffer
+            void setFrame(const double& frame);
         
             // Get the frame number of this framebuffer
             const double& getFrame();
@@ -144,7 +147,7 @@ namespace aton
             bool empty();
         
             // To keep False while writing the buffer
-            void ready(bool ready);
+            void ready(const bool& ready);
             const bool& isReady();
         
         private:
@@ -155,7 +158,6 @@ namespace aton
             long long _pram;
             int _width;
             int _height;
-            Box _bucket;
             bool _ready;
             std::string _version;
             std::vector<RenderBuffer> _buffers;
