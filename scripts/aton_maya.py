@@ -17,19 +17,19 @@ except ImportError:
 
 # Check the Maya version for PySide
 mayaVersion = cmds.about(apiVersion=True)
-if mayaVersion == 201700:
+if mayaVersion >= 201700:
     from PySide2 import QtCore, QtWidgets
     from shiboken2 import wrapInstance
-    QtGui = QtWidgets
 else:
-    from PySide import QtCore, QtGui
+    from PySide import QtCore
+    from PySide import QtGui as QtWidgets
     from shiboken import wrapInstance
 
 def maya_main_window():
     main_window_ptr = OpenMayaUI.MQtUtil.mainWindow()
-    return wrapInstance(long(main_window_ptr), QtGui.QWidget)
+    return wrapInstance(long(main_window_ptr), QtWidgets.QWidget)
 
-class Aton(QtGui.QDialog):
+class Aton(QtWidgets.QDialog):
 
     def __init__(self, parent = maya_main_window()):
         super(Aton, self).__init__(parent)
@@ -109,32 +109,32 @@ class Aton(QtGui.QDialog):
         self.setWindowFlags(QtCore.Qt.Tool)
         self.setAttribute(QtCore.Qt.WA_AlwaysShowToolTips)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-        if mayaVersion == 201700:
+        if mayaVersion >= 201700:
             self.setMinimumSize(415, 350)
             self.setMaximumSize(415, 350)
         else:
             self.setMinimumSize(400, 350)
             self.setMaximumSize(400, 350)
 
-        mainLayout = QtGui.QVBoxLayout()
+        mainLayout = QtWidgets.QVBoxLayout()
         mainLayout.setContentsMargins(5,5,5,5)
         mainLayout.setSpacing(2)
 
-        generalGroupBox = QtGui.QGroupBox("General")
-        generalLayout = QtGui.QVBoxLayout(generalGroupBox)
+        generalGroupBox = QtWidgets.QGroupBox("General")
+        generalLayout = QtWidgets.QVBoxLayout(generalGroupBox)
 
         # Port Layout
-        portLayout = QtGui.QHBoxLayout()
-        portLabel = QtGui.QLabel("Port:")
+        portLayout = QtWidgets.QHBoxLayout()
+        portLabel = QtWidgets.QLabel("Port:")
         portLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
         portLabel.setMaximumSize(75, 20)
         portLabel.setMinimumSize(75, 20)
-        self.portSpinBox = QtGui.QSpinBox()
-        self.portSpinBox.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
+        self.portSpinBox = QtWidgets.QSpinBox()
+        self.portSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
         self.portSpinBox.setMaximum(1024)
         self.portSpinBox.setMaximum(9999)
         self.portSpinBox.setValue(self.defaultPort)
-        portSlider = QtGui.QSlider()
+        portSlider = QtWidgets.QSlider()
         portSlider.setOrientation(QtCore.Qt.Horizontal)
         portSlider.setMinimum(0)
         portSlider.setMaximum(15)
@@ -144,12 +144,12 @@ class Aton(QtGui.QDialog):
         portLayout.addWidget(portSlider)
 
         # Camera Layout
-        cameraLayout = QtGui.QHBoxLayout()
-        cameraLabel = QtGui.QLabel("Camera:")
+        cameraLayout = QtWidgets.QHBoxLayout()
+        cameraLabel = QtWidgets.QLabel("Camera:")
         cameraLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
         cameraLabel.setMaximumSize(75, 20)
         cameraLabel.setMinimumSize(75, 20)
-        self.cameraComboBox = QtGui.QComboBox()
+        self.cameraComboBox = QtWidgets.QComboBox()
         self.cameraComboBoxDict = {}
         self.cameraComboBox.addItem("Current view")
         for i in cmds.listCameras():
@@ -158,20 +158,20 @@ class Aton(QtGui.QDialog):
         cameraLayout.addWidget(cameraLabel)
         cameraLayout.addWidget(self.cameraComboBox)
 
-        overridesGroupBox = QtGui.QGroupBox("Overrides")
-        overridesLayout = QtGui.QVBoxLayout(overridesGroupBox)
+        overridesGroupBox = QtWidgets.QGroupBox("Overrides")
+        overridesLayout = QtWidgets.QVBoxLayout(overridesGroupBox)
 
         # Resolution Layout
-        resolutionLayout = QtGui.QHBoxLayout()
-        resolutionLabel = QtGui.QLabel("Resolution %:")
+        resolutionLayout = QtWidgets.QHBoxLayout()
+        resolutionLabel = QtWidgets.QLabel("Resolution %:")
         resolutionLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
         resolutionLabel.setMinimumSize(75, 20)
-        self.resolutionSpinBox = QtGui.QSpinBox()
-        self.resolutionSpinBox.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
+        self.resolutionSpinBox = QtWidgets.QSpinBox()
+        self.resolutionSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
         self.resolutionSpinBox.setMinimum(1)
         self.resolutionSpinBox.setMaximum(900)
         self.resolutionSpinBox.setValue(100)
-        resolutionSlider = QtGui.QSlider()
+        resolutionSlider = QtWidgets.QSlider()
         resolutionSlider.setOrientation(QtCore.Qt.Horizontal)
         resolutionSlider.setValue(20)
         resolutionSlider.setMaximum(20)
@@ -180,16 +180,16 @@ class Aton(QtGui.QDialog):
         resolutionLayout.addWidget(resolutionSlider)
 
         # Camera Layout
-        cameraAaLayout = QtGui.QHBoxLayout()
-        cameraAaLabel = QtGui.QLabel("Camera (AA):")
+        cameraAaLayout = QtWidgets.QHBoxLayout()
+        cameraAaLabel = QtWidgets.QLabel("Camera (AA):")
         cameraAaLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
         cameraAaLabel.setMinimumSize(75, 20)
-        self.cameraAaSpinBox = QtGui.QSpinBox()
-        self.cameraAaSpinBox.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
+        self.cameraAaSpinBox = QtWidgets.QSpinBox()
+        self.cameraAaSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
         self.cameraAaSpinBox.setMaximum(64)
         self.cameraAaSpinBox.setMinimum(-64)
         self.cameraAaSpinBox.setValue(self.getSceneOption(4))
-        cameraAaSlider = QtGui.QSlider()
+        cameraAaSlider = QtWidgets.QSlider()
         cameraAaSlider.setOrientation(QtCore.Qt.Horizontal)
         cameraAaSlider.setValue(self.cameraAaSpinBox.value())
         cameraAaSlider.setMaximum(16)
@@ -199,18 +199,18 @@ class Aton(QtGui.QDialog):
         cameraAaLayout.addWidget(cameraAaSlider)
 
         # Render region layout
-        renderRegionLayout = QtGui.QHBoxLayout()
-        renderRegionLabel = QtGui.QLabel("Region X:")
+        renderRegionLayout = QtWidgets.QHBoxLayout()
+        renderRegionLabel = QtWidgets.QLabel("Region X:")
         renderRegionLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
-        self.renderRegionXSpinBox = QtGui.QSpinBox()
-        renderRegionYLabel = QtGui.QLabel("Y:")
-        self.renderRegionYSpinBox = QtGui.QSpinBox()
-        renderRegionRLabel = QtGui.QLabel("R:")
-        self.renderRegionRSpinBox = QtGui.QSpinBox()
-        renderRegionTLabel = QtGui.QLabel("T:")
-        self.renderRegionTSpinBox = QtGui.QSpinBox()
-        renderRegionCheckBox = QtGui.QCheckBox()
-        renderRegionGetNukeButton = QtGui.QPushButton("Get")
+        self.renderRegionXSpinBox = QtWidgets.QSpinBox()
+        renderRegionYLabel = QtWidgets.QLabel("Y:")
+        self.renderRegionYSpinBox = QtWidgets.QSpinBox()
+        renderRegionRLabel = QtWidgets.QLabel("R:")
+        self.renderRegionRSpinBox = QtWidgets.QSpinBox()
+        renderRegionTLabel = QtWidgets.QLabel("T:")
+        self.renderRegionTSpinBox = QtWidgets.QSpinBox()
+        renderRegionCheckBox = QtWidgets.QCheckBox()
+        renderRegionGetNukeButton = QtWidgets.QPushButton("Get")
         renderRegionGetNukeButton.clicked.connect(self.getNukeCropNode)
         renderRegionCheckBox.setLayoutDirection(QtCore.Qt.RightToLeft)
         renderRegionLayout.addWidget(renderRegionLabel)
@@ -235,16 +235,16 @@ class Aton(QtGui.QDialog):
                   self.renderRegionTSpinBox]:
             i.setRange(0,99999)
             i.setMaximumSize(60,25)
-            i.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
+            i.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
 
         self.renderRegionRSpinBox.setValue(self.getSceneOption(2))
         self.renderRegionTSpinBox.setValue(self.getSceneOption(3))
 
         # Shaders layout
-        shaderLayout = QtGui.QHBoxLayout()
-        shaderLabel = QtGui.QLabel("Shader override:")
+        shaderLayout = QtWidgets.QHBoxLayout()
+        shaderLabel = QtWidgets.QLabel("Shader override:")
         shaderLabel.setMaximumSize(85, 20)
-        self.shaderComboBox = QtGui.QComboBox()
+        self.shaderComboBox = QtWidgets.QComboBox()
         self.shaderComboBox.addItem("Disabled")
         self.shaderComboBox.addItem("Checker")
         self.shaderComboBox.addItem("Grey")
@@ -252,18 +252,18 @@ class Aton(QtGui.QDialog):
         self.shaderComboBox.addItem("Normal")
         self.shaderComboBox.addItem("Occlusion")
         self.shaderComboBox.addItem("UV")
-        self.selectedShaderCheckbox = QtGui.QCheckBox("Selected objects only")
+        self.selectedShaderCheckbox = QtWidgets.QCheckBox("Selected objects only")
         shaderLayout.addWidget(shaderLabel)
         shaderLayout.addWidget(self.shaderComboBox)
         shaderLayout.addWidget(self.selectedShaderCheckbox)
 
-        textureRepeatLayout = QtGui.QHBoxLayout()
-        textureRepeatLabel = QtGui.QLabel("Texture repeat:")
+        textureRepeatLayout = QtWidgets.QHBoxLayout()
+        textureRepeatLabel = QtWidgets.QLabel("Texture repeat:")
         textureRepeatLabel.setMaximumSize(85, 20)
-        self.textureRepeatSpinbox = QtGui.QSpinBox()
+        self.textureRepeatSpinbox = QtWidgets.QSpinBox()
         self.textureRepeatSpinbox.setValue(1)
-        self.textureRepeatSpinbox.setButtonSymbols(QtGui.QAbstractSpinBox.NoButtons)
-        textureRepeatSlider = QtGui.QSlider()
+        self.textureRepeatSpinbox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
+        textureRepeatSlider = QtWidgets.QSlider()
         textureRepeatSlider.setMinimum(1)
         textureRepeatSlider.setMaximum(64)
         textureRepeatSlider.setOrientation(QtCore.Qt.Horizontal)
@@ -274,20 +274,20 @@ class Aton(QtGui.QDialog):
         textureRepeatLayout.addWidget(textureRepeatSlider)
 
         # Ignore Layout
-        ignoresGroupBox = QtGui.QGroupBox("Ignore")
-        ignoresLayout = QtGui.QVBoxLayout(ignoresGroupBox)
-        ignoreLayout = QtGui.QHBoxLayout()
-        ignoreLabel = QtGui.QLabel("Ignore:")
+        ignoresGroupBox = QtWidgets.QGroupBox("Ignore")
+        ignoresLayout = QtWidgets.QVBoxLayout(ignoresGroupBox)
+        ignoreLayout = QtWidgets.QHBoxLayout()
+        ignoreLabel = QtWidgets.QLabel("Ignore:")
         ignoreLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
-        self.motionBlurCheckBox = QtGui.QCheckBox("Motion Blur")
+        self.motionBlurCheckBox = QtWidgets.QCheckBox("Motion Blur")
         self.motionBlurCheckBox.setChecked(self.getSceneOption(5))
-        self.subdivsCheckBox = QtGui.QCheckBox("Subdivs")
+        self.subdivsCheckBox = QtWidgets.QCheckBox("Subdivs")
         self.subdivsCheckBox.setChecked(self.getSceneOption(6))
-        self.displaceCheckBox = QtGui.QCheckBox("Displace")
+        self.displaceCheckBox = QtWidgets.QCheckBox("Displace")
         self.displaceCheckBox.setChecked(self.getSceneOption(7))
-        self.bumpCheckBox = QtGui.QCheckBox("Bump")
+        self.bumpCheckBox = QtWidgets.QCheckBox("Bump")
         self.bumpCheckBox.setChecked(self.getSceneOption(8))
-        self.sssCheckBox = QtGui.QCheckBox("SSS")
+        self.sssCheckBox = QtWidgets.QCheckBox("SSS")
         self.sssCheckBox.setChecked(self.getSceneOption(9))
         ignoreLayout.addWidget(self.motionBlurCheckBox)
         ignoreLayout.addWidget(self.subdivsCheckBox)
@@ -296,10 +296,10 @@ class Aton(QtGui.QDialog):
         ignoreLayout.addWidget(self.sssCheckBox)
 
         # Main Buttons Layout
-        mainButtonslayout = QtGui.QHBoxLayout()
-        startButton = QtGui.QPushButton("Start / Refresh")
-        stopButton = QtGui.QPushButton("Stop")
-        resetButton = QtGui.QPushButton("Reset")
+        mainButtonslayout = QtWidgets.QHBoxLayout()
+        startButton = QtWidgets.QPushButton("Start / Refresh")
+        stopButton = QtWidgets.QPushButton("Stop")
+        resetButton = QtWidgets.QPushButton("Reset")
         startButton.clicked.connect(self.render)
         stopButton.clicked.connect(self.stop)
         resetButton.clicked.connect(resetUi)
@@ -365,7 +365,7 @@ class Aton(QtGui.QDialog):
             except ValueError:
                 return ""
 
-        clipboard = QtGui.QApplication.clipboard()
+        clipboard = QtWidgets.QApplication.clipboard()
         data = clipboard.text()
 
         checkData1 = "set cut_paste_input [stack 0]"
