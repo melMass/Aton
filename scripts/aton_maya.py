@@ -15,9 +15,15 @@ try:
 except ImportError:
     cmds.warning("MtoA was not found.")
 
-from PySide import QtCore
-from PySide import QtGui
-from shiboken import wrapInstance
+# Check the Maya version for PySide
+mayaVersion = cmds.about(apiVersion=True)
+if mayaVersion == 201700:
+    from PySide2 import QtCore, QtWidgets
+    from shiboken2 import wrapInstance
+    QtGui = QtWidgets
+else:
+    from PySide import QtCore, QtGui
+    from shiboken import wrapInstance
 
 def maya_main_window():
     main_window_ptr = OpenMayaUI.MQtUtil.mainWindow()
@@ -103,8 +109,12 @@ class Aton(QtGui.QDialog):
         self.setWindowFlags(QtCore.Qt.Tool)
         self.setAttribute(QtCore.Qt.WA_AlwaysShowToolTips)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-        self.setMinimumSize(400, 350)
-        self.setMaximumSize(400, 350)
+        if mayaVersion == 201700:
+            self.setMinimumSize(415, 350)
+            self.setMaximumSize(415, 350)
+        else:
+            self.setMinimumSize(400, 350)
+            self.setMaximumSize(400, 350)
 
         mainLayout = QtGui.QVBoxLayout()
         mainLayout.setContentsMargins(5,5,5,5)
