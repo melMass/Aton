@@ -50,17 +50,24 @@ class Aton(QtWidgets.QDialog):
             cam = cmds.listRelatives(cam)[0]
         return cam
 
+    def getPort(self):
+        ''' Returns the port number from Aton driver '''
+        port = 0
+        try: # To init Arnold Render settings
+            port = cmds.getAttr("defaultArnoldDisplayDriver.port")
+        except ValueError:
+            mel.eval("unifiedRenderGlobalsWindow;")
+            try: # If aton driver is not loaded
+                port = cmds.getAttr("defaultArnoldDisplayDriver.port")
+            except ValueError:
+                pass
+        return port
+
     def getSceneOption(self, attr):
-        ''' Returns requested scene options attribute value'''
+        ''' Returns requested scene options attribute value '''
         result = 0
         if cmds.getAttr("defaultRenderGlobals.ren") == "arnold":
-
-            try: # To init Arnold Render settings
-                cmds.getAttr("defaultArnoldDisplayDriver.port")
-            except ValueError:
-                mel.eval("unifiedRenderGlobalsWindow;")
-
-            result = {0 : lambda: cmds.getAttr("defaultArnoldDisplayDriver.port"),
+            result = {0 : lambda: self.getPort(),
                       1 : lambda: self.getActiveCamera(),
                       2 : lambda: cmds.getAttr("defaultResolution.width"),
                       3 : lambda: cmds.getAttr("defaultResolution.height"),
@@ -394,18 +401,14 @@ class Aton(QtWidgets.QDialog):
             cmds.warning("Current renderer is not set to Arnold.")
             return
 
-        try: # If Aton driver for Arnold is not installed
-            cmds.setAttr("defaultArnoldDisplayDriver.aiTranslator", "aton", type="string")
-        except RuntimeError:
-            cmds.warning("Aton driver for Arnold is not installed")
-            return
+        cmds.setAttr("defaultArnoldDisplayDriver.aiTranslator", "aton", type="string")
 
         # Updating the port from UI
         if self.defaultPort != 0:
             port = self.portSpinBox.value()
             cmds.setAttr("defaultArnoldDisplayDriver.port", port)
         else:
-            cmds.warning("Current renderer is not set to Arnold.")
+            cmds.warning("Current renderer is not set to Arnold or Aton driver is not loaded.")
             return
 
         # Adding time changed callback
