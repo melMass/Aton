@@ -150,9 +150,9 @@ int FrameBuffer::getBufferIndex(const char* aovName)
 }
 
 // Get N buffer/aov name name
-const char* FrameBuffer::getBufferName(const size_t& index)
+const char* FrameBuffer::getBufferName(int index)
 {
-    return _aovs[index].c_str();
+    return !_aovs.empty() ? _aovs[index].c_str() : NULL;
 }
 
 // Get last buffer/aov name

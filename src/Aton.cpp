@@ -31,7 +31,7 @@ using namespace aton;
 static const char* const CLASS = "Aton";
 
 // Version
-static const char* const VERSION = "1.1.3";
+static const char* const VERSION = "1.1.4b";
 
 // Help
 static const char* const HELP =
@@ -296,41 +296,44 @@ class Aton: public Iop
                     
                     if (m_enable_aovs)
                     {
-                        size_t fb_size = fB.size();
+                        int fb_size = static_cast<int>(fB.size());
                         
                         if (channels.size() != fb_size)
                             channels.clear();
 
-                        for(size_t i = 0; i < fb_size; ++i)
+                        for(int i = 0; i < fb_size; ++i)
                         {
-                            using namespace chStr;
-                            const std::string& bfName = fB.getBufferName(i);
+                            const char* bfName = fB.getBufferName(i);
                             
-                            if (bfName == RGBA && !channels.contains(Chan_Red))
+                            if (bfName != NULL)
                             {
-                                channels.insert(Chan_Red);
-                                channels.insert(Chan_Green);
-                                channels.insert(Chan_Blue);
-                                channels.insert(Chan_Alpha);
-                            }
-                            else if (bfName == Z && !channels.contains(Chan_Z))
-                            {
-                                channels.insert(Chan_Z);
-                            }
-                            else if (bfName == N || bfName == P)
-                            {
-                                if (!channels.contains(channel((bfName + _X).c_str())))
+                                using namespace chStr;
+                                if (bfName == RGBA && !channels.contains(Chan_Red))
                                 {
-                                    channels.insert(channel((bfName + _X).c_str()));
-                                    channels.insert(channel((bfName + _Y).c_str()));
-                                    channels.insert(channel((bfName + _Z).c_str()));
+                                    channels.insert(Chan_Red);
+                                    channels.insert(Chan_Green);
+                                    channels.insert(Chan_Blue);
+                                    channels.insert(Chan_Alpha);
                                 }
-                            }
-                            else if (!channels.contains(channel((bfName + _red).c_str())))
-                            {
-                                channels.insert(channel((bfName + _red).c_str()));
-                                channels.insert(channel((bfName + _green).c_str()));
-                                channels.insert(channel((bfName + _blue).c_str()));
+                                else if (bfName == Z && !channels.contains(Chan_Z))
+                                {
+                                    channels.insert(Chan_Z);
+                                }
+                                else if (bfName == N || bfName == P)
+                                {
+                                    if (!channels.contains(channel((bfName + _X).c_str())))
+                                    {
+                                        channels.insert(channel((bfName + _X).c_str()));
+                                        channels.insert(channel((bfName + _Y).c_str()));
+                                        channels.insert(channel((bfName + _Z).c_str()));
+                                    }
+                                }
+                                else if (!channels.contains(channel((bfName + _red).c_str())))
+                                {
+                                    channels.insert(channel((bfName + _red).c_str()));
+                                    channels.insert(channel((bfName + _green).c_str()));
+                                    channels.insert(channel((bfName + _blue).c_str()));
+                                }
                             }
                         }
                     }

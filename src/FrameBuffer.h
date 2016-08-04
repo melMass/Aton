@@ -80,7 +80,7 @@ namespace aton
             int getBufferIndex(const char * aovName);
         
             // Get N buffer/aov name name
-            const char* getBufferName(const size_t& index = 0);
+            const char* getBufferName(int index = 0);
         
             // Get last buffer/aov name
             bool isFirstBufferName(const char* aovName);
