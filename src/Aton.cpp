@@ -30,11 +30,9 @@ using namespace aton;
 // Class name
 static const char* const CLASS = "Aton";
 
-// Version
-static const char* const VERSION = "1.1.4b";
-
 // Help
 static const char* const HELP =
+    "Aton v1.1.4b \n"
     "Listens for renders coming from the Aton display driver. "
     "For more info go to http://sosoyan.github.io/Aton/";
 
@@ -875,16 +873,11 @@ class Aton: public Iop
             knob("status_knob")->set_text(str_status.c_str());
         }
     
-        const char* node_help() const
-        {
-            using namespace std;
-            string help = string(CLASS) + string(VERSION) + "\n" + HELP;
-            return help.c_str();
-        }
     
         bool firstEngineRendersWholeRequest() const { return true; }
         const char* Class() const { return CLASS; }
         const char* displayName() const { return CLASS; }
+        const char* node_help() const { return HELP; }
         static const Iop::Description desc;
 };
 
