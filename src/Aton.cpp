@@ -393,8 +393,6 @@ class Aton: public Iop
             // Main knobs
             Int_knob(f, &m_port, "port_number", "Port");
             Button(f, "clear_all_knob", "Clear All");
-            Spacer(f, 10000);
-            Text_knob(f, (boost::format("Aton v%s")%VERSION).str().c_str());
 
             Divider(f, "General");
             Bool_knob(f, &m_enable_aovs, "enable_aovs_knob", "Enable AOVs");
@@ -877,10 +875,16 @@ class Aton: public Iop
             knob("status_knob")->set_text(str_status.c_str());
         }
     
+        const char* node_help() const
+        {
+            using namespace std;
+            string help = string(CLASS) + string(VERSION) + "\n" + HELP;
+            return help.c_str();
+        }
+    
         bool firstEngineRendersWholeRequest() const { return true; }
         const char* Class() const { return CLASS; }
         const char* displayName() const { return CLASS; }
-        const char* node_help() const { return HELP; }
         static const Iop::Description desc;
 };
 
