@@ -94,12 +94,13 @@ function showDownloads(data) {
 
 // Callback function for getting release stats
 function getStats() {
-	var user = 'Sosoyan';
+    var user = 'Sosoyan';
 	var repository = 'Aton';
 
     var url = apiRoot + "repos/" + user + "/" + repository + "/releases/latest";
     var url2 = apiRoot + "repos/" + user + "/" + repository + "/releases";
-    $.getJSON(url, showStats).fail(showStats).success($.getJSON(url2, showDownloads).fail(showDownloads));
+    $.getJSON(url, showStats).fail(showStats);
+    setTimeout(function(){$.getJSON(url2, showDownloads).fail(showDownloads)}, 500);
 
 }
 getStats();
