@@ -259,8 +259,8 @@ class Aton: public Iop
                               fB.getArnoldVersion());
                     
                     // Set the format
-                    const int& width = fB.getWidth();
-                    const int& height = fB.getHeight();
+                    const int width = fB.getWidth();
+                    const int height = fB.getHeight();
                     
                     if (m_node->m_fmt.width() != width ||
                         m_node->m_fmt.height() != height)
@@ -301,37 +301,34 @@ class Aton: public Iop
 
                         for(int i = 0; i < fb_size; ++i)
                         {
-                            const char* bfName = fB.getBufferName(i);
+                            std::string bfName = fB.getBufferName(i);
                             
-                            if (bfName != NULL)
+                            using namespace chStr;
+                            if (bfName == RGBA && !channels.contains(Chan_Red))
                             {
-                                using namespace chStr;
-                                if (bfName == RGBA && !channels.contains(Chan_Red))
+                                channels.insert(Chan_Red);
+                                channels.insert(Chan_Green);
+                                channels.insert(Chan_Blue);
+                                channels.insert(Chan_Alpha);
+                            }
+                            else if (bfName == Z && !channels.contains(Chan_Z))
+                            {
+                                channels.insert(Chan_Z);
+                            }
+                            else if (bfName == N || bfName == P)
+                            {
+                                if (!channels.contains(channel((bfName + _X).c_str())))
                                 {
-                                    channels.insert(Chan_Red);
-                                    channels.insert(Chan_Green);
-                                    channels.insert(Chan_Blue);
-                                    channels.insert(Chan_Alpha);
+                                    channels.insert(channel((bfName + _X).c_str()));
+                                    channels.insert(channel((bfName + _Y).c_str()));
+                                    channels.insert(channel((bfName + _Z).c_str()));
                                 }
-                                else if (bfName == Z && !channels.contains(Chan_Z))
-                                {
-                                    channels.insert(Chan_Z);
-                                }
-                                else if (bfName == N || bfName == P)
-                                {
-                                    if (!channels.contains(channel((bfName + _X).c_str())))
-                                    {
-                                        channels.insert(channel((bfName + _X).c_str()));
-                                        channels.insert(channel((bfName + _Y).c_str()));
-                                        channels.insert(channel((bfName + _Z).c_str()));
-                                    }
-                                }
-                                else if (!channels.contains(channel((bfName + _red).c_str())))
-                                {
-                                    channels.insert(channel((bfName + _red).c_str()));
-                                    channels.insert(channel((bfName + _green).c_str()));
-                                    channels.insert(channel((bfName + _blue).c_str()));
-                                }
+                            }
+                            else if (!channels.contains(channel((bfName + _red).c_str())))
+                            {
+                                channels.insert(channel((bfName + _red).c_str()));
+                                channels.insert(channel((bfName + _green).c_str()));
+                                channels.insert(channel((bfName + _blue).c_str()));
                             }
                         }
                     }
@@ -355,10 +352,10 @@ class Aton: public Iop
             foreach(z, channels)
             {
                 int b = 0;
+                int xx = x;
                 int c = colourIndex(z);
                 float* cOut = out.writable(z) + x;
                 const float* END = cOut + (r - x);
-                unsigned int xx = static_cast<unsigned int>(x);
                 
                 m_mutex.lock();
                 if (m_enable_aovs && !fBs.empty() && fBs[f].isReady())
