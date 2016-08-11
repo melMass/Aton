@@ -300,7 +300,7 @@ class Aton: public Iop
                             channels.clear();
 
                         for(int i = 0; i < fb_size; ++i)
-                        {
+                        {	
                             std::string bfName = fB.getBufferName(i);
                             
                             using namespace chStr;
@@ -365,7 +365,7 @@ class Aton: public Iop
                 {
                     if (fBs.empty() || !fBs[f].isReady() ||
                         x >= fBs[f].getWidth() ||
-                        y >= fBs[f].getHeight())
+                        y >= fBs[f].getHeight() /*|| r > fBs[f].getWidth()*/)
                     {
                         *cOut = 0.0f;
                     }
