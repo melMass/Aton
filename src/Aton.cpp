@@ -350,16 +350,15 @@ class Aton: public Iop
         void engine(int y, int x, int r, ChannelMask channels, Row& out)
         {
             int f = getFrameIndex(uiContext().frame());
-            unsigned int xx = static_cast<unsigned int>(x);
             std::vector<FrameBuffer>& fBs = m_node->m_framebuffers;
             
             foreach(z, channels)
             {
-                x = xx;
                 int b = 0;
                 int c = colourIndex(z);
                 float* cOut = out.writable(z) + x;
                 const float* END = cOut + (r - x);
+                unsigned int xx = static_cast<unsigned int>(x);
                 
                 m_mutex.lock();
                 if (m_enable_aovs && !fBs.empty() && fBs[f].isReady())
@@ -374,9 +373,9 @@ class Aton: public Iop
                         *cOut = 0.0f;
                     }
                     else
-                        *cOut = fBs[f].getBufferPix(b, x, y, c);
+                        *cOut = fBs[f].getBufferPix(b, xx, y, c);
                     ++cOut;
-                    ++x;
+                    ++xx;
                 }
                 m_mutex.unlock();
             }

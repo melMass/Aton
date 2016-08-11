@@ -60,7 +60,7 @@ namespace aton
                            const int& spp = 0);
         
             // Set writable buffer's pixel
-            void setBufferPix(const long& b,
+            void setBufferPix(const int& b,
                               const unsigned int& x,
                               const unsigned int& y,
                               const int& spp,
@@ -68,7 +68,7 @@ namespace aton
                               const float& pix);
         
             // Get read only buffer's pixel
-            const float& getBufferPix(const long& b,
+            const float& getBufferPix(const int& b,
                                       const unsigned int& x,
                                       const unsigned int& y,
                                       const int& c) const;

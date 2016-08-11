@@ -73,7 +73,7 @@ void FrameBuffer::addBuffer(const char* aov,
 }
 
 // Get writable buffer object
-void FrameBuffer::setBufferPix(const long& b,
+void FrameBuffer::setBufferPix(const int& b,
                                const unsigned int& x,
                                const unsigned int& y,
                                const int& spp,
@@ -89,7 +89,7 @@ void FrameBuffer::setBufferPix(const long& b,
 }
 
 // Get read only buffer object
-const float& FrameBuffer::getBufferPix(const long& b,
+const float& FrameBuffer::getBufferPix(const int& b,
                                        const unsigned int& x,
                                        const unsigned int& y,
                                        const int& c) const
