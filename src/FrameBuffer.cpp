@@ -159,7 +159,14 @@ const char* FrameBuffer::getBufferName(const int& index)
         {
             aovName = _aovs.at(index).c_str();
         }
-        catch (...){}
+        catch (const std::out_of_range& e)
+        {
+			//std::cerr << "Out of Range error" << std::endl;
+        }
+        catch (...)
+        {
+            std::cerr << "Unexpected error at getting buffer name" << std::endl;
+        }
     
     return aovName;
 }
