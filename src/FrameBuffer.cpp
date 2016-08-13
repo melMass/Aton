@@ -28,12 +28,14 @@ RenderColor::RenderColor() { _val[0] = _val[1] = _val[2] = 0.0f; }
 float& RenderColor::operator[](int i) { return _val[i]; }
 const float& RenderColor::operator[](int i) const { return _val[i]; }
 
+void RenderColor::reset() { _val[0] = _val[1] = _val[2] = 0.0f; }
+
 // RenderBuffer class
 RenderBuffer::RenderBuffer(const unsigned int& width,
                            const unsigned int& height,
                            const int& spp)
 {
-    size_t size = width * height;
+    int size = width * height;
     
     switch (spp)
     {
@@ -159,10 +161,7 @@ const char* FrameBuffer::getBufferName(const int& index)
         {
             aovName = _aovs.at(index).c_str();
         }
-        catch (const std::out_of_range& e)
-        {
-			//std::cerr << "Out of Range error" << std::endl;
-        }
+        catch (const std::out_of_range& e) {}
         catch (...)
         {
             std::cerr << "Unexpected error at getting buffer name" << std::endl;
@@ -189,6 +188,32 @@ bool FrameBuffer::isAovsChanged(const std::vector<std::string>& aovs)
     return (aovs != _aovs);
 }
 
+void FrameBuffer::setResolution(const int w,
+                                const int h)
+{
+    _width = w;
+    _height = h;
+    
+    int size = w * h;
+    
+    std::vector<RenderBuffer>::iterator iRB;
+    for(iRB = _buffers.begin(); iRB != _buffers.end(); ++iRB)
+    {
+        if (!iRB->_color_data.empty())
+        {
+            iRB->_color_data.resize(size);
+            std::vector<RenderColor>::iterator iRC;
+            for(iRC = iRB->_color_data.begin(); iRC != iRB->_color_data.end(); ++iRC)
+                iRC->reset();
+        }
+        if (!iRB->_float_data.empty())
+        {
+            iRB->_float_data.resize(size);
+            std::fill(iRB->_float_data.begin(), iRB->_float_data.end(), 0.0f);
+        }
+    }
+}
+
 // Check if Resolution has been changed
 bool FrameBuffer::isResolutionChanged(const unsigned int& width,
                                       const unsigned int& height)
@@ -209,12 +234,6 @@ bool FrameBuffer::isBufferExist(const char* aovName)
     return std::find(_aovs.begin(),
                      _aovs.end(), aovName) != _aovs.end();
 }
-
-// Set width of the buffer
-void FrameBuffer::setWidth(const int& w) { _width = w; }
-
-// Set height of the buffer
-void FrameBuffer::setHeight(const int& h) { _height = h; }
 
 // Get width of the buffer
 const int& FrameBuffer::getWidth() { return _width; }

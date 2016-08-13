@@ -1037,11 +1037,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     if(fB.isResolutionChanged(_xres, _yres))
                     {
                         node->m_mutex.lock();
-                        fB.ready(false);
-                        fB.clearAll();
-                        fB.setWidth(_xres);
-                        fB.setHeight(_yres);
-                        node->resetChannels(node->m_channels);
+                        fB.setResolution(_xres, _yres);
                         node->m_mutex.unlock();
                     }
 

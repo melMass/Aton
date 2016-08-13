@@ -27,6 +27,8 @@ namespace aton
 
             float& operator[](int i);
             const float& operator[](int i) const;
+        
+            void reset();
 
             // Data
             float _val[3];
@@ -82,6 +84,9 @@ namespace aton
             // Get N buffer/aov name name
             const char* getBufferName(const int& index);
         
+            void setResolution(const int width,
+                               const int height);
+        
             // Get last buffer/aov name
             bool isFirstBufferName(const char* aovName);
         
@@ -100,12 +105,6 @@ namespace aton
         
             // Check if the given buffer/aov name name is exist
             bool isBufferExist(const char* aovName);
-        
-            // Set width of the buffer
-            void setWidth(const int& w);
-
-            // Set height of the buffer
-            void setHeight(const int& h);
         
             // Get width of the buffer
             const int& getWidth();
