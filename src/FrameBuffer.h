@@ -84,9 +84,6 @@ namespace aton
             // Get N buffer/aov name name
             const char* getBufferName(const int& index);
         
-            void setResolution(const int width,
-                               const int height);
-        
             // Get last buffer/aov name
             bool isFirstBufferName(const char* aovName);
         
@@ -97,8 +94,12 @@ namespace aton
             bool isAovsChanged(const std::vector<std::string>& aovs);
         
             // Check if Resolution has been changed
-            bool isResolutionChanged(const unsigned int& width,
-                                     const unsigned int& height);
+            bool isResolutionChanged(const unsigned int& w,
+                                     const unsigned int& h);
+        
+            // Resize the containers to match the resolution
+            void setResolution(const unsigned int& w,
+                               const unsigned int& h);
         
             // Clear buffers and aovs
             void clearAll();

@@ -188,37 +188,39 @@ bool FrameBuffer::isAovsChanged(const std::vector<std::string>& aovs)
     return (aovs != _aovs);
 }
 
-void FrameBuffer::setResolution(const int w,
-                                const int h)
+// Check if Resolution has been changed
+bool FrameBuffer::isResolutionChanged(const unsigned int& w,
+                                      const unsigned int& h)
+{
+    return (w != _width && h != _height);
+}
+
+// Resize the containers to match the resolution
+void FrameBuffer::setResolution(const unsigned int& w,
+                                const unsigned int& h)
 {
     _width = w;
     _height = h;
     
-    int size = w * h;
+    int bfSize = _width * _height;
     
     std::vector<RenderBuffer>::iterator iRB;
     for(iRB = _buffers.begin(); iRB != _buffers.end(); ++iRB)
     {
         if (!iRB->_color_data.empty())
         {
-            iRB->_color_data.resize(size);
             std::vector<RenderColor>::iterator iRC;
             for(iRC = iRB->_color_data.begin(); iRC != iRB->_color_data.end(); ++iRC)
                 iRC->reset();
+            iRB->_color_data.resize(bfSize);
+
         }
         if (!iRB->_float_data.empty())
         {
-            iRB->_float_data.resize(size);
             std::fill(iRB->_float_data.begin(), iRB->_float_data.end(), 0.0f);
+            iRB->_float_data.resize(bfSize);
         }
     }
-}
-
-// Check if Resolution has been changed
-bool FrameBuffer::isResolutionChanged(const unsigned int& width,
-                                      const unsigned int& height)
-{
-    return (width != _width && height != _height);
 }
 
 // Clear buffers and aovs
@@ -231,8 +233,7 @@ void FrameBuffer::clearAll()
 // Check if the given buffer/aov name name is exist
 bool FrameBuffer::isBufferExist(const char* aovName)
 {
-    return std::find(_aovs.begin(),
-                     _aovs.end(), aovName) != _aovs.end();
+    return std::find(_aovs.begin(), _aovs.end(), aovName) != _aovs.end();
 }
 
 // Get width of the buffer
