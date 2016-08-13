@@ -86,21 +86,24 @@ function showDownloads(data) {
         html += " - Downloaded " + total + " times."
     }
 
-    var resultDiv = $("#downloads-result");
-    resultDiv.html(html);
+    var downloadDiv = $("#downloads-result");
+    downloadDiv.html(html);
     $("#loader-gif").hide();
-    resultDiv.slideDown();
+    downloadDiv.slideDown();
 }
 
 // Callback function for getting release stats
+var user = 'Sosoyan';
+var repository = 'Aton';
+
 function getStats() {
-    var user = 'Sosoyan';
-	var repository = 'Aton';
 
     var url = apiRoot + "repos/" + user + "/" + repository + "/releases/latest";
-    var url2 = apiRoot + "repos/" + user + "/" + repository + "/releases";
     $.getJSON(url, showStats).fail(showStats);
-    setTimeout(function(){$.getJSON(url2, showDownloads).fail(showDownloads)}, 500);
-
 }
 getStats();
+
+$(window).load(function() {
+    var url2 = apiRoot + "repos/" + user + "/" + repository + "/releases";
+    $.getJSON(url2, showDownloads).fail(showDownloads);
+});
