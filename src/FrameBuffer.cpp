@@ -209,11 +209,9 @@ void FrameBuffer::setResolution(const unsigned int& w,
     {
         if (!iRB->_color_data.empty())
         {
-            std::vector<RenderColor>::iterator iRC;
-            for(iRC = iRB->_color_data.begin(); iRC != iRB->_color_data.end(); ++iRC)
-                iRC->reset();
+            RenderColor color;
+            std::fill(iRB->_color_data.begin(), iRB->_color_data.end(), color);
             iRB->_color_data.resize(bfSize);
-
         }
         if (!iRB->_float_data.empty())
         {
