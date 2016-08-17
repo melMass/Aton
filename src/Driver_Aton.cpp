@@ -16,7 +16,7 @@ AI_DRIVER_NODE_EXPORT_METHODS(AtonDriverMtd);
 struct ShaderData
 {
    aton::Client* client;
-   int xres, yres;
+   int xres, yres, min_x, min_y;
 };
 
 const char* getHost()
@@ -98,15 +98,23 @@ driver_open
     int min_y = AiNodeGetInt(options, "region_min_y");
     int max_y = AiNodeGetInt(options, "region_max_y");
     
-    if (min_x == INT_MIN || max_x == INT_MIN)
+    // Setting Resolution
+    if (min_x == INT_MIN ||
+        max_x == INT_MIN ||
+        min_y == INT_MIN ||
+        max_y == INT_MIN)
+    {
         data->xres = xres;
-    else
-        data->xres = max_x - min_x + 1;
-        
-    if (min_y == INT_MIN || max_y == INT_MIN)
         data->yres = yres;
+        data->min_x = data->min_y = 0;
+    }
     else
+    {
+        data->xres = max_x - min_x + 1;
         data->yres = max_y - min_y + 1;
+        data->min_x = min_x;
+        data->min_y = min_y;
+    }
     
     // Get area of region
     long long rArea = data->xres * data->yres;
@@ -145,6 +153,11 @@ driver_write_bucket
     int spp = 0;
     const void* bucket_data;
     const char* aov_name;
+    
+    if (data->min_x < 0)
+        bucket_xo = bucket_xo - data->min_x;
+    if (data->min_y < 0)
+        bucket_yo = bucket_yo - data->min_y;
     
     while (AiOutputIteratorGetNext(iterator, &aov_name, &pixel_type, &bucket_data))
     {

@@ -197,7 +197,7 @@ bool FrameBuffer::isAovsChanged(const std::vector<std::string>& aovs)
 bool FrameBuffer::isResolutionChanged(const unsigned int& w,
                                       const unsigned int& h)
 {
-    return (w != _width && h != _height);
+    return (w != _width || h != _height);
 }
 
 // Resize the containers to match the resolution
