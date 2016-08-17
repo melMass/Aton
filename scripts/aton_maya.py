@@ -46,6 +46,7 @@ class Aton(QtWidgets.QDialog):
         self.frame_sequence.started.connect(self.sequence_started)
         self.frame_sequence.stopped.connect(self.sequence_stopped)
         self.frame_sequence.stepped.connect(self.sequence_stepped)
+        self.default_level = -3
         self.defaultPort = self.getSceneOption(0)
         self.setupUi()
 
@@ -82,7 +83,10 @@ class Aton(QtWidgets.QDialog):
                       6 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreSubdivision"),
                       7 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreDisplacement"),
                       8 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreBump"),
-                      9 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreSss")}[attr]()
+                      9 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreSss"),
+                      10 : lambda: cmds.playbackOptions(q=True, minTime=True),
+                      11 : lambda: cmds.playbackOptions(q=True, maxTime=True)
+                      }[attr]()
         return result
 
     def setupUi(self):
@@ -116,6 +120,10 @@ class Aton(QtWidgets.QDialog):
             self.shaderComboBox.setCurrentIndex(0)
             textureRepeatSlider.setValue(4)
             self.selectedShaderCheckbox.setChecked(0)
+            self.startSpinBox.setValue(self.getSceneOption(10))
+            self.endSpinBox.setValue(self.getSceneOption(11))
+            self.stepSpinBox.setValue(1)
+            self.seqCheckBox.setChecked(False)
 
         self.setObjectName(self.windowName)
         self.setWindowTitle("Aton %s"%__version__)
@@ -291,39 +299,34 @@ class Aton(QtWidgets.QDialog):
         self.startSpinBox = QtWidgets.QSpinBox()
         self.startSpinBox.setButtonSymbols(
             QtWidgets.QAbstractSpinBox.NoButtons)
-        self.startSpinBox.setValue(cmds.playbackOptions(q=True, minTime=True))
         self.startSpinBox.setRange(0, 99999)
         self.startSpinBox.setToolTip('Start Frame')
+        self.startSpinBox.setValue(self.getSceneOption(10))
         self.endSpinBox = QtWidgets.QSpinBox()
         self.endSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
-        self.endSpinBox.setValue(cmds.playbackOptions(q=True, maxTime=True))
         self.endSpinBox.setRange(0, 99999)
         self.endSpinBox.setToolTip('End Frame')
+        self.endSpinBox.setValue(self.getSceneOption(11))
         self.stepSpinBox = QtWidgets.QSpinBox()
         self.stepSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
         self.stepSpinBox.setValue(1)
         self.stepSpinBox.setRange(1, 100)
         self.stepSpinBox.setToolTip('Frame Step')
-        self.seqStartButton = QtWidgets.QPushButton('Start Sequence')
-        self.seqStartButton.clicked.connect(self.frame_sequence.start)
-        self.seqStopButton = QtWidgets.QPushButton('Stop Sequence')
-        self.seqStopButton.clicked.connect(self.frame_sequence.stop)
-        self.seqStopButton.hide()
+        self.seqCheckBox = QtWidgets.QCheckBox('Enable')
 
         # Sequence GroupBox Layout
         sequenceGroupBox = QtWidgets.QGroupBox('Sequence')
         sequenceLayout = QtWidgets.QGridLayout(sequenceGroupBox)
-        sequenceLayout.addWidget(QtWidgets.QLabel('start:'), 0, 0,
+        sequenceLayout.addWidget(QtWidgets.QLabel('Start frame:'), 0, 0,
                                  alignment=QtCore.Qt.AlignRight)
         sequenceLayout.addWidget(self.startSpinBox, 0, 1)
-        sequenceLayout.addWidget(QtWidgets.QLabel('end:'), 0, 2,
+        sequenceLayout.addWidget(QtWidgets.QLabel('End frame:'), 0, 2,
                                  alignment=QtCore.Qt.AlignRight)
         sequenceLayout.addWidget(self.endSpinBox, 0, 3)
-        sequenceLayout.addWidget(QtWidgets.QLabel('step:'), 0, 4,
+        sequenceLayout.addWidget(QtWidgets.QLabel('By frame:'), 0, 4,
                                  alignment=QtCore.Qt.AlignRight)
         sequenceLayout.addWidget(self.stepSpinBox, 0, 5)
-        sequenceLayout.addWidget(self.seqStartButton, 0, 6)
-        sequenceLayout.addWidget(self.seqStopButton, 0, 6)
+        sequenceLayout.addWidget(self.seqCheckBox, 0, 6)
 
         # Ignore Layout
         ignoresGroupBox = QtWidgets.QGroupBox("Ignore")
@@ -475,11 +478,22 @@ class Aton(QtWidgets.QDialog):
                                                   not cmds.getAttr("%s.visibility"%cmds.listRelatives(x, s=1)[0])]
         for i in hCams: cmds.showHidden(i)
 
+        if self.sequence_enabled: # set level to 2 before ipr starts
+            # Store progressive_inital_level
+            # Set it to 2 so we run only 1 iteration per frame
+            level = 'defaultArnoldRenderOptions.progressive_initial_level'
+            self.default_level = cmds.getAttr(level)
+            cmds.setAttr(level, 2)
+
         try: # Start IPR
             camera = self.getCamera()
             cmds.arnoldIpr(cam=camera, mode='start')
         except RuntimeError:
             cmds.warning("Current renderer is not set to Arnold.")
+
+        # Sequence Rendering
+        if self.sequence_enabled:
+            self.frame_sequence.start()
 
         # Update IPR
         self.IPRUpdate()
@@ -498,20 +512,11 @@ class Aton(QtWidgets.QDialog):
         )
         return frames
 
+    @property
+    def sequence_enabled(self):
+        return self.seqCheckBox.checkState()
+
     def sequence_started(self):
-        self.seqStopButton.show()
-        self.seqStartButton.hide()
-
-        # Store progressive_inital_level
-        # Set it to 2 so we run only 1 iteration per frame
-        level = 'defaultArnoldRenderOptions.progressive_initial_level'
-        self._initial_level = cmds.getAttr(level)
-        cmds.setAttr(level, 2)
-
-        # Start ipr if it's not running
-        if not cmds.arnoldIpr():
-            self.render()
-
         # Setup frame_sequence
         self.frame_sequence.frames = self.getFrames()
 
@@ -530,15 +535,9 @@ class Aton(QtWidgets.QDialog):
         # Stop ipr when finished
         self.stop()
 
-        try:
-            self.seqStartButton.show()
-            self.seqStopButton.hide()
-        except RuntimeError: # Buttons no longer exist
-            pass
-
         # Restore old progressive_initial_level
         level = 'defaultArnoldRenderOptions.progressive_initial_level'
-        cmds.setAttr(level, self._initial_level)
+        cmds.setAttr(level, self.default_level)
 
         # kill progressBar
         gMainProgressBar = mel.eval('$tmp = $gMainProgressBar')
