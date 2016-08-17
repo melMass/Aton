@@ -3,6 +3,7 @@ __copyright__ = "2016 All rights reserved. See Copyright.txt for more details."
 __version__ = "v1.1.4b"
 
 import sys
+from timeit import default_timer
 
 import maya.mel as mel
 import maya.OpenMaya as OM
@@ -29,6 +30,7 @@ def maya_main_window():
     main_window_ptr = OpenMayaUI.MQtUtil.mainWindow()
     return wrapInstance(long(main_window_ptr), QtWidgets.QWidget)
 
+
 class Aton(QtWidgets.QDialog):
 
     def __init__(self, parent = maya_main_window()):
@@ -40,6 +42,10 @@ class Aton(QtWidgets.QDialog):
 
         self.timeChangedCB = None
         self.selectionChangedCB = None
+        self.frame_sequence = AiFrameSequence()
+        self.frame_sequence.started.connect(self.sequence_started)
+        self.frame_sequence.stopped.connect(self.sequence_stopped)
+        self.frame_sequence.stepped.connect(self.sequence_stepped)
         self.defaultPort = self.getSceneOption(0)
         self.setupUi()
 
@@ -117,11 +123,11 @@ class Aton(QtWidgets.QDialog):
         self.setAttribute(QtCore.Qt.WA_AlwaysShowToolTips)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
         if mayaVersion >= 201700:
-            self.setMinimumSize(415, 350)
-            self.setMaximumSize(415, 350)
+            self.setMinimumSize(415, 420)
+            self.setMaximumSize(415, 420)
         else:
-            self.setMinimumSize(400, 350)
-            self.setMaximumSize(400, 350)
+            self.setMinimumSize(400, 420)
+            self.setMaximumSize(400, 420)
 
         mainLayout = QtWidgets.QVBoxLayout()
         mainLayout.setContentsMargins(5,5,5,5)
@@ -280,6 +286,45 @@ class Aton(QtWidgets.QDialog):
         textureRepeatLayout.addWidget(self.textureRepeatSpinbox)
         textureRepeatLayout.addWidget(textureRepeatSlider)
 
+        # Sequence GroupBox Controls
+        self.startSpinBox = QtWidgets.QSpinBox()
+        self.startSpinBox = QtWidgets.QSpinBox()
+        self.startSpinBox.setButtonSymbols(
+            QtWidgets.QAbstractSpinBox.NoButtons)
+        self.startSpinBox.setValue(cmds.playbackOptions(q=True, minTime=True))
+        self.startSpinBox.setRange(0, 99999)
+        self.startSpinBox.setToolTip('Start Frame')
+        self.endSpinBox = QtWidgets.QSpinBox()
+        self.endSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
+        self.endSpinBox.setValue(cmds.playbackOptions(q=True, maxTime=True))
+        self.endSpinBox.setRange(0, 99999)
+        self.endSpinBox.setToolTip('End Frame')
+        self.stepSpinBox = QtWidgets.QSpinBox()
+        self.stepSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
+        self.stepSpinBox.setValue(1)
+        self.stepSpinBox.setRange(1, 100)
+        self.stepSpinBox.setToolTip('Frame Step')
+        self.seqStartButton = QtWidgets.QPushButton('Start Sequence')
+        self.seqStartButton.clicked.connect(self.frame_sequence.start)
+        self.seqStopButton = QtWidgets.QPushButton('Stop Sequence')
+        self.seqStopButton.clicked.connect(self.frame_sequence.stop)
+        self.seqStopButton.hide()
+
+        # Sequence GroupBox Layout
+        sequenceGroupBox = QtWidgets.QGroupBox('Sequence')
+        sequenceLayout = QtWidgets.QGridLayout(sequenceGroupBox)
+        sequenceLayout.addWidget(QtWidgets.QLabel('start:'), 0, 0,
+                                 alignment=QtCore.Qt.AlignRight)
+        sequenceLayout.addWidget(self.startSpinBox, 0, 1)
+        sequenceLayout.addWidget(QtWidgets.QLabel('end:'), 0, 2,
+                                 alignment=QtCore.Qt.AlignRight)
+        sequenceLayout.addWidget(self.endSpinBox, 0, 3)
+        sequenceLayout.addWidget(QtWidgets.QLabel('step:'), 0, 4,
+                                 alignment=QtCore.Qt.AlignRight)
+        sequenceLayout.addWidget(self.stepSpinBox, 0, 5)
+        sequenceLayout.addWidget(self.seqStartButton, 0, 6)
+        sequenceLayout.addWidget(self.seqStopButton, 0, 6)
+
         # Ignore Layout
         ignoresGroupBox = QtWidgets.QGroupBox("Ignore")
         ignoresLayout = QtWidgets.QVBoxLayout(ignoresGroupBox)
@@ -327,6 +372,7 @@ class Aton(QtWidgets.QDialog):
         mainLayout.addWidget(generalGroupBox)
         mainLayout.addWidget(overridesGroupBox)
         mainLayout.addWidget(ignoresGroupBox)
+        mainLayout.addWidget(sequenceGroupBox)
         mainLayout.addLayout(mainButtonslayout)
 
         # UI Updates
@@ -444,6 +490,68 @@ class Aton(QtWidgets.QDialog):
         cmds.setAttr("defaultArnoldDisplayDriver.aiTranslator", defaultTranslator, type="string")
         cmds.setAttr("defaultArnoldDisplayDriver.port", self.defaultPort)
 
+    def getFrames(self):
+        frames = range(
+            self.startSpinBox.value(),
+            self.endSpinBox.value() + 1,
+            self.stepSpinBox.value()
+        )
+        return frames
+
+    def sequence_started(self):
+        self.seqStopButton.show()
+        self.seqStartButton.hide()
+
+        # Store progressive_inital_level
+        # Set it to 2 so we run only 1 iteration per frame
+        level = 'defaultArnoldRenderOptions.progressive_initial_level'
+        self._initial_level = cmds.getAttr(level)
+        cmds.setAttr(level, 2)
+
+        # Start ipr if it's not running
+        if not cmds.arnoldIpr():
+            self.render()
+
+        # Setup frame_sequence
+        self.frame_sequence.frames = self.getFrames()
+
+        # Setup progress bar
+        gMainProgressBar = mel.eval('$tmp = $gMainProgressBar')
+        cmds.progressBar(
+            gMainProgressBar,
+            edit=True,
+            beginProgress=True,
+            isInterruptable=True,
+            status='Aton Frame Sequence',
+            maxValue=len(self.frame_sequence.frames)
+        )
+
+    def sequence_stopped(self):
+        # Stop ipr when finished
+        self.stop()
+
+        try:
+            self.seqStartButton.show()
+            self.seqStopButton.hide()
+        except RuntimeError: # Buttons no longer exist
+            pass
+
+        # Restore old progressive_initial_level
+        level = 'defaultArnoldRenderOptions.progressive_initial_level'
+        cmds.setAttr(level, self._initial_level)
+
+        # kill progressBar
+        gMainProgressBar = mel.eval('$tmp = $gMainProgressBar')
+        cmds.progressBar(gMainProgressBar, edit=True, endProgress=True)
+
+    def sequence_stepped(self, frame):
+        # Refresh IPR
+        self.IPRUpdate()
+
+        # step progressBar
+        gMainProgressBar = mel.eval('$tmp = $gMainProgressBar')
+        cmds.progressBar(gMainProgressBar, edit=True, step=1)
+
     def initOvrShaders(self):
         ''' Initilize override shaders '''
         # Checker shader
@@ -484,7 +592,7 @@ class Aton(QtWidgets.QDialog):
         AiNodeSetInt(self.uvShader, "shade_mode", 2)
         AiNodeSetInt(self.uvShader, "color_mode", 5)
 
-    def IPRUpdate(self, attr = None):
+    def IPRUpdate(self, attr=None):
         ''' This method is called during IPR session '''
         try: # If render session is not started yet
             cmds.arnoldIpr(mode='pause')
@@ -628,6 +736,8 @@ class Aton(QtWidgets.QDialog):
         except (AttributeError, RuntimeError):
             return
 
+        self.frame_sequence.stop()
+
     def closeEvent(self, event):
         ''' Removes callback when closing the GUI '''
         if self.timeChangedCB != None:
@@ -637,6 +747,119 @@ class Aton(QtWidgets.QDialog):
         if self.selectionChangedCB != None:
             OM.MEventMessage.removeCallback(self.selectionChangedCB)
             self.selectionChangedCB = None
+
+        self.frame_sequence.stop()
+
+
+class Signal(set):
+    '''Qt Signal Clone allows'''
+    connect = set.add
+    disconnect = set.discard
+    def emit(self, *args, **kwargs):
+        for fn in list(self):
+            fn(*args, **kwargs)
+
+
+class AiFrameSequence(object):
+    '''
+    Step through a batch of frames using the specified timeout in seconds. For
+    each frame wait for the frame to start rendering, and then stop rendering
+    before moving on. Stop stepping early using the stop method.
+    AiFrameSequence emits the following signals: started, stopped, stepped,
+    frame_changed. stepped emits the step in the inner frame loop, it can be
+    used to report progress. frame_changed emits the frame number when the
+    frame is changed.
+
+    usage::
+
+       b = AiFrameSequence(xrange(10, 20, 2), 1)
+       b.start()
+       # OR LIKE THIS
+       b = AiFrameSequence()
+       b.frames = xrange(10, 20, 2)
+       b.timeout = 1
+       b.start()
+    '''
+
+    def __init__(self, frames=None, timeout=None):
+        self.frames = frames or []
+        self.timeout = timeout
+        self.running = False
+        self.started = Signal()
+        self.stopped = Signal()
+        self.stepped = Signal()
+        self.frame_changed = Signal()
+
+    def change_frame(self, frame):
+        cmds.currentTime(frame)
+        options = AiUniverseGetOptions()
+        AiNodeSetFlt(options, "frame", frame)
+        self.frame_changed.emit(frame)
+
+    def start(self):
+        '''Start stepping through frames'''
+
+        self.running = True
+        self.started.emit()
+
+        for i, frame in enumerate(self.frames):
+            if not self.running:
+                break
+            self.change_frame(frame)
+            self.stepped.emit(i)
+            sleep_until( # sleep until frame starts, then finishes
+                conditions=[AiRendering, lambda: not AiRendering()],
+                wake_condition=lambda: not self.running,
+                timeout=self.timeout,
+            )
+
+        self.running = False
+        self.stopped.emit()
+
+    def stop(self):
+        '''Stop stepping through frames'''
+
+        self.running = False
+
+
+def qt_sleep(secs=0):
+    '''Non-blocking sleep for Qt'''
+
+    start = default_timer()
+
+    while True:
+        QtWidgets.qApp.processEvents()
+        if default_timer() - start > secs:
+            return
+
+
+def sleep_until(conditions, wake_condition=None, timeout=None):
+    '''
+    Process qApp events until a sequence of conditions becomes True. Return
+    when each condition returns True or the wake_condition returns True or
+    the timeout is reached...
+    :param conditions: Sequence of callables returning True or False
+    :param wake_condition: Optional callable returning True or False
+    :param timeout: Number of seconds to wait before returning
+    '''
+
+    start = default_timer()
+
+    for condition in conditions:
+        while True:
+
+            if condition():
+                break
+
+            if timeout:
+                if default_timer() - start > timeout:
+                    break
+
+            if wake_condition():
+                break
+
+            qt_sleep(0.1)
+
 
 if __name__ == "__main__":
     aton = Aton()
