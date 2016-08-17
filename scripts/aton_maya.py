@@ -302,17 +302,21 @@ class Aton(QtWidgets.QDialog):
         self.startSpinBox.setRange(0, 99999)
         self.startSpinBox.setToolTip('Start Frame')
         self.startSpinBox.setValue(self.getSceneOption(10))
+        self.startSpinBox.setEnabled(False)
         self.endSpinBox = QtWidgets.QSpinBox()
         self.endSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
         self.endSpinBox.setRange(0, 99999)
         self.endSpinBox.setToolTip('End Frame')
         self.endSpinBox.setValue(self.getSceneOption(11))
+        self.endSpinBox.setEnabled(False)
         self.stepSpinBox = QtWidgets.QSpinBox()
         self.stepSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
         self.stepSpinBox.setValue(1)
         self.stepSpinBox.setRange(1, 100)
         self.stepSpinBox.setToolTip('Frame Step')
+        self.stepSpinBox.setEnabled(False)
         self.seqCheckBox = QtWidgets.QCheckBox('Enable')
+        self.seqCheckBox.stateChanged.connect(self.sequence_toggled)
 
         # Sequence GroupBox Layout
         sequenceGroupBox = QtWidgets.QGroupBox('Sequence')
@@ -515,6 +519,16 @@ class Aton(QtWidgets.QDialog):
     @property
     def sequence_enabled(self):
         return self.seqCheckBox.checkState()
+
+    def sequence_toggled(self):
+        if self.sequence_enabled:
+            self.startSpinBox.setEnabled(True)
+            self.endSpinBox.setEnabled(True)
+            self.stepSpinBox.setEnabled(True)
+        else:
+            self.startSpinBox.setEnabled(False)
+            self.endSpinBox.setEnabled(False)
+            self.stepSpinBox.setEnabled(False)
 
     def sequence_started(self):
         # Setup frame_sequence
