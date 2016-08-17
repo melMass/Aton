@@ -88,14 +88,28 @@ driver_open
     const char* host = AiNodeGetStr(node, "host");
     int port = AiNodeGetInt(node, "port");
     
-    // Get resolution and area
-    data->xres = display_window.maxx - display_window.minx + 1;
-    data->yres = display_window.maxy - display_window.miny + 1;
+    // Get resolution
+    int xres = AiNodeGetInt(options, "xres");
+    int yres = AiNodeGetInt(options, "yres");
+    
+    // Get regions
+    int min_x = AiNodeGetInt(options, "region_min_x");
+    int max_x = AiNodeGetInt(options, "region_max_x");
+    int min_y = AiNodeGetInt(options, "region_min_y");
+    int max_y = AiNodeGetInt(options, "region_max_y");
+    
+    if (min_x == INT_MIN || max_x == INT_MIN)
+        data->xres = xres;
+    else
+        data->xres = max_x - min_x + 1;
+        
+    if (min_y == INT_MIN || max_y == INT_MIN)
+        data->yres = yres;
+    else
+        data->yres = max_y - min_y + 1;
     
     // Get area of region
-    int rWidth = data_window.maxx - data_window.minx + 1;
-    int rHeight = data_window.maxy - data_window.miny + 1;
-    long long rArea = rWidth * rHeight;
+    long long rArea = data->xres * data->yres;
 
     try // Now we can connect to the server and start rendering
     {
