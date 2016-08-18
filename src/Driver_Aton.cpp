@@ -16,7 +16,7 @@ AI_DRIVER_NODE_EXPORT_METHODS(AtonDriverMtd);
 struct ShaderData
 {
    aton::Client* client;
-   int xres, yres, min_x, min_y;
+   int xres, yres, min_x, min_y, max_x, max_y;
 };
 
 const char* getHost()
@@ -88,33 +88,41 @@ driver_open
     const char* host = AiNodeGetStr(node, "host");
     int port = AiNodeGetInt(node, "port");
     
-    // Get resolution
+    // Get Resolution
     int xres = AiNodeGetInt(options, "xres");
     int yres = AiNodeGetInt(options, "yres");
     
-    // Get regions
+    // Get Regions
     int min_x = AiNodeGetInt(options, "region_min_x");
-    int max_x = AiNodeGetInt(options, "region_max_x");
     int min_y = AiNodeGetInt(options, "region_min_y");
+    int max_x = AiNodeGetInt(options, "region_max_x");
     int max_y = AiNodeGetInt(options, "region_max_y");
     
-    // Setting Resolution
-    if (min_x == INT_MIN ||
-        max_x == INT_MIN ||
-        min_y == INT_MIN ||
-        max_y == INT_MIN)
-    {
+    // Setting Origin
+    data->min_x = (min_x == INT_MIN) ? 0 : min_x;
+    data->min_y = (min_y == INT_MIN) ? 0 : min_y;
+    data->max_x = (max_x == INT_MIN) ? 0 : max_x;
+    data->max_y = (max_y == INT_MIN) ? 0 : max_y;
+   
+     // Setting X Resolution
+    if (data->min_x < 0 && data->max_x >= xres)
+        data->xres = data->max_x - data->min_x + 1;
+    else if (data->min_x >= 0 && data->max_x < xres)
         data->xres = xres;
+    else if (data->min_x < 0 && data->max_x < xres)
+        data->xres = xres - min_x;
+    else if(data->min_x >= 0 && data->max_x >= xres)
+        data->xres = xres + (max_x - xres + 1);
+    
+    // Setting Y Resolution
+    if (data->min_y < 0 && data->max_y >= yres)
+        data->yres = data->max_y - data->min_y + 1;
+    else if (data->min_y >= 0 && data->max_y < yres)
         data->yres = yres;
-        data->min_x = data->min_y = 0;
-    }
-    else
-    {
-        data->xres = max_x - min_x + 1;
-        data->yres = max_y - min_y + 1;
-        data->min_x = min_x;
-        data->min_y = min_y;
-    }
+    else if (data->min_y < 0 && data->max_y < yres)
+        data->yres = yres - min_y;
+    else if(data->min_y >= 0 && data->max_y >= yres)
+        data->yres = yres + (max_y - yres + 1);
     
     // Get area of region
     long long rArea = data->xres * data->yres;
