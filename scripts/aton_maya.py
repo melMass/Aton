@@ -188,8 +188,6 @@ class Aton(QtWidgets.QDialog):
         self.portSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
         self.portSpinBox.setMaximum(1024)
         self.portSpinBox.setMaximum(9999)
-        self.portSpinBox.setMinimumSize(25, 25)
-        self.portSpinBox.setMaximumSize(50, 25)
         self.portSpinBox.setValue(self.defaultPort)
         portSlider = QtWidgets.QSlider()
         portSlider.setOrientation(QtCore.Qt.Horizontal)
