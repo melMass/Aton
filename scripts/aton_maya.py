@@ -533,6 +533,7 @@ class Aton(QtWidgets.QDialog):
 
         try: # Start IPR
             cmds.arnoldIpr(cam=self.getCamera(), mode='start')
+            sys.stdout.write("// Info: Aton - Render started.\n")
         except RuntimeError:
             cmds.warning("Current renderer is not set to Arnold.")
 
@@ -542,7 +543,6 @@ class Aton(QtWidgets.QDialog):
 
         # Update IPR
         self.IPRUpdate()
-        sys.stdout.write("// Info: Aton - Render started.\n")
 
         # Setting back to default
         for i in hCams: cmds.hide(i)
@@ -564,13 +564,18 @@ class Aton(QtWidgets.QDialog):
         self.frame_sequence.frames = self.getFrames()
 
         # Setup progress bar
+        progressKeys = {"edit":True,
+                        "beginProgress":True,
+                        "isInterruptable":True,
+                        "maxValue": len(self.frame_sequence.frames),
+                        "status": 'Aton Frame Sequence'}
+
         self.gMainProgressBar = mel.eval('$tmp = $gMainProgressBar')
-        cmds.progressBar(self.gMainProgressBar,
-                         edit=True,
-                         beginProgress=True,
-                         isInterruptable=True,
-                         status='Aton Frame Sequence',
-                         maxValue=len(self.frame_sequence.frames))
+        cmds.progressBar( self.gMainProgressBar, **progressKeys)
+        # maya.api bugfix
+        if cmds.progressBar(self.gMainProgressBar, q=True, ic=True):
+            cmds.progressBar(self.gMainProgressBar, e=True, ep=True)
+            cmds.progressBar(self.gMainProgressBar, **progressKeys)
 
     def sequence_stopped(self):
         # Stop ipr when finished
@@ -781,6 +786,9 @@ class Aton(QtWidgets.QDialog):
         self.stop()
         self.frame_sequence.stop()
 
+    def keyPressEvent(self, event):
+        if event.key() == QtCore.Qt.Key_Escape:
+            self.frame_sequence.stop()
 
 class Signal(set):
     '''Qt Signal Clone allows'''
@@ -789,7 +797,6 @@ class Signal(set):
     def emit(self, *args, **kwargs):
         for fn in list(self):
             fn(*args, **kwargs)
-
 
 class AiFrameSequence(object):
     '''
@@ -829,20 +836,21 @@ class AiFrameSequence(object):
 
     def start(self):
         '''Start stepping through frames'''
-
         self.running = True
         self.started.emit()
+        gMainProgressBar = mel.eval('$tmp = $gMainProgressBar')
 
         for i, frame in enumerate(self.frames):
-            if not self.running:
+            isCancelled = cmds.progressBar(gMainProgressBar, q=True, ic=True)
+            if not self.running or isCancelled:
                 break
             self.change_frame(frame)
             self.stepped.emit(i)
-            sleep_until( # sleep until frame starts, then finishes
-                conditions=[AiRendering, lambda: not AiRendering()],
-                wake_condition=lambda: not self.running,
-                timeout=self.timeout,
-            )
+
+            # Sleep until frame starts, then finishes
+            sleep_until(conditions = [AiRendering, lambda: not AiRendering()],
+                        wake_condition = lambda: not self.running,
+                        timeout=self.timeout)
 
         self.running = False
         self.stopped.emit()
