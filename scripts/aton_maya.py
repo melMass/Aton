@@ -667,6 +667,11 @@ class Aton(QtWidgets.QDialog):
                 AiNodeSetInt(options, "region_min_y", rMinY)
                 AiNodeSetInt(options, "region_max_x", rMaxX)
                 AiNodeSetInt(options, "region_max_y", rMaxY)
+            else:
+                AiNodeSetInt(options, "region_min_x", 0)
+                AiNodeSetInt(options, "region_min_y", 0)
+                AiNodeSetInt(options, "region_max_x", xres-1)
+                AiNodeSetInt(options, "region_max_y", yres-1)
 
         # Camera AA Update
         if attr == None or attr == 2:
