@@ -857,20 +857,16 @@ class AiFrameSequence(object):
 
     def stop(self):
         '''Stop stepping through frames'''
-
         self.running = False
-
 
 def qt_sleep(secs=0):
     '''Non-blocking sleep for Qt'''
-
     start = default_timer()
 
     while True:
         QtWidgets.qApp.processEvents()
         if default_timer() - start > secs:
             return
-
 
 def sleep_until(conditions, wake_condition=None, timeout=None):
     '''
@@ -886,14 +882,11 @@ def sleep_until(conditions, wake_condition=None, timeout=None):
 
     for condition in conditions:
         while True:
-
             if condition():
                 break
-
             if timeout:
                 if default_timer() - start > timeout:
                     break
-
             if wake_condition():
                 break
 
