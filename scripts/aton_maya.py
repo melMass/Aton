@@ -248,6 +248,7 @@ class Aton(QtWidgets.QDialog):
         cameraAaSlider = QtWidgets.QSlider()
         cameraAaSlider.setOrientation(QtCore.Qt.Horizontal)
         cameraAaSlider.setValue(self.cameraAaSpinBox.value())
+        cameraAaSlider.setMinimum(-3)
         cameraAaSlider.setMaximum(16)
         cameraAaSlider.valueChanged[int].connect(self.cameraAaSpinBox.setValue)
         cameraAaLayout.addWidget(cameraAaLabel)
@@ -563,8 +564,8 @@ class Aton(QtWidgets.QDialog):
         self.frame_sequence.frames = self.getFrames()
 
         # Setup progress bar
-        gMainProgressBar = mel.eval('$tmp = $gMainProgressBar')
-        cmds.progressBar(gMainProgressBar,
+        self.gMainProgressBar = mel.eval('$tmp = $gMainProgressBar')
+        cmds.progressBar(self.gMainProgressBar,
                          edit=True,
                          beginProgress=True,
                          isInterruptable=True,
@@ -580,16 +581,14 @@ class Aton(QtWidgets.QDialog):
         cmds.setAttr(level, self.default_level)
 
         # kill progressBar
-        gMainProgressBar = mel.eval('$tmp = $gMainProgressBar')
-        cmds.progressBar(gMainProgressBar, edit=True, endProgress=True)
+        cmds.progressBar(self.gMainProgressBar, edit=True, endProgress=True)
 
     def sequence_stepped(self, frame):
         # Refresh IPR
         self.IPRUpdate()
 
         # step progressBar
-        gMainProgressBar = mel.eval('$tmp = $gMainProgressBar')
-        cmds.progressBar(gMainProgressBar, edit=True, step=1)
+        cmds.progressBar(self.gMainProgressBar, edit=True, step=1)
 
     def initOvrShaders(self):
         ''' Initilize override shaders '''
