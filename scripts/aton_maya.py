@@ -1,4 +1,4 @@
-__author__ = "Vahan Sosoyan"
+__author__ = "Vahan Sosoyan, Dan Bradham"
 __copyright__ = "2016 All rights reserved. See Copyright.txt for more details."
 __version__ = "v1.1.4b"
 
@@ -29,7 +29,6 @@ else:
 def maya_main_window():
     main_window_ptr = OpenMayaUI.MQtUtil.mainWindow()
     return wrapInstance(long(main_window_ptr), QtWidgets.QWidget)
-
 
 class Aton(QtWidgets.QDialog):
 
@@ -108,6 +107,7 @@ class Aton(QtWidgets.QDialog):
             resolutionSlider.setValue(20)
             self.cameraAaSpinBox.setValue(self.getSceneOption(4))
             cameraAaSlider.setValue(self.getSceneOption(4))
+            self.renderRegionCheckBox.setChecked(False)
             self.renderRegionXSpinBox.setValue(0)
             self.renderRegionYSpinBox.setValue(0)
             self.renderRegionRSpinBox.setValue(self.getSceneOption(2))
@@ -125,35 +125,71 @@ class Aton(QtWidgets.QDialog):
             self.stepSpinBox.setValue(1)
             self.seqCheckBox.setChecked(False)
 
+        def region_toggled():
+            if self.renderRegionCheckBox.isChecked():
+                renderRegionLabel.setEnabled(True)
+                self.renderRegionXSpinBox.setEnabled(True)
+                renderRegionYLabel.setEnabled(True)
+                self.renderRegionYSpinBox.setEnabled(True)
+                renderRegionRLabel.setEnabled(True)
+                self.renderRegionRSpinBox.setEnabled(True)
+                renderRegionTLabel.setEnabled(True)
+                self.renderRegionTSpinBox.setEnabled(True)
+                renderRegionGetNukeButton.setEnabled(True)
+            else:
+                renderRegionLabel.setEnabled(False)
+                self.renderRegionXSpinBox.setEnabled(False)
+                renderRegionYLabel.setEnabled(False)
+                self.renderRegionYSpinBox.setEnabled(False)
+                renderRegionRLabel.setEnabled(False)
+                self.renderRegionRSpinBox.setEnabled(False)
+                renderRegionTLabel.setEnabled(False)
+                self.renderRegionTSpinBox.setEnabled(False)
+                renderRegionGetNukeButton.setEnabled(False)
+
+        def sequence_toggled():
+            if self.sequence_enabled:
+                self.startLabel.setEnabled(True)
+                self.endLabel.setEnabled(True)
+                self.stepLabel.setEnabled(True)
+                self.startSpinBox.setEnabled(True)
+                self.endSpinBox.setEnabled(True)
+                self.stepSpinBox.setEnabled(True)
+            else:
+                self.startLabel.setEnabled(False)
+                self.endLabel.setEnabled(False)
+                self.stepLabel.setEnabled(False)
+                self.startSpinBox.setEnabled(False)
+                self.endSpinBox.setEnabled(False)
+                self.stepSpinBox.setEnabled(False)
+
         self.setObjectName(self.windowName)
         self.setWindowTitle("Aton %s"%__version__)
         self.setWindowFlags(QtCore.Qt.Tool)
         self.setAttribute(QtCore.Qt.WA_AlwaysShowToolTips)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-        if mayaVersion >= 201700:
-            self.setMinimumSize(415, 420)
-            self.setMaximumSize(415, 420)
-        else:
-            self.setMinimumSize(400, 420)
-            self.setMaximumSize(400, 420)
+        self.setMinimumSize(420, 400)
+        self.setMaximumSize(420, 400)
 
         mainLayout = QtWidgets.QVBoxLayout()
         mainLayout.setContentsMargins(5,5,5,5)
         mainLayout.setSpacing(2)
 
         generalGroupBox = QtWidgets.QGroupBox("General")
+        generalGroupBox.setMaximumSize(420, 100)
         generalLayout = QtWidgets.QVBoxLayout(generalGroupBox)
 
         # Port Layout
         portLayout = QtWidgets.QHBoxLayout()
         portLabel = QtWidgets.QLabel("Port:")
         portLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
-        portLabel.setMaximumSize(75, 20)
         portLabel.setMinimumSize(75, 20)
         self.portSpinBox = QtWidgets.QSpinBox()
         self.portSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
         self.portSpinBox.setMaximum(1024)
         self.portSpinBox.setMaximum(9999)
+        self.portSpinBox.setMinimumSize(25, 25)
+        self.portSpinBox.setMaximumSize(50, 25)
         self.portSpinBox.setValue(self.defaultPort)
         portSlider = QtWidgets.QSlider()
         portSlider.setOrientation(QtCore.Qt.Horizontal)
@@ -169,8 +205,9 @@ class Aton(QtWidgets.QDialog):
         cameraLabel = QtWidgets.QLabel("Camera:")
         cameraLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
         cameraLabel.setMaximumSize(75, 20)
-        cameraLabel.setMinimumSize(75, 20)
         self.cameraComboBox = QtWidgets.QComboBox()
+        self.cameraComboBox.setMinimumSize(0, 20)
+        self.cameraComboBox.setMaximumSize(500, 20)
         self.cameraComboBoxDict = {}
         self.cameraComboBox.addItem("Current view")
         for i in cmds.listCameras():
@@ -195,7 +232,7 @@ class Aton(QtWidgets.QDialog):
         resolutionSlider = QtWidgets.QSlider()
         resolutionSlider.setOrientation(QtCore.Qt.Horizontal)
         resolutionSlider.setValue(20)
-        resolutionSlider.setMaximum(20)
+        resolutionSlider.setMaximum(40)
         resolutionLayout.addWidget(resolutionLabel)
         resolutionLayout.addWidget(self.resolutionSpinBox)
         resolutionLayout.addWidget(resolutionSlider)
@@ -221,6 +258,9 @@ class Aton(QtWidgets.QDialog):
 
         # Render region layout
         renderRegionLayout = QtWidgets.QHBoxLayout()
+        self.renderRegionCheckBox = QtWidgets.QCheckBox("")
+        self.renderRegionCheckBox.setLayoutDirection(QtCore.Qt.RightToLeft)
+        self.renderRegionCheckBox.stateChanged.connect(region_toggled)
         renderRegionLabel = QtWidgets.QLabel("Region X:")
         renderRegionLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
         self.renderRegionXSpinBox = QtWidgets.QSpinBox()
@@ -230,10 +270,10 @@ class Aton(QtWidgets.QDialog):
         self.renderRegionRSpinBox = QtWidgets.QSpinBox()
         renderRegionTLabel = QtWidgets.QLabel("T:")
         self.renderRegionTSpinBox = QtWidgets.QSpinBox()
-        renderRegionCheckBox = QtWidgets.QCheckBox()
         renderRegionGetNukeButton = QtWidgets.QPushButton("Get")
+        renderRegionGetNukeButton.setMaximumSize(35, 18)
         renderRegionGetNukeButton.clicked.connect(self.getNukeCropNode)
-        renderRegionCheckBox.setLayoutDirection(QtCore.Qt.RightToLeft)
+        renderRegionLayout.addWidget(self.renderRegionCheckBox)
         renderRegionLayout.addWidget(renderRegionLabel)
         renderRegionLayout.addWidget(self.renderRegionXSpinBox)
         renderRegionLayout.addWidget(renderRegionYLabel)
@@ -244,18 +284,20 @@ class Aton(QtWidgets.QDialog):
         renderRegionLayout.addWidget(self.renderRegionTSpinBox)
         renderRegionLayout.addWidget(renderRegionGetNukeButton)
 
+
         for i in [renderRegionLabel,
                   renderRegionYLabel,
                   renderRegionRLabel,
                   renderRegionTLabel]:
             i.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
+            i.setEnabled(False)
 
         for i in [self.renderRegionXSpinBox,
                   self.renderRegionYSpinBox,
                   self.renderRegionRSpinBox,
                   self.renderRegionTSpinBox]:
-            i.setRange(0,99999)
-            i.setMaximumSize(60,25)
+            i.setRange(-99999,99999)
+            i.setEnabled(False)
             i.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
 
         self.renderRegionRSpinBox.setValue(self.getSceneOption(2))
@@ -294,46 +336,9 @@ class Aton(QtWidgets.QDialog):
         textureRepeatLayout.addWidget(self.textureRepeatSpinbox)
         textureRepeatLayout.addWidget(textureRepeatSlider)
 
-        # Sequence GroupBox Controls
-        self.startSpinBox = QtWidgets.QSpinBox()
-        self.startSpinBox = QtWidgets.QSpinBox()
-        self.startSpinBox.setButtonSymbols(
-            QtWidgets.QAbstractSpinBox.NoButtons)
-        self.startSpinBox.setRange(0, 99999)
-        self.startSpinBox.setToolTip('Start Frame')
-        self.startSpinBox.setValue(self.getSceneOption(10))
-        self.startSpinBox.setEnabled(False)
-        self.endSpinBox = QtWidgets.QSpinBox()
-        self.endSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
-        self.endSpinBox.setRange(0, 99999)
-        self.endSpinBox.setToolTip('End Frame')
-        self.endSpinBox.setValue(self.getSceneOption(11))
-        self.endSpinBox.setEnabled(False)
-        self.stepSpinBox = QtWidgets.QSpinBox()
-        self.stepSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
-        self.stepSpinBox.setValue(1)
-        self.stepSpinBox.setRange(1, 100)
-        self.stepSpinBox.setToolTip('Frame Step')
-        self.stepSpinBox.setEnabled(False)
-        self.seqCheckBox = QtWidgets.QCheckBox('Enable')
-        self.seqCheckBox.stateChanged.connect(self.sequence_toggled)
-
-        # Sequence GroupBox Layout
-        sequenceGroupBox = QtWidgets.QGroupBox('Sequence')
-        sequenceLayout = QtWidgets.QGridLayout(sequenceGroupBox)
-        sequenceLayout.addWidget(QtWidgets.QLabel('Start frame:'), 0, 0,
-                                 alignment=QtCore.Qt.AlignRight)
-        sequenceLayout.addWidget(self.startSpinBox, 0, 1)
-        sequenceLayout.addWidget(QtWidgets.QLabel('End frame:'), 0, 2,
-                                 alignment=QtCore.Qt.AlignRight)
-        sequenceLayout.addWidget(self.endSpinBox, 0, 3)
-        sequenceLayout.addWidget(QtWidgets.QLabel('By frame:'), 0, 4,
-                                 alignment=QtCore.Qt.AlignRight)
-        sequenceLayout.addWidget(self.stepSpinBox, 0, 5)
-        sequenceLayout.addWidget(self.seqCheckBox, 0, 6)
-
         # Ignore Layout
         ignoresGroupBox = QtWidgets.QGroupBox("Ignore")
+        ignoresGroupBox.setMaximumSize(420, 50)
         ignoresLayout = QtWidgets.QVBoxLayout(ignoresGroupBox)
         ignoreLayout = QtWidgets.QHBoxLayout()
         ignoreLabel = QtWidgets.QLabel("Ignore:")
@@ -353,6 +358,42 @@ class Aton(QtWidgets.QDialog):
         ignoreLayout.addWidget(self.displaceCheckBox)
         ignoreLayout.addWidget(self.bumpCheckBox)
         ignoreLayout.addWidget(self.sssCheckBox)
+
+        # Sequence Layout
+        sequenceGroupBox = QtWidgets.QGroupBox('Sequence')
+        sequenceGroupBox.setMaximumSize(420, 60)
+        sequenceLayout = QtWidgets.QHBoxLayout(sequenceGroupBox)
+        self.seqCheckBox = QtWidgets.QCheckBox()
+        self.seqCheckBox.setMaximumSize(15, 25)
+        self.seqCheckBox.stateChanged.connect(sequence_toggled)
+        self.startLabel = QtWidgets.QLabel('Start frame:')
+        self.startLabel.setEnabled(False)
+        self.startSpinBox = QtWidgets.QSpinBox()
+        self.startSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
+        self.startSpinBox.setRange(0, 99999)
+        self.startSpinBox.setValue(self.getSceneOption(10))
+        self.startSpinBox.setEnabled(False)
+        self.endLabel = QtWidgets.QLabel('End frame:')
+        self.endLabel.setEnabled(False)
+        self.endSpinBox = QtWidgets.QSpinBox()
+        self.endSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
+        self.endSpinBox.setRange(0, 99999)
+        self.endSpinBox.setValue(self.getSceneOption(11))
+        self.endSpinBox.setEnabled(False)
+        self.stepLabel = QtWidgets.QLabel('By frame:')
+        self.stepLabel.setEnabled(False)
+        self.stepSpinBox = QtWidgets.QSpinBox()
+        self.stepSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
+        self.stepSpinBox.setValue(1)
+        self.stepSpinBox.setRange(1, 100)
+        self.stepSpinBox.setEnabled(False)
+        sequenceLayout.addWidget(self.seqCheckBox)
+        sequenceLayout.addWidget(self.startLabel)
+        sequenceLayout.addWidget(self.startSpinBox)
+        sequenceLayout.addWidget(self.endLabel)
+        sequenceLayout.addWidget(self.endSpinBox)
+        sequenceLayout.addWidget(self.stepLabel)
+        sequenceLayout.addWidget(self.stepSpinBox)
 
         # Main Buttons Layout
         mainButtonslayout = QtWidgets.QHBoxLayout()
@@ -394,6 +435,7 @@ class Aton(QtWidgets.QDialog):
         self.connect(self.renderRegionYSpinBox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(1))
         self.connect(self.renderRegionRSpinBox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(1))
         self.connect(self.renderRegionTSpinBox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(1))
+        self.connect(self.renderRegionCheckBox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(1))
         self.connect(self.motionBlurCheckBox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(3))
         self.connect(self.subdivsCheckBox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(3))
         self.connect(self.displaceCheckBox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(3))
@@ -402,6 +444,7 @@ class Aton(QtWidgets.QDialog):
         self.connect(self.shaderComboBox, QtCore.SIGNAL("currentIndexChanged(int)"), lambda: self.IPRUpdate(4))
         self.connect(self.textureRepeatSpinbox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(5))
         self.connect(self.selectedShaderCheckbox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(4))
+
 
         self.setLayout(mainLayout)
 
@@ -490,8 +533,7 @@ class Aton(QtWidgets.QDialog):
             cmds.setAttr(level, 2)
 
         try: # Start IPR
-            camera = self.getCamera()
-            cmds.arnoldIpr(cam=camera, mode='start')
+            cmds.arnoldIpr(cam=self.getCamera(), mode='start')
         except RuntimeError:
             cmds.warning("Current renderer is not set to Arnold.")
 
@@ -509,26 +551,14 @@ class Aton(QtWidgets.QDialog):
         cmds.setAttr("defaultArnoldDisplayDriver.port", self.defaultPort)
 
     def getFrames(self):
-        frames = range(
-            self.startSpinBox.value(),
-            self.endSpinBox.value() + 1,
-            self.stepSpinBox.value()
-        )
+        frames = range(self.startSpinBox.value(),
+                       self.endSpinBox.value() + 1,
+                       self.stepSpinBox.value())
         return frames
 
     @property
     def sequence_enabled(self):
         return self.seqCheckBox.checkState()
-
-    def sequence_toggled(self):
-        if self.sequence_enabled:
-            self.startSpinBox.setEnabled(True)
-            self.endSpinBox.setEnabled(True)
-            self.stepSpinBox.setEnabled(True)
-        else:
-            self.startSpinBox.setEnabled(False)
-            self.endSpinBox.setEnabled(False)
-            self.stepSpinBox.setEnabled(False)
 
     def sequence_started(self):
         # Setup frame_sequence
@@ -536,14 +566,12 @@ class Aton(QtWidgets.QDialog):
 
         # Setup progress bar
         gMainProgressBar = mel.eval('$tmp = $gMainProgressBar')
-        cmds.progressBar(
-            gMainProgressBar,
-            edit=True,
-            beginProgress=True,
-            isInterruptable=True,
-            status='Aton Frame Sequence',
-            maxValue=len(self.frame_sequence.frames)
-        )
+        cmds.progressBar(gMainProgressBar,
+                         edit=True,
+                         beginProgress=True,
+                         isInterruptable=True,
+                         status='Aton Frame Sequence',
+                         maxValue=len(self.frame_sequence.frames))
 
     def sequence_stopped(self):
         # Stop ipr when finished
@@ -636,16 +664,11 @@ class Aton(QtWidgets.QDialog):
             rMaxX = self.renderRegionRSpinBox.value() -1
             rMaxY = (yres - self.renderRegionYSpinBox.value()) - 1
 
-            if (rMinX >= 0) and (rMinY >= 0) and (rMaxX <= xres) and (rMaxY <= yres):
+            if self.renderRegionCheckBox.isChecked():
                 AiNodeSetInt(options, "region_min_x", rMinX)
                 AiNodeSetInt(options, "region_min_y", rMinY)
                 AiNodeSetInt(options, "region_max_x", rMaxX)
                 AiNodeSetInt(options, "region_max_y", rMaxY)
-            else:
-                AiNodeSetInt(options, "region_min_x", 0)
-                AiNodeSetInt(options, "region_min_y", 0)
-                AiNodeSetInt(options, "region_max_x", xres-1)
-                AiNodeSetInt(options, "region_max_y", yres-1)
 
         # Camera AA Update
         if attr == None or attr == 2:
@@ -753,14 +776,7 @@ class Aton(QtWidgets.QDialog):
 
     def closeEvent(self, event):
         ''' Removes callback when closing the GUI '''
-        if self.timeChangedCB != None:
-            OM.MEventMessage.removeCallback(self.timeChangedCB)
-            self.timeChangedCB = None
-
-        if self.selectionChangedCB != None:
-            OM.MEventMessage.removeCallback(self.selectionChangedCB)
-            self.selectionChangedCB = None
-
+        self.stop()
         self.frame_sequence.stop()
 
 
