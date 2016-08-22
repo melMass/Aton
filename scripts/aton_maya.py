@@ -215,6 +215,7 @@ class Aton(QtWidgets.QDialog):
         cameraLayout.addWidget(self.cameraComboBox)
 
         overridesGroupBox = QtWidgets.QGroupBox("Overrides")
+        overridesGroupBox.setMaximumSize(420, 175)
         overridesLayout = QtWidgets.QVBoxLayout(overridesGroupBox)
 
         # Resolution Layout
@@ -258,8 +259,6 @@ class Aton(QtWidgets.QDialog):
         # Render region layout
         renderRegionLayout = QtWidgets.QHBoxLayout()
         self.renderRegionCheckBox = QtWidgets.QCheckBox("")
-        self.renderRegionCheckBox.setLayoutDirection(QtCore.Qt.RightToLeft)
-        self.renderRegionCheckBox.stateChanged.connect(region_toggled)
         renderRegionLabel = QtWidgets.QLabel("Region X:")
         renderRegionLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
         self.renderRegionXSpinBox = QtWidgets.QSpinBox()
