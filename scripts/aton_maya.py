@@ -259,6 +259,7 @@ class Aton(QtWidgets.QDialog):
         # Render region layout
         renderRegionLayout = QtWidgets.QHBoxLayout()
         self.renderRegionCheckBox = QtWidgets.QCheckBox("")
+        self.renderRegionCheckBox.stateChanged.connect(region_toggled)
         renderRegionLabel = QtWidgets.QLabel("Region X:")
         renderRegionLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
         self.renderRegionXSpinBox = QtWidgets.QSpinBox()
