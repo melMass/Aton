@@ -84,20 +84,40 @@ class Aton(QtWidgets.QDialog):
                       8 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreBump"),
                       9 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreSss"),
                       10 : lambda: cmds.playbackOptions(q=True, minTime=True),
-                      11 : lambda: cmds.playbackOptions(q=True, maxTime=True)
-                      }[attr]()
+                      11 : lambda: cmds.playbackOptions(q=True, maxTime=True)}[attr]()
         return result
 
     def setupUi(self):
         ''' Building the GUI '''
-        def resUpdateUi():
-            self.resolutionSpinBox.setValue(resolutionSlider.value() * 5)
+        def resUpdateUi(value):
+            self.resolutionSpinBox.setValue(value * 5)
 
-        def camUpdateUi():
-            self.cameraAaSpinBox.setValue(cameraAaSlider.value())
+        def camUpdateUi(value):
+            self.cameraAaSpinBox.setValue(value)
 
-        def portUpdateUi():
-            self.portSpinBox.setValue(portSlider.value() + self.defaultPort)
+        def portUpdateUi(value):
+            self.portSpinBox.setValue(value + self.defaultPort)
+
+        def region_toggled(value):
+            isChecked = bool(value)
+            renderRegionLabel.setEnabled(isChecked)
+            self.renderRegionXSpinBox.setEnabled(isChecked)
+            renderRegionYLabel.setEnabled(isChecked)
+            self.renderRegionYSpinBox.setEnabled(isChecked)
+            renderRegionRLabel.setEnabled(isChecked)
+            self.renderRegionRSpinBox.setEnabled(isChecked)
+            renderRegionTLabel.setEnabled(isChecked)
+            self.renderRegionTSpinBox.setEnabled(isChecked)
+            renderRegionGetNukeButton.setEnabled(isChecked)
+
+        def sequence_toggled(value):
+            isChecked = bool(value)
+            self.startLabel.setEnabled(isChecked)
+            self.endLabel.setEnabled(isChecked)
+            self.stepLabel.setEnabled(isChecked)
+            self.startSpinBox.setEnabled(isChecked)
+            self.endSpinBox.setEnabled(isChecked)
+            self.stepSpinBox.setEnabled(isChecked)
 
         def resetUi(*args):
             self.portSpinBox.setValue(self.defaultPort)
@@ -124,44 +144,6 @@ class Aton(QtWidgets.QDialog):
             self.endSpinBox.setValue(self.getSceneOption(11))
             self.stepSpinBox.setValue(1)
             self.seqCheckBox.setChecked(False)
-
-        def region_toggled():
-            if self.renderRegionCheckBox.isChecked():
-                renderRegionLabel.setEnabled(True)
-                self.renderRegionXSpinBox.setEnabled(True)
-                renderRegionYLabel.setEnabled(True)
-                self.renderRegionYSpinBox.setEnabled(True)
-                renderRegionRLabel.setEnabled(True)
-                self.renderRegionRSpinBox.setEnabled(True)
-                renderRegionTLabel.setEnabled(True)
-                self.renderRegionTSpinBox.setEnabled(True)
-                renderRegionGetNukeButton.setEnabled(True)
-            else:
-                renderRegionLabel.setEnabled(False)
-                self.renderRegionXSpinBox.setEnabled(False)
-                renderRegionYLabel.setEnabled(False)
-                self.renderRegionYSpinBox.setEnabled(False)
-                renderRegionRLabel.setEnabled(False)
-                self.renderRegionRSpinBox.setEnabled(False)
-                renderRegionTLabel.setEnabled(False)
-                self.renderRegionTSpinBox.setEnabled(False)
-                renderRegionGetNukeButton.setEnabled(False)
-
-        def sequence_toggled():
-            if self.sequence_enabled:
-                self.startLabel.setEnabled(True)
-                self.endLabel.setEnabled(True)
-                self.stepLabel.setEnabled(True)
-                self.startSpinBox.setEnabled(True)
-                self.endSpinBox.setEnabled(True)
-                self.stepSpinBox.setEnabled(True)
-            else:
-                self.startLabel.setEnabled(False)
-                self.endLabel.setEnabled(False)
-                self.stepLabel.setEnabled(False)
-                self.startSpinBox.setEnabled(False)
-                self.endSpinBox.setEnabled(False)
-                self.stepSpinBox.setEnabled(False)
 
         self.setObjectName(self.windowName)
         self.setWindowTitle("Aton %s"%__version__)
@@ -282,7 +264,6 @@ class Aton(QtWidgets.QDialog):
         renderRegionLayout.addWidget(renderRegionTLabel)
         renderRegionLayout.addWidget(self.renderRegionTSpinBox)
         renderRegionLayout.addWidget(renderRegionGetNukeButton)
-
 
         for i in [renderRegionLabel,
                   renderRegionYLabel,
@@ -443,7 +424,6 @@ class Aton(QtWidgets.QDialog):
         self.connect(self.shaderComboBox, QtCore.SIGNAL("currentIndexChanged(int)"), lambda: self.IPRUpdate(4))
         self.connect(self.textureRepeatSpinbox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(5))
         self.connect(self.selectedShaderCheckbox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(4))
-
 
         self.setLayout(mainLayout)
 
