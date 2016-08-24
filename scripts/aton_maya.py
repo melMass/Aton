@@ -92,6 +92,11 @@ class Aton(QtWidgets.QDialog):
         def resUpdateUi(value):
             self.resolutionSpinBox.setValue(value * 5)
 
+        def resInfoUpdate(value):
+            xres = self.getSceneOption(2) * value / 100
+            yres = self.getSceneOption(3) * value / 100
+            resolutionInfoLabel.setText("%sx%s"%(xres, yres))
+
         def camUpdateUi(value):
             self.cameraAaSpinBox.setValue(value)
 
@@ -208,15 +213,19 @@ class Aton(QtWidgets.QDialog):
         self.resolutionSpinBox = QtWidgets.QSpinBox()
         self.resolutionSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
         self.resolutionSpinBox.setMinimum(1)
-        self.resolutionSpinBox.setMaximum(900)
+        self.resolutionSpinBox.setMaximum(999)
         self.resolutionSpinBox.setValue(100)
         resolutionSlider = QtWidgets.QSlider()
         resolutionSlider.setOrientation(QtCore.Qt.Horizontal)
         resolutionSlider.setValue(20)
         resolutionSlider.setMaximum(40)
+        xres, yres = self.getSceneOption(2), self.getSceneOption(3)
+        resolutionInfoLabel = QtWidgets.QLabel("%sx%s"%(xres, yres))
+        resolutionInfoLabel.setEnabled(False)
         resolutionLayout.addWidget(resolutionLabel)
         resolutionLayout.addWidget(self.resolutionSpinBox)
         resolutionLayout.addWidget(resolutionSlider)
+        resolutionLayout.addWidget(resolutionInfoLabel)
 
         # Camera Layout
         cameraAaLayout = QtWidgets.QHBoxLayout()
@@ -406,6 +415,7 @@ class Aton(QtWidgets.QDialog):
         # UI Updates
         self.connect(portSlider, QtCore.SIGNAL("valueChanged(int)"), portUpdateUi)
         self.connect(resolutionSlider, QtCore.SIGNAL("valueChanged(int)"), resUpdateUi)
+        self.connect(self.resolutionSpinBox, QtCore.SIGNAL("valueChanged(int)"), resInfoUpdate)
 
         # IPR Updates
         self.connect(self.cameraComboBox, QtCore.SIGNAL("currentIndexChanged(int)"), lambda: self.IPRUpdate(0))
