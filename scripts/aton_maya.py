@@ -46,6 +46,7 @@ class Aton(QtWidgets.QDialog):
         self.frame_sequence.stopped.connect(self.sequence_stopped)
         self.frame_sequence.stepped.connect(self.sequence_stepped)
         self.default_level = -3
+        self.defaultHost = self.getSceneOption(-1)
         self.defaultPort = self.getSceneOption(0)
         self.setupUi()
 
@@ -55,6 +56,19 @@ class Aton(QtWidgets.QDialog):
         if cmds.listRelatives(cam) != None:
             cam = cmds.listRelatives(cam)[0]
         return cam
+
+    def getHost(self):
+        ''' Returns the hosr address from Aton driver '''
+        host = 0
+        try: # To init Arnold Render settings
+            host = cmds.getAttr("defaultArnoldDisplayDriver.host")
+        except ValueError:
+            mel.eval("unifiedRenderGlobalsWindow;")
+            try: # If aton driver is not loaded
+                host = cmds.getAttr("defaultArnoldDisplayDriver.host")
+            except ValueError:
+                pass
+        return host
 
     def getPort(self):
         ''' Returns the port number from Aton driver '''
@@ -73,7 +87,8 @@ class Aton(QtWidgets.QDialog):
         ''' Returns requested scene options attribute value '''
         result = 0
         if cmds.getAttr("defaultRenderGlobals.ren") == "arnold":
-            result = {0 : lambda: self.getPort(),
+            result = {-1 : lambda: self.getHost(),
+                      0 : lambda: self.getPort(),
                       1 : lambda: self.getActiveCamera(),
                       2 : lambda: cmds.getAttr("defaultResolution.width"),
                       3 : lambda: cmds.getAttr("defaultResolution.height"),
@@ -103,17 +118,11 @@ class Aton(QtWidgets.QDialog):
         def portUpdateUi(value):
             self.portSpinBox.setValue(value + self.defaultPort)
 
-        def region_toggled(value):
+        def overscan_toggled(value):
             isChecked = bool(value)
-            renderRegionLabel.setEnabled(isChecked)
-            self.renderRegionXSpinBox.setEnabled(isChecked)
-            renderRegionYLabel.setEnabled(isChecked)
-            self.renderRegionYSpinBox.setEnabled(isChecked)
-            renderRegionRLabel.setEnabled(isChecked)
-            self.renderRegionRSpinBox.setEnabled(isChecked)
-            renderRegionTLabel.setEnabled(isChecked)
-            self.renderRegionTSpinBox.setEnabled(isChecked)
-            renderRegionGetNukeButton.setEnabled(isChecked)
+            overscanLabel.setEnabled(isChecked)
+            self.overscanSpinBox.setEnabled(isChecked)
+            overscanSlider.setEnabled(isChecked)
 
         def sequence_toggled(value):
             isChecked = bool(value)
@@ -125,6 +134,7 @@ class Aton(QtWidgets.QDialog):
             self.stepSpinBox.setEnabled(isChecked)
 
         def resetUi(*args):
+            self.hostLineEdit.setText(self.defaultHost)
             self.portSpinBox.setValue(self.defaultPort)
             portSlider.setValue(0)
             self.cameraComboBox.setCurrentIndex(0)
@@ -132,11 +142,12 @@ class Aton(QtWidgets.QDialog):
             resolutionSlider.setValue(20)
             self.cameraAaSpinBox.setValue(self.getSceneOption(4))
             cameraAaSlider.setValue(self.getSceneOption(4))
-            self.renderRegionCheckBox.setChecked(False)
             self.renderRegionXSpinBox.setValue(0)
             self.renderRegionYSpinBox.setValue(0)
             self.renderRegionRSpinBox.setValue(self.getSceneOption(2))
             self.renderRegionTSpinBox.setValue(self.getSceneOption(3))
+            self.overscanCheckBox.setChecked(False)
+            overscanSlider.setValue(0)
             self.motionBlurCheckBox.setChecked(self.getSceneOption(5))
             self.subdivsCheckBox.setChecked(self.getSceneOption(6))
             self.displaceCheckBox.setChecked(self.getSceneOption(7))
@@ -155,16 +166,27 @@ class Aton(QtWidgets.QDialog):
         self.setWindowFlags(QtCore.Qt.Tool)
         self.setAttribute(QtCore.Qt.WA_AlwaysShowToolTips)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-        self.setMinimumSize(420, 400)
-        self.setMaximumSize(420, 400)
+        self.setMinimumSize(420, 440)
+        self.setMaximumSize(420, 440)
 
         mainLayout = QtWidgets.QVBoxLayout()
         mainLayout.setContentsMargins(5,5,5,5)
         mainLayout.setSpacing(2)
 
         generalGroupBox = QtWidgets.QGroupBox("General")
-        generalGroupBox.setMaximumSize(420, 100)
+        generalGroupBox.setMaximumSize(420, 120)
         generalLayout = QtWidgets.QVBoxLayout(generalGroupBox)
+
+        # Host Layout
+        hostLayout = QtWidgets.QHBoxLayout()
+        hostLabel = QtWidgets.QLabel("Hosts:")
+        hostLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
+        hostLabel.setMinimumSize(75, 20)
+        hostLabel.setMaximumSize(75, 20)
+        self.hostLineEdit = QtWidgets.QLineEdit()
+        self.hostLineEdit.setText(self.defaultHost)
+        hostLayout.addWidget(hostLabel)
+        hostLayout.addWidget(self.hostLineEdit)
 
         # Port Layout
         portLayout = QtWidgets.QHBoxLayout()
@@ -202,7 +224,7 @@ class Aton(QtWidgets.QDialog):
         cameraLayout.addWidget(self.cameraComboBox)
 
         overridesGroupBox = QtWidgets.QGroupBox("Overrides")
-        overridesGroupBox.setMaximumSize(420, 175)
+        overridesGroupBox.setMaximumSize(420, 200)
         overridesLayout = QtWidgets.QVBoxLayout(overridesGroupBox)
 
         # Resolution Layout
@@ -249,9 +271,8 @@ class Aton(QtWidgets.QDialog):
 
         # Render region layout
         renderRegionLayout = QtWidgets.QHBoxLayout()
-        self.renderRegionCheckBox = QtWidgets.QCheckBox("")
-        self.renderRegionCheckBox.stateChanged.connect(region_toggled)
         renderRegionLabel = QtWidgets.QLabel("Region X:")
+        renderRegionLabel.setMinimumSize(75, 20)
         renderRegionLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
         self.renderRegionXSpinBox = QtWidgets.QSpinBox()
         renderRegionYLabel = QtWidgets.QLabel("Y:")
@@ -263,7 +284,6 @@ class Aton(QtWidgets.QDialog):
         renderRegionGetNukeButton = QtWidgets.QPushButton("Get")
         renderRegionGetNukeButton.setMaximumSize(35, 18)
         renderRegionGetNukeButton.clicked.connect(self.getNukeCropNode)
-        renderRegionLayout.addWidget(self.renderRegionCheckBox)
         renderRegionLayout.addWidget(renderRegionLabel)
         renderRegionLayout.addWidget(self.renderRegionXSpinBox)
         renderRegionLayout.addWidget(renderRegionYLabel)
@@ -279,18 +299,43 @@ class Aton(QtWidgets.QDialog):
                   renderRegionRLabel,
                   renderRegionTLabel]:
             i.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
-            i.setEnabled(False)
 
         for i in [self.renderRegionXSpinBox,
                   self.renderRegionYSpinBox,
                   self.renderRegionRSpinBox,
                   self.renderRegionTSpinBox]:
             i.setRange(-99999,99999)
-            i.setEnabled(False)
+            i.setMaximumSize(40,20)
             i.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
 
         self.renderRegionRSpinBox.setValue(self.getSceneOption(2))
         self.renderRegionTSpinBox.setValue(self.getSceneOption(3))
+
+        # Overscan Layout
+        overscanLayout = QtWidgets.QHBoxLayout()
+        self.overscanCheckBox = QtWidgets.QCheckBox()
+        self.overscanCheckBox.stateChanged.connect(overscan_toggled)
+        self.overscanCheckBox.setChecked(False)
+        overscanLabel = QtWidgets.QLabel("Overscan:")
+        overscanLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
+        overscanLabel.setMinimumSize(56, 20)
+        overscanLabel.setEnabled(False)
+        self.overscanSpinBox = QtWidgets.QSpinBox()
+        self.overscanSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
+        self.overscanSpinBox.setMinimum(0)
+        self.overscanSpinBox.setMaximum(9999)
+        self.overscanSpinBox.setValue(0)
+        self.overscanSpinBox.setEnabled(False)
+        overscanSlider = QtWidgets.QSlider()
+        overscanSlider.setOrientation(QtCore.Qt.Horizontal)
+        overscanSlider.setValue(0)
+        overscanSlider.setMaximum(250)
+        overscanSlider.valueChanged[int].connect(self.overscanSpinBox.setValue)
+        overscanSlider.setEnabled(False)
+        overscanLayout.addWidget(self.overscanCheckBox)
+        overscanLayout.addWidget(overscanLabel)
+        overscanLayout.addWidget(self.overscanSpinBox)
+        overscanLayout.addWidget(overscanSlider)
 
         # Shaders layout
         shaderLayout = QtWidgets.QHBoxLayout()
@@ -397,11 +442,13 @@ class Aton(QtWidgets.QDialog):
         mainButtonslayout.addWidget(resetButton)
 
         # Add Layouts to Main
+        generalLayout.addLayout(hostLayout)
         generalLayout.addLayout(portLayout)
         generalLayout.addLayout(cameraLayout)
         overridesLayout.addLayout(resolutionLayout)
         overridesLayout.addLayout(cameraAaLayout)
         overridesLayout.addLayout(renderRegionLayout)
+        overridesLayout.addLayout(overscanLayout)
         overridesLayout.addLayout(shaderLayout)
         overridesLayout.addLayout(textureRepeatLayout)
         ignoresLayout.addLayout(ignoreLayout)
@@ -425,7 +472,8 @@ class Aton(QtWidgets.QDialog):
         self.connect(self.renderRegionYSpinBox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(1))
         self.connect(self.renderRegionRSpinBox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(1))
         self.connect(self.renderRegionTSpinBox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(1))
-        self.connect(self.renderRegionCheckBox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(1))
+        self.connect(self.overscanCheckBox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(1))
+        self.connect(self.overscanSpinBox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(1))
         self.connect(self.motionBlurCheckBox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(3))
         self.connect(self.subdivsCheckBox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(3))
         self.connect(self.displaceCheckBox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(3))
@@ -488,9 +536,12 @@ class Aton(QtWidgets.QDialog):
 
         cmds.setAttr("defaultArnoldDisplayDriver.aiTranslator", "aton", type="string")
 
-        # Updating the port from UI
-        if self.defaultPort != 0:
+        # Updating host and port from UI
+        if self.defaultPort != 0 or self.defaultHost != 0:
+            host = self.hostLineEdit.text()
             port = self.portSpinBox.value()
+            print host
+            cmds.setAttr("defaultArnoldDisplayDriver.host", host, type="string")
             cmds.setAttr("defaultArnoldDisplayDriver.port", port)
         else:
             cmds.warning("Current renderer is not set to Arnold or Aton driver is not loaded.")
@@ -645,27 +696,34 @@ class Aton(QtWidgets.QDialog):
 
         # Resolution and Region Update
         if attr == None or attr == 1:
-            xres = self.getSceneOption(2) * self.resolutionSpinBox.value() / 100
-            yres = self.getSceneOption(3) * self.resolutionSpinBox.value() / 100
+            resValue = self.resolutionSpinBox.value()
+            xres = self.getSceneOption(2) * resValue / 100
+            yres = self.getSceneOption(3) * resValue / 100
 
             AiNodeSetInt(options, "xres", xres)
             AiNodeSetInt(options, "yres", yres)
 
-            rMinX = self.renderRegionXSpinBox.value()
-            rMinY = yres - self.renderRegionTSpinBox.value()
-            rMaxX = self.renderRegionRSpinBox.value() -1
-            rMaxY = (yres - self.renderRegionYSpinBox.value()) - 1
-
-            if self.renderRegionCheckBox.isChecked():
-                AiNodeSetInt(options, "region_min_x", rMinX)
-                AiNodeSetInt(options, "region_min_y", rMinY)
-                AiNodeSetInt(options, "region_max_x", rMaxX)
-                AiNodeSetInt(options, "region_max_y", rMaxY)
+            if self.overscanCheckBox.isChecked():
+                ovrScnValue = self.overscanSpinBox.value()
+                rMinX = (self.renderRegionXSpinBox.value() * resValue / 100) - ovrScnValue
+                rMinY = yres - (self.renderRegionTSpinBox.value() * resValue / 100) - ovrScnValue
+                rMaxX = (self.renderRegionRSpinBox.value() * resValue / 100) - 1 + ovrScnValue
+                rMaxY = (yres - (self.renderRegionYSpinBox.value() * resValue / 100)) - 1 + ovrScnValue
             else:
-                AiNodeSetInt(options, "region_min_x", 0)
-                AiNodeSetInt(options, "region_min_y", 0)
-                AiNodeSetInt(options, "region_max_x", xres-1)
-                AiNodeSetInt(options, "region_max_y", yres-1)
+                rMinX = self.renderRegionXSpinBox.value()
+                rMinY = yres - self.renderRegionTSpinBox.value()
+                rMaxX = self.renderRegionRSpinBox.value() - 1
+                rMaxY = yres - self.renderRegionYSpinBox.value() - 1
+                if (rMinX < 0) or (rMinY < 0) or (rMaxX >= xres) or (rMaxY >= yres):
+                    rMinX = 0
+                    rMinY = 0
+                    rMaxX = xres - 1
+                    rMaxY = yres - 1
+
+            AiNodeSetInt(options, "region_min_x", rMinX)
+            AiNodeSetInt(options, "region_min_y", rMinY)
+            AiNodeSetInt(options, "region_max_x", rMaxX)
+            AiNodeSetInt(options, "region_max_y", rMaxY)
 
         # Camera AA Update
         if attr == None or attr == 2:
