@@ -118,12 +118,6 @@ class Aton(QtWidgets.QDialog):
         def portUpdateUi(value):
             self.portSpinBox.setValue(value + self.defaultPort)
 
-        def overscan_toggled(value):
-            isChecked = bool(value)
-            overscanLabel.setEnabled(isChecked)
-            self.overscanSpinBox.setEnabled(isChecked)
-            overscanSlider.setEnabled(isChecked)
-
         def sequence_toggled(value):
             isChecked = bool(value)
             self.startLabel.setEnabled(isChecked)
@@ -312,26 +306,19 @@ class Aton(QtWidgets.QDialog):
 
         # Overscan Layout
         overscanLayout = QtWidgets.QHBoxLayout()
-        self.overscanCheckBox = QtWidgets.QCheckBox()
-        self.overscanCheckBox.stateChanged.connect(overscan_toggled)
-        self.overscanCheckBox.setChecked(False)
         overscanLabel = QtWidgets.QLabel("Overscan:")
         overscanLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
-        overscanLabel.setMinimumSize(56, 20)
-        overscanLabel.setEnabled(False)
+        overscanLabel.setMinimumSize(75, 20)
         self.overscanSpinBox = QtWidgets.QSpinBox()
         self.overscanSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
         self.overscanSpinBox.setMinimum(0)
         self.overscanSpinBox.setMaximum(9999)
         self.overscanSpinBox.setValue(0)
-        self.overscanSpinBox.setEnabled(False)
         overscanSlider = QtWidgets.QSlider()
         overscanSlider.setOrientation(QtCore.Qt.Horizontal)
         overscanSlider.setValue(0)
         overscanSlider.setMaximum(250)
         overscanSlider.valueChanged[int].connect(self.overscanSpinBox.setValue)
-        overscanSlider.setEnabled(False)
-        overscanLayout.addWidget(self.overscanCheckBox)
         overscanLayout.addWidget(overscanLabel)
         overscanLayout.addWidget(self.overscanSpinBox)
         overscanLayout.addWidget(overscanSlider)
@@ -472,7 +459,6 @@ class Aton(QtWidgets.QDialog):
         self.connect(self.renderRegionYSpinBox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(1))
         self.connect(self.renderRegionRSpinBox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(1))
         self.connect(self.renderRegionTSpinBox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(1))
-        self.connect(self.overscanCheckBox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(1))
         self.connect(self.overscanSpinBox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(1))
         self.connect(self.motionBlurCheckBox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(3))
         self.connect(self.subdivsCheckBox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(3))
@@ -702,22 +688,11 @@ class Aton(QtWidgets.QDialog):
             AiNodeSetInt(options, "xres", xres)
             AiNodeSetInt(options, "yres", yres)
 
-            if self.overscanCheckBox.isChecked():
-                ovrScnValue = self.overscanSpinBox.value() * resValue / 100
-                rMinX = (self.renderRegionXSpinBox.value() * resValue / 100) - ovrScnValue
-                rMinY = yres - (self.renderRegionTSpinBox.value() * resValue / 100) - ovrScnValue
-                rMaxX = (self.renderRegionRSpinBox.value() * resValue / 100) - 1 + ovrScnValue
-                rMaxY = (yres - (self.renderRegionYSpinBox.value() * resValue / 100)) - 1 + ovrScnValue
-            else:
-                rMinX = self.renderRegionXSpinBox.value()
-                rMinY = yres - self.renderRegionTSpinBox.value()
-                rMaxX = self.renderRegionRSpinBox.value() - 1
-                rMaxY = yres - self.renderRegionYSpinBox.value() - 1
-                if (rMinX < 0) or (rMinY < 0) or (rMaxX >= xres) or (rMaxY >= yres):
-                    rMinX = 0
-                    rMinY = 0
-                    rMaxX = xres - 1
-                    rMaxY = yres - 1
+            ovrScnValue = self.overscanSpinBox.value() * resValue / 100
+            rMinX = (self.renderRegionXSpinBox.value() * resValue / 100) - ovrScnValue
+            rMinY = yres - (self.renderRegionTSpinBox.value() * resValue / 100) - ovrScnValue
+            rMaxX = (self.renderRegionRSpinBox.value() * resValue / 100) - 1 + ovrScnValue
+            rMaxY = (yres - (self.renderRegionYSpinBox.value() * resValue / 100)) - 1 + ovrScnValue
 
             AiNodeSetInt(options, "region_min_x", rMinX)
             AiNodeSetInt(options, "region_min_y", rMinY)
