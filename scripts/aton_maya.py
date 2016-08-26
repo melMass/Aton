@@ -168,7 +168,7 @@ class Aton(QtWidgets.QDialog):
         mainLayout.setSpacing(2)
 
         generalGroupBox = QtWidgets.QGroupBox("General")
-        generalGroupBox.setMaximumSize(420, 120)
+        generalGroupBox.setMaximumSize(420, 110)
         generalLayout = QtWidgets.QVBoxLayout(generalGroupBox)
 
         # Port Layout
@@ -192,7 +192,7 @@ class Aton(QtWidgets.QDialog):
 
         # Extra Host Layout
         extraHostLayout = QtWidgets.QHBoxLayout()
-        extraHostLabel = QtWidgets.QLabel("Extra Host:")
+        extraHostLabel = QtWidgets.QLabel("Extra host:")
         extraHostLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
         extraHostLabel.setMinimumSize(75, 20)
         extraHostLabel.setMaximumSize(75, 20)
@@ -326,7 +326,8 @@ class Aton(QtWidgets.QDialog):
         # Shaders layout
         shaderLayout = QtWidgets.QHBoxLayout()
         shaderLabel = QtWidgets.QLabel("Shader override:")
-        shaderLabel.setMaximumSize(85, 20)
+        shaderLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
+        shaderLabel.setMaximumSize(90, 20)
         self.shaderComboBox = QtWidgets.QComboBox()
         self.shaderComboBox.addItem("Disabled")
         self.shaderComboBox.addItem("Checker")
@@ -342,7 +343,8 @@ class Aton(QtWidgets.QDialog):
 
         textureRepeatLayout = QtWidgets.QHBoxLayout()
         textureRepeatLabel = QtWidgets.QLabel("Texture repeat:")
-        textureRepeatLabel.setMaximumSize(85, 20)
+        textureRepeatLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
+        textureRepeatLabel.setMinimumSize(90, 20)
         self.textureRepeatSpinbox = QtWidgets.QSpinBox()
         self.textureRepeatSpinbox.setValue(1)
         self.textureRepeatSpinbox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
@@ -381,7 +383,7 @@ class Aton(QtWidgets.QDialog):
 
         # Sequence Layout
         sequenceGroupBox = QtWidgets.QGroupBox('Sequence')
-        sequenceGroupBox.setMaximumSize(420, 60)
+        sequenceGroupBox.setMaximumSize(420, 55)
         sequenceLayout = QtWidgets.QHBoxLayout(sequenceGroupBox)
         self.seqCheckBox = QtWidgets.QCheckBox()
         self.seqCheckBox.setMaximumSize(15, 25)
