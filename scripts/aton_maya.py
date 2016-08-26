@@ -46,7 +46,7 @@ class Aton(QtWidgets.QDialog):
         self.frame_sequence.stopped.connect(self.sequence_stopped)
         self.frame_sequence.stepped.connect(self.sequence_stepped)
         self.default_level = -3
-        self.defaultHost = self.getSceneOption(-1)
+        self.defaultextraHost = self.getSceneOption(-1)
         self.defaultPort = self.getSceneOption(0)
         self.setupUi()
 
@@ -57,18 +57,18 @@ class Aton(QtWidgets.QDialog):
             cam = cmds.listRelatives(cam)[0]
         return cam
 
-    def getHost(self):
+    def getextraHost(self):
         ''' Returns the hosr address from Aton driver '''
-        host = 0
+        extraHost = 0
         try: # To init Arnold Render settings
-            host = cmds.getAttr("defaultArnoldDisplayDriver.host")
+            extraHost = cmds.getAttr("defaultArnoldDisplayDriver.extraHost")
         except ValueError:
             mel.eval("unifiedRenderGlobalsWindow;")
             try: # If aton driver is not loaded
-                host = cmds.getAttr("defaultArnoldDisplayDriver.host")
+                extraHost = cmds.getAttr("defaultArnoldDisplayDriver.extraHost")
             except ValueError:
                 pass
-        return host
+        return extraHost
 
     def getPort(self):
         ''' Returns the port number from Aton driver '''
@@ -87,7 +87,7 @@ class Aton(QtWidgets.QDialog):
         ''' Returns requested scene options attribute value '''
         result = 0
         if cmds.getAttr("defaultRenderGlobals.ren") == "arnold":
-            result = {-1 : lambda: self.getHost(),
+            result = {-1 : lambda: self.getextraHost(),
                       0 : lambda: self.getPort(),
                       1 : lambda: self.getActiveCamera(),
                       2 : lambda: cmds.getAttr("defaultResolution.width"),
@@ -134,7 +134,7 @@ class Aton(QtWidgets.QDialog):
             self.stepSpinBox.setEnabled(isChecked)
 
         def resetUi(*args):
-            self.hostLineEdit.setText(self.defaultHost)
+            self.extraHostLineEdit.setText(self.defaultextraHost)
             self.portSpinBox.setValue(self.defaultPort)
             portSlider.setValue(0)
             self.cameraComboBox.setCurrentIndex(0)
@@ -177,17 +177,6 @@ class Aton(QtWidgets.QDialog):
         generalGroupBox.setMaximumSize(420, 120)
         generalLayout = QtWidgets.QVBoxLayout(generalGroupBox)
 
-        # Host Layout
-        hostLayout = QtWidgets.QHBoxLayout()
-        hostLabel = QtWidgets.QLabel("Hosts:")
-        hostLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
-        hostLabel.setMinimumSize(75, 20)
-        hostLabel.setMaximumSize(75, 20)
-        self.hostLineEdit = QtWidgets.QLineEdit()
-        self.hostLineEdit.setText(self.defaultHost)
-        hostLayout.addWidget(hostLabel)
-        hostLayout.addWidget(self.hostLineEdit)
-
         # Port Layout
         portLayout = QtWidgets.QHBoxLayout()
         portLabel = QtWidgets.QLabel("Port:")
@@ -206,6 +195,16 @@ class Aton(QtWidgets.QDialog):
         portLayout.addWidget(portLabel)
         portLayout.addWidget(self.portSpinBox)
         portLayout.addWidget(portSlider)
+
+        # Extra Host Layout
+        extraHostLayout = QtWidgets.QHBoxLayout()
+        extraHostLabel = QtWidgets.QLabel("Extra Host:")
+        extraHostLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
+        extraHostLabel.setMinimumSize(75, 20)
+        extraHostLabel.setMaximumSize(75, 20)
+        self.extraHostLineEdit = QtWidgets.QLineEdit()
+        extraHostLayout.addWidget(extraHostLabel)
+        extraHostLayout.addWidget(self.extraHostLineEdit)
 
         # Camera Layout
         cameraLayout = QtWidgets.QHBoxLayout()
@@ -442,8 +441,9 @@ class Aton(QtWidgets.QDialog):
         mainButtonslayout.addWidget(resetButton)
 
         # Add Layouts to Main
-        generalLayout.addLayout(hostLayout)
         generalLayout.addLayout(portLayout)
+        generalLayout.addLayout(extraHostLayout)
+
         generalLayout.addLayout(cameraLayout)
         overridesLayout.addLayout(resolutionLayout)
         overridesLayout.addLayout(cameraAaLayout)
@@ -536,12 +536,11 @@ class Aton(QtWidgets.QDialog):
 
         cmds.setAttr("defaultArnoldDisplayDriver.aiTranslator", "aton", type="string")
 
-        # Updating host and port from UI
-        if self.defaultPort != 0 or self.defaultHost != 0:
-            host = self.hostLineEdit.text()
+        # Updating extraHost and port from UI
+        if self.defaultPort != 0 or self.defaultextraHost != 0:
+            extraHost = self.extraHostLineEdit.text()
             port = self.portSpinBox.value()
-            print host
-            cmds.setAttr("defaultArnoldDisplayDriver.host", host, type="string")
+            cmds.setAttr("defaultArnoldDisplayDriver.extraHost", extraHost, type="string")
             cmds.setAttr("defaultArnoldDisplayDriver.port", port)
         else:
             cmds.warning("Current renderer is not set to Arnold or Aton driver is not loaded.")
@@ -704,7 +703,7 @@ class Aton(QtWidgets.QDialog):
             AiNodeSetInt(options, "yres", yres)
 
             if self.overscanCheckBox.isChecked():
-                ovrScnValue = self.overscanSpinBox.value()
+                ovrScnValue = self.overscanSpinBox.value() * resValue / 100
                 rMinX = (self.renderRegionXSpinBox.value() * resValue / 100) - ovrScnValue
                 rMinY = yres - (self.renderRegionTSpinBox.value() * resValue / 100) - ovrScnValue
                 rMaxX = (self.renderRegionRSpinBox.value() * resValue / 100) - 1 + ovrScnValue

@@ -15,8 +15,10 @@ AI_DRIVER_NODE_EXPORT_METHODS(AtonDriverMtd);
 
 struct ShaderData
 {
-   aton::Client* client;
-   int xres, yres, min_x, min_y, max_x, max_y;
+    aton::Client* client;
+    aton::Client* extra_client;
+    bool extraHost;
+    int xres, yres, min_x, min_y, max_x, max_y;
 };
 
 const char* getHost()
@@ -25,11 +27,11 @@ const char* getHost()
     
     if (aton_host == NULL)
         aton_host = "127.0.0.1";
-    
+
     char* host = new char[strlen(aton_host) + 1];
     strcpy(host, aton_host);
     aton_host = host;
-    
+
     return aton_host;
 }
 
@@ -49,6 +51,7 @@ int getPort()
 node_parameters
 {
     AiParameterSTR("host", getHost());
+    AiParameterSTR("extra_host", "");
     AiParameterINT("port", getPort());
     AiMetaDataSetStr(mds, NULL, "maya.translator", "aton");
     AiMetaDataSetStr(mds, NULL, "maya.attr_prefix", "");
@@ -86,6 +89,8 @@ driver_open
     
     // Get Host and Port
     const char* host = AiNodeGetStr(node, "host");
+    const char* extra_host = AiNodeGetStr(node, "extra_host");
+    
     int port = AiNodeGetInt(node, "port");
     
     // Get Resolution
@@ -104,7 +109,7 @@ driver_open
     data->max_x = (max_x == INT_MIN) ? 0 : max_x;
     data->max_y = (max_y == INT_MIN) ? 0 : max_y;
    
-     // Setting X Resolution
+    // Setting X Resolution
     if (data->min_x < 0 && data->max_x >= xres)
         data->xres = data->max_x - data->min_x + 1;
     else if (data->min_x >= 0 && data->max_x < xres)
@@ -127,17 +132,27 @@ driver_open
     // Get area of region
     long long rArea = data->xres * data->yres;
 
+    boost::system::error_code ec;
+    boost::asio::ip::address::from_string(extra_host, ec );
+    data->extraHost = false;
+    if (!ec) data->extraHost = true;
+    
     try // Now we can connect to the server and start rendering
     {
-       // Create a new aton object
-       data->client = new aton::Client(host, port);
-
-       // Make image header & send to server
-       aton::Data header(data->xres, data->yres,
-                         0, 0, 0, 0, rArea, version, currentFrame);
-       data->client->openImage(header);
+        // Make image header & send to server
+        aton::Data header(data->xres, data->yres, 0, 0, 0, 0,
+                          rArea, version, currentFrame);
+    
+        data->client = new aton::Client(host, port);
+        data->client->openImage(header);
+        
+        if (data->extraHost)
+        {
+            data->extra_client = new aton::Client(extra_host, port);
+            data->extra_client->openImage(header);
+        }
     }
-    catch (const std::exception &e)
+    catch(const std::exception &e)
     {
         const char *err = e.what();
         AiMsgError("Aton display driver %s", err);
@@ -192,6 +207,8 @@ driver_write_bucket
 
         // Send it to the server
         data->client->sendPixels(packet);
+        if (data->extraHost)
+            data->extra_client->sendPixels(packet);
     }
 }
 
@@ -203,6 +220,8 @@ driver_close
     try
     {
         data->client->closeImage();
+        if (data->extraHost)
+            data->extra_client->closeImage();
     }
     catch (const std::exception &e)
     {
@@ -217,7 +236,9 @@ node_finish
     // Release the driver
     ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
     delete data->client;
-
+    if (data->extraHost)
+        delete data->extra_client;
+    
     AiFree(data);
     AiDriverDestroy(node);
 }
