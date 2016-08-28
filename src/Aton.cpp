@@ -22,10 +22,8 @@ using namespace aton;
 #include "boost/foreach.hpp"
 #include "boost/regex.hpp"
 #include "boost/filesystem.hpp"
-#include "boost/lexical_cast.hpp"
 #include "boost/algorithm/string.hpp"
 #include "boost/thread/thread.hpp"
-#include "boost/date_time/posix_time/posix_time.hpp"
 
 // Class name
 static const char* const CLASS = "Aton";
