@@ -867,7 +867,6 @@ class Aton: public Iop
             knob("status_knob")->set_text(str_status.c_str());
         }
     
-    
         bool firstEngineRendersWholeRequest() const { return true; }
         const char* Class() const { return CLASS; }
         const char* displayName() const { return CLASS; }
