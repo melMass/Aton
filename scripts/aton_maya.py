@@ -492,21 +492,26 @@ class Aton(QtWidgets.QDialog):
         return result
 
     def setOverscan(self):
+        ovrScnValue = bool(self.overscanSpinBox.value())
         message = "Do you want to set the Overscan values in Render Setttings? "
-        result = cmds.confirmDialog(title='Overscan',
-                                    message=message,
-                                    button=['OK', 'Cancel'],
-                                    defaultButton='OK',
-                                    cancelButton='Cancel',
-                                    dismissString='Cancel',
-                                    icn="information")
+        if cmds.getAttr("defaultRenderGlobals.ren") == "arnold" and ovrScnValue:
+            result = cmds.confirmDialog(title='Overscan',
+                                        message=message,
+                                        button=['OK', 'Cancel'],
+                                        defaultButton='OK',
+                                        cancelButton='Cancel',
+                                        dismissString='Cancel',
+                                        icn="information")
 
-        if result == 'OK':
+            if result == 'OK':
                 rMinX = self.getRegion(2, False)
                 rMinY = self.getRegion(3, False)
                 rMaxX = self.getRegion(4, False)
                 rMaxY = self.getRegion(5, False)
-                cmds.setAttr("defaultArnoldRenderOptions.outputOverscan", "%s %s %s %s"%(rMinX, rMinY, rMaxX, rMaxY), type="string")
+                cmds.setAttr("defaultArnoldRenderOptions.outputOverscan", "%s %s %s %s"%(rMinX,
+                                                                                         rMinY,
+                                                                                         rMaxX,
+                                                                                         rMaxY), type="string")
 
     def getNukeCropNode(self, *args):
         ''' Get crop node data from Nuke '''
