@@ -144,7 +144,7 @@ Data Server::listen()
                 // Get pixels
                 int num_samples = d.bucket_size_x() * d.bucket_size_y() * d.spp();
                 d.mPixelStore.resize(num_samples);
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mPixelStore[0]), sizeof(float)*num_samples)) ;
+                read(mSocket, buffer(reinterpret_cast<char*>(&d.mPixelStore[0]), sizeof(float)*num_samples));
                 break;
             }
             case 2: // Close image

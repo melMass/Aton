@@ -13,6 +13,13 @@ using boost::asio::ip::tcp;
 
 AI_DRIVER_NODE_EXPORT_METHODS(AtonDriverMtd);
 
+struct ShaderData
+{
+    aton::Client* client, *extra_client;
+    bool extraHost;
+    int xres, yres, min_x, min_y, max_x, max_y;
+};
+
 const char* getHost()
 {
     const char* aton_host = getenv("ATON_HOST");
@@ -39,16 +46,6 @@ int getPort()
     
     return aton_port;
 }
-
-struct ShaderData
-{
-    ShaderData(): host(getHost()),
-                  port(getPort()) { }
-    aton::Client* client, *extra_client;
-    bool extraHost;
-    int xres, yres, min_x, min_y, max_x, max_y, port;
-    const char* host;
-};
 
 node_parameters
 {
