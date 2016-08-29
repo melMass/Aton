@@ -128,9 +128,9 @@ class Aton(QtWidgets.QDialog):
             self.stepSpinBox.setEnabled(isChecked)
 
         def resetUi(*args):
-            self.extraHostLineEdit.setText(self.defaultextraHost)
             self.portSpinBox.setValue(self.defaultPort)
             portSlider.setValue(0)
+            self.extraHostLineEdit.setText("")
             self.cameraComboBox.setCurrentIndex(0)
             self.resolutionSpinBox.setValue(100)
             resolutionSlider.setValue(20)
@@ -140,7 +140,6 @@ class Aton(QtWidgets.QDialog):
             self.renderRegionYSpinBox.setValue(0)
             self.renderRegionRSpinBox.setValue(self.getSceneOption(2))
             self.renderRegionTSpinBox.setValue(self.getSceneOption(3))
-            self.overscanCheckBox.setChecked(False)
             overscanSlider.setValue(0)
             self.motionBlurCheckBox.setChecked(self.getSceneOption(5))
             self.subdivsCheckBox.setChecked(self.getSceneOption(6))
