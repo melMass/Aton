@@ -46,7 +46,6 @@ class Aton(QtWidgets.QDialog):
         self.frame_sequence.stopped.connect(self.sequence_stopped)
         self.frame_sequence.stepped.connect(self.sequence_stepped)
         self.default_level = -3
-        self.defaultextraHost = self.getSceneOption(-1)
         self.defaultPort = self.getSceneOption(0)
         self.setupUi()
 
@@ -56,19 +55,6 @@ class Aton(QtWidgets.QDialog):
         if cmds.listRelatives(cam) != None:
             cam = cmds.listRelatives(cam)[0]
         return cam
-
-    def getextraHost(self):
-        ''' Returns the hosr address from Aton driver '''
-        extraHost = 0
-        try: # To init Arnold Render settings
-            extraHost = cmds.getAttr("defaultArnoldDisplayDriver.extraHost")
-        except ValueError:
-            mel.eval("unifiedRenderGlobalsWindow;")
-            try: # If aton driver is not loaded
-                extraHost = cmds.getAttr("defaultArnoldDisplayDriver.extraHost")
-            except ValueError:
-                pass
-        return extraHost
 
     def getPort(self):
         ''' Returns the port number from Aton driver '''
@@ -87,8 +73,7 @@ class Aton(QtWidgets.QDialog):
         ''' Returns requested scene options attribute value '''
         result = 0
         if cmds.getAttr("defaultRenderGlobals.ren") == "arnold":
-            result = {-1 : lambda: self.getextraHost(),
-                      0 : lambda: self.getPort(),
+            result = {0 : lambda: self.getPort(),
                       1 : lambda: self.getActiveCamera(),
                       2 : lambda: cmds.getAttr("defaultResolution.width"),
                       3 : lambda: cmds.getAttr("defaultResolution.height"),
@@ -318,9 +303,13 @@ class Aton(QtWidgets.QDialog):
         overscanSlider.setValue(0)
         overscanSlider.setMaximum(250)
         overscanSlider.valueChanged[int].connect(self.overscanSpinBox.setValue)
+        overscanSetButton = QtWidgets.QPushButton("Set")
+        overscanSetButton.setMaximumSize(35, 18)
+        overscanSetButton.clicked.connect(self.setOverscan)
         overscanLayout.addWidget(overscanLabel)
         overscanLayout.addWidget(self.overscanSpinBox)
         overscanLayout.addWidget(overscanSlider)
+        overscanLayout.addWidget(overscanSetButton)
 
         # Shaders layout
         shaderLayout = QtWidgets.QHBoxLayout()
@@ -481,6 +470,43 @@ class Aton(QtWidgets.QDialog):
             if cmds.listRelatives(camera, s=1) != None:
                 camera = cmds.listRelatives(camera, s=1)[0]
         return camera
+
+    def getRegion(self, attr, resScale = True):
+        if resScale:
+            resValue = self.resolutionSpinBox.value()
+        else:
+            resValue = 100
+
+        ovrScnValue = self.overscanSpinBox.value() * resValue / 100
+
+        xres = self.getSceneOption(2) * resValue / 100
+        yres = self.getSceneOption(3) * resValue / 100
+
+        result = {0 : lambda: xres,
+                  1 : lambda: yres,
+                  2 : lambda: (self.renderRegionXSpinBox.value() * resValue / 100) - ovrScnValue,
+                  3 : lambda: yres - (self.renderRegionTSpinBox.value() * resValue / 100) - ovrScnValue,
+                  4 : lambda: (self.renderRegionRSpinBox.value() * resValue / 100) - 1 + ovrScnValue,
+                  5 : lambda: (yres - (self.renderRegionYSpinBox.value() * resValue / 100)) - 1 + ovrScnValue}[attr]()
+
+        return result
+
+    def setOverscan(self):
+        message = "Do you want to set the Overscan values in Render Setttings? "
+        result = cmds.confirmDialog(title='Overscan',
+                                    message=message,
+                                    button=['OK', 'Cancel'],
+                                    defaultButton='OK',
+                                    cancelButton='Cancel',
+                                    dismissString='Cancel',
+                                    icn="information")
+
+        if result == 'OK':
+                rMinX = self.getRegion(2, False)
+                rMinY = self.getRegion(3, False)
+                rMaxX = self.getRegion(4, False)
+                rMaxY = self.getRegion(5, False)
+                cmds.setAttr("defaultArnoldRenderOptions.outputOverscan", "%s %s %s %s"%(rMinX, rMinY, rMaxX, rMaxY), type="string")
 
     def getNukeCropNode(self, *args):
         ''' Get crop node data from Nuke '''
@@ -682,23 +708,14 @@ class Aton(QtWidgets.QDialog):
 
         # Resolution and Region Update
         if attr == None or attr == 1:
-            resValue = self.resolutionSpinBox.value()
-            xres = self.getSceneOption(2) * resValue / 100
-            yres = self.getSceneOption(3) * resValue / 100
 
-            AiNodeSetInt(options, "xres", xres)
-            AiNodeSetInt(options, "yres", yres)
+            AiNodeSetInt(options, "xres", self.getRegion(0))
+            AiNodeSetInt(options, "yres", self.getRegion(1))
 
-            ovrScnValue = self.overscanSpinBox.value() * resValue / 100
-            rMinX = (self.renderRegionXSpinBox.value() * resValue / 100) - ovrScnValue
-            rMinY = yres - (self.renderRegionTSpinBox.value() * resValue / 100) - ovrScnValue
-            rMaxX = (self.renderRegionRSpinBox.value() * resValue / 100) - 1 + ovrScnValue
-            rMaxY = (yres - (self.renderRegionYSpinBox.value() * resValue / 100)) - 1 + ovrScnValue
-
-            AiNodeSetInt(options, "region_min_x", rMinX)
-            AiNodeSetInt(options, "region_min_y", rMinY)
-            AiNodeSetInt(options, "region_max_x", rMaxX)
-            AiNodeSetInt(options, "region_max_y", rMaxY)
+            AiNodeSetInt(options, "region_min_x", self.getRegion(2))
+            AiNodeSetInt(options, "region_min_y", self.getRegion(3))
+            AiNodeSetInt(options, "region_max_x", self.getRegion(4))
+            AiNodeSetInt(options, "region_max_y", self.getRegion(5))
 
         # Camera AA Update
         if attr == None or attr == 2:
