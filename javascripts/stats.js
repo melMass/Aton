@@ -31,7 +31,7 @@ function showStats(data) {
             $.each(releaseAssets, function(index, asset) {
             var assetSize = (asset.size / 1000000.0).toFixed(2);
             var lastUpdate = asset.updated_at.split("T")[0];
-            html += "<p>" + asset.name + " (" + assetSize + "MB)<br><i>Last updated on " + lastUpdate + "</i></p>";
+            html += "<p>" + asset.name + " (" + assetSize + "MB)<span id='downloads-result'></span><br><i>Last updated on " + lastUpdate + "</i></p>";
 
             });
 
@@ -100,7 +100,10 @@ function getStats() {
 
     var url = apiRoot + "repos/" + user + "/" + repository + "/releases/latest";
     $.getJSON(url, showStats).fail(showStats);
-    var url2 = apiRoot + "repos/" + user + "/" + repository + "/releases";
-    $.getJSON(url2, showDownloads).fail(showDownloads);
 }
 getStats();
+
+$(window).load(function() {
+    var url2 = apiRoot + "repos/" + user + "/" + repository + "/releases";
+    $.getJSON(url2, showDownloads).fail(showDownloads);
+});
