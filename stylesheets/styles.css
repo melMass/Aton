@@ -323,16 +323,3 @@ footer {
     color:#444;
   }
 }
-
-#stats-result {
-    float: left;
-    position: relative;
-}
-
-#downloads-result {
-
-    float: left;
-    height: 44px;
-    position: relative;
-    left: -15px;
-}
