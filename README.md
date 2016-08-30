@@ -46,6 +46,13 @@ To build it yourself you will need to have
 * Arnold 4.2+ SDK
 * Boost 1.54+
 
+##Contributers
+
+* An Nguyen
+* Brian Scherbinski
+* Cameron Smither
+* Dan Bradham
+
 It's based on: 
 
 *Dan Bethelli's Rmanconnect which is freely available at.*
