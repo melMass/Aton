@@ -45,8 +45,8 @@ class Aton(QtWidgets.QDialog):
         self.frame_sequence.started.connect(self.sequence_started)
         self.frame_sequence.stopped.connect(self.sequence_stopped)
         self.frame_sequence.stepped.connect(self.sequence_stepped)
-        self.default_level = -3
         self.defaultPort = self.getSceneOption(0)
+        self.defaultRefinement = self.getSceneOption(12)
         self.setupUi()
 
     def getActiveCamera(self):
@@ -84,7 +84,8 @@ class Aton(QtWidgets.QDialog):
                       8 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreBump"),
                       9 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreSss"),
                       10 : lambda: cmds.playbackOptions(q=True, minTime=True),
-                      11 : lambda: cmds.playbackOptions(q=True, maxTime=True)}[attr]()
+                      11 : lambda: cmds.playbackOptions(q=True, maxTime=True),
+                      12 : lambda: cmds.getAttr("defaultArnoldRenderOptions.progressive_rendering")}[attr]()
         return result
 
     def setupUi(self):
@@ -583,12 +584,9 @@ class Aton(QtWidgets.QDialog):
                                                   not cmds.getAttr("%s.visibility"%cmds.listRelatives(x, s=1)[0])]
         for i in hCams: cmds.showHidden(i)
 
-        if self.sequence_enabled: # set level to 2 before ipr starts
-            # Store progressive_inital_level
-            # Set it to 2 so we run only 1 iteration per frame
-            level = 'defaultArnoldRenderOptions.progressive_initial_level'
-            self.default_level = cmds.getAttr(level)
-            cmds.setAttr(level, 2)
+        if self.sequence_enabled:
+            # Set Progressive refinement to off
+            cmds.setAttr("defaultArnoldRenderOptions.progressive_rendering", False)
 
         try: # Start IPR
             cmds.arnoldIpr(cam=self.getCamera(), mode='start')
@@ -640,9 +638,8 @@ class Aton(QtWidgets.QDialog):
         # Stop ipr when finished
         self.stop()
 
-        # Restore old progressive_initial_level
-        level = 'defaultArnoldRenderOptions.progressive_initial_level'
-        cmds.setAttr(level, self.default_level)
+        # Restore default progressive refinement
+        cmds.setAttr("defaultArnoldRenderOptions.progressive_rendering", self.defaultRefinement)
 
         # kill progressBar
         cmds.progressBar(self.gMainProgressBar, edit=True, endProgress=True)
