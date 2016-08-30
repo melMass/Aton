@@ -8,7 +8,7 @@ and Nuke plugin for direct rendering into the Nuke interface.
 1. Copy **aton.dll**(.dylib, .so) from ~/Bin to your **$NUKE_PATH**
   * In your init.py add the following
   
-     nuke.load("aton")
+     ```nuke.load("aton")```
 
   * In your menu.py add the following
 
