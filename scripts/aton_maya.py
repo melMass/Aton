@@ -557,7 +557,7 @@ class Aton(QtWidgets.QDialog):
         cmds.setAttr("defaultArnoldDisplayDriver.aiTranslator", "aton", type="string")
 
         # Updating extraHost and port from UI
-        if self.defaultPort != 0 or self.defaultextraHost != 0:
+        if self.defaultPort != 0:
             extraHost = self.extraHostLineEdit.text()
             port = self.portSpinBox.value()
             cmds.setAttr("defaultArnoldDisplayDriver.extraHost", extraHost, type="string")
