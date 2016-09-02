@@ -110,6 +110,11 @@ Data Server::listen()
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mRArea), sizeof(long long)));
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mVersion), sizeof(int)));
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mCurrentFrame), sizeof(int)));
+                read(mSocket, buffer(reinterpret_cast<char*>(&d.mCamFov), sizeof(float)));
+                
+                int camMatrixSize = 16;
+                d.mCamMatrixStore.resize(camMatrixSize);
+                read(mSocket, buffer(reinterpret_cast<char*>(&d.mCamMatrixStore[0]), sizeof(float)*camMatrixSize));
                 break;
             }
             case 1: // Image data

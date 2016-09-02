@@ -52,16 +52,19 @@ void Client::openImage(Data& header)
     // Send image header message with image desc information
     int key = 0;
     write(mSocket, buffer(reinterpret_cast<char*>(&key), sizeof(int)));
-
+    
     // Read our imageid
     read(mSocket, buffer(reinterpret_cast<char*>(&mImageId), sizeof(int)));
-
+    
     // Send our width & height
     write(mSocket, buffer(reinterpret_cast<char*>(&header.mXres), sizeof(int)));
     write(mSocket, buffer(reinterpret_cast<char*>(&header.mYres), sizeof(int)));
     write(mSocket, buffer(reinterpret_cast<char*>(&header.mRArea), sizeof(long long)));
     write(mSocket, buffer(reinterpret_cast<char*>(&header.mVersion), sizeof(int)));
     write(mSocket, buffer(reinterpret_cast<char*>(&header.mCurrentFrame), sizeof(float)));
+    write(mSocket, buffer(reinterpret_cast<char*>(&header.mCamFov), sizeof(float)));
+    int camMatrixSize = 16;
+    write(mSocket, buffer(reinterpret_cast<char*>(&header.mCamMatrix[0]), sizeof(float)*camMatrixSize));
 }
 
 void Client::sendPixels(Data& data)

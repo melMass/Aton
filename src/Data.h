@@ -33,6 +33,8 @@ namespace aton
              const long long& rArea = 0,
              const int& version = 0,
              const float& currentFrame = 0.0f,
+             const float& cam_fov = 0.0f,
+             const float* cam_matrix = NULL,
              const int& spp = 0,
              const long long& ram = 0,
              const int& time = 0,
@@ -74,6 +76,12 @@ namespace aton
         // Current frame
         const float& currentFrame() const { return mCurrentFrame; }
         
+        // Camera Fov
+        const float& camFov() const { return mCamFov; }
+        
+        // Camera matrix
+        const float& camMatrix(int index) const { return mCamMatrix[index]; }
+        
         // Samples-per-pixel, aka channel depth
         const int& spp() const { return mSpp; }
         
@@ -114,6 +122,12 @@ namespace aton
 
         // Current frame
         float mCurrentFrame;
+        
+        // Camera  data
+        float mCamFov;
+        float* mCamMatrix;
+        
+        std::vector<float> mCamMatrixStore;
 
         // Width, height, num channels (samples)
         unsigned int mTime;

@@ -5,6 +5,7 @@ All rights reserved. See COPYING.txt for more details.
 */
 
 #include "Data.h"
+#include <iostream>
 
 using namespace aton;
 
@@ -17,6 +18,8 @@ Data::Data(const int& xres,
            const long long& rArea,
            const int& version,
            const float& currentFrame,
+           const float& cam_fov,
+           const float* cam_matrix,
            const int& spp,
            const long long& ram,
            const int& time,
@@ -31,6 +34,7 @@ Data::Data(const int& xres,
                                 mRArea(rArea),
                                 mVersion(version),
                                 mCurrentFrame(currentFrame),
+                                mCamFov(cam_fov),
                                 mSpp(spp),
                                 mRam(ram),
                                 mTime(time),
@@ -38,6 +42,9 @@ Data::Data(const int& xres,
 {
     if (data != NULL)
         mpData = const_cast<float*>(data);
+    
+    if (cam_matrix != NULL)
+        mCamMatrix = const_cast<float*>(cam_matrix);
 }
 
 void Data::deAllocAovName()

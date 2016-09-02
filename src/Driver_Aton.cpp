@@ -92,6 +92,21 @@ driver_open
     
     int port = AiNodeGetInt(node, "port");
     
+    // Get Camera
+    AtNode* camera = (AtNode*)AiNodeGetPtr(options, "camera");
+    AtMatrix cam_at_matrix;
+    AiNodeGetMatrix(camera, "matrix", cam_at_matrix);
+    
+    float cam_fov = AiNodeGetFlt(camera, "fov");
+    float cam_matrix[16] = {cam_at_matrix[0][0], cam_at_matrix[0][1],
+                            cam_at_matrix[0][2], cam_at_matrix[0][3],
+                            cam_at_matrix[1][0], cam_at_matrix[1][1],
+                            cam_at_matrix[1][2], cam_at_matrix[1][3],
+                            cam_at_matrix[2][0], cam_at_matrix[2][1],
+                            cam_at_matrix[2][2], cam_at_matrix[2][3],
+                            cam_at_matrix[3][0], cam_at_matrix[3][1],
+                            cam_at_matrix[3][2], cam_at_matrix[3][3]};
+    
     // Get Resolution
     int xres = AiNodeGetInt(options, "xres");
     int yres = AiNodeGetInt(options, "yres");
@@ -140,7 +155,7 @@ driver_open
     {
         // Make image header & send to server
         aton::Data header(data->xres, data->yres, 0, 0, 0, 0,
-                          rArea, version, currentFrame);
+                          rArea, version, currentFrame, cam_fov, cam_matrix);
     
         data->client = new aton::Client(host, port);
         data->client->openImage(header);
@@ -201,8 +216,8 @@ driver_write_bucket
         
         // Create our data object
         aton::Data packet(data->xres, data->yres, bucket_xo, bucket_yo,
-                          bucket_size_x, bucket_size_y,
-                          0, 0, 0, spp, ram, time, aov_name, ptr);
+                          bucket_size_x, bucket_size_y, 0, 0, 0, 0, 0,
+                          spp, ram, time, aov_name, ptr);
 
         // Send it to the server
         data->client->sendPixels(packet);
