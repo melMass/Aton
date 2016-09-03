@@ -981,6 +981,10 @@ static void timeChange(unsigned index, unsigned nthreads, void* data)
         {
             node->flagForUpdate();
             prevFrame = uiFrame;
+            int f_index = node->getFrameIndex(uiFrame);
+            FrameBuffer& fB = node->m_framebuffers[f_index];
+            node->setCameraKnobs(fB.getCameraFov(),
+                                 fB.getCameraMatrix());
         }
         else
             this_thread::sleep(posix_time::millisec(ms));
