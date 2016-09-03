@@ -875,43 +875,14 @@ class Aton: public Iop
             focalExpr = (boost::format("(haperture / (2 * tan(pi * %s.cam_fov_knob / 360)))")%m_node->m_node_name).str();
             
             std::string cmd; // Our python command buffer
-            cmd = (boost::format("cam = nuke.nodes.Camera();"
-                                 "cam['useMatrix'].setValue(True);"
-                                 "cam['focal'].setExpression('%s');"
-                                 "cam['haperture'].setValue(36);"
-                                 "cam['vaperture'].setValue(24);"
-                                 "cam['matrix'].setExpression('%s.cM0', 0);"
-                                 "cam['matrix'].setExpression('%s.cM1', 1);"
-                                 "cam['matrix'].setExpression('%s.cM2', 2);"
-                                 "cam['matrix'].setExpression('%s.cM3', 3);"
-                                 "cam['matrix'].setExpression('%s.cM4', 4);"
-                                 "cam['matrix'].setExpression('%s.cM5', 5);"
-                                 "cam['matrix'].setExpression('%s.cM6', 6);"
-                                 "cam['matrix'].setExpression('%s.cM7', 7);"
-                                 "cam['matrix'].setExpression('%s.cM8', 8);"
-                                 "cam['matrix'].setExpression('%s.cM9', 9);"
-                                 "cam['matrix'].setExpression('%s.cM10', 10);"
-                                 "cam['matrix'].setExpression('%s.cM11', 11);"
-                                 "cam['matrix'].setExpression('%s.cM12', 12);"
-                                 "cam['matrix'].setExpression('%s.cM13', 13);"
-                                 "cam['matrix'].setExpression('%s.cM14', 14);"
-                                 "cam['matrix'].setExpression('%s.cM15', 15);")%focalExpr
-                                                                               %m_node->m_node_name
-                                                                               %m_node->m_node_name
-                                                                               %m_node->m_node_name
-                                                                               %m_node->m_node_name
-                                                                               %m_node->m_node_name
-                                                                               %m_node->m_node_name
-                                                                               %m_node->m_node_name
-                                                                               %m_node->m_node_name
-                                                                               %m_node->m_node_name
-                                                                               %m_node->m_node_name
-                                                                               %m_node->m_node_name
-                                                                               %m_node->m_node_name
-                                                                               %m_node->m_node_name
-                                                                               %m_node->m_node_name
-                                                                               %m_node->m_node_name
-                                                                               %m_node->m_node_name).str();
+            cmd = (boost::format("exec('''cam = nuke.nodes.Camera()\n"
+                                         "cam['useMatrix'].setValue(True)\n"
+                                         "cam['focal'].setExpression('%s')\n"
+                                         "cam['haperture'].setValue(36)\n"
+                                         "cam['vaperture'].setValue(24)\n"
+                                         "for i in range(0, 16):\n\t"
+                                            "cam['matrix'].setExpression('%s.cM'+str(i), i)''')")%focalExpr
+                                                                                                 %m_node->m_node_name).str();
             
             script_command(cmd.c_str(), true, false);
             script_unlock();
