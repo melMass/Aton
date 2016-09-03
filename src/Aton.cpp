@@ -53,7 +53,7 @@ class Aton: public Iop
         int                       m_port;             // Port we're listening on (knob)
         int                       m_slimit;           // The limit size
         float                     m_cam_fov;          // Default Camera fov
-        Matrix4                   m_cam_matrix;       // Default Camera matrix
+        float                     m_cam_matrix;       // Default Camera matrix value
         bool                      m_multiframes;      // Enable Multiple Frames toogle
         bool                      m_all_frames;       // Capture All Frames toogle
         bool                      m_stamp;            // Enable Frame stamp toogle
@@ -81,7 +81,7 @@ class Aton: public Iop
                           m_port(getPort()),
                           m_slimit(20),
                           m_cam_fov(50),
-                          m_cam_matrix(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),
+                          m_cam_matrix(0),
                           m_multiframes(true),
                           m_all_frames(false),
                           m_stamp(isVersionValid()),
@@ -123,6 +123,13 @@ class Aton: public Iop
             // We don't need to see these knobs
             knob("formats_knob")->hide();
             knob("capturing_knob")->hide();
+            knob("cam_fov_knob")->hide();
+
+            for (int i=0; i<16; i++)
+            {
+                std::string knob_name = (boost::format("cM%s")%i).str();
+                knob(knob_name.c_str())->hide();
+            }
             
             if (!isVersionValid())
             {
@@ -260,17 +267,6 @@ class Aton: public Iop
                               fB.getFrame(),
                               fB.getArnoldVersion());
                     
-//                    // Set Camera
-//                    if (fB.getFov() != m_node->m_cam_fov)
-//                    {
-//                        
-//                        std::stringstream stream;
-//                        stream << (fB.getFov());
-//                        std::string fov = stream.str();
-//                        m_node->m_cam_fov = fB.getFov();
-//                        knob("cam_fov_knob")->set_text(fov.c_str());
-//                    }
-                    
                     // Set the format
                     const int width = fB.getWidth();
                     const int height = fB.getHeight();
@@ -396,8 +392,7 @@ class Aton: public Iop
             // Hidden knobs
             Format_knob(f, &m_fmtp, "formats_knob", "format");
             Bool_knob(f, &m_capturing, "capturing_knob");
-            Float_knob(f, &m_cam_fov, "cam_fov_knob", "Camera Fov");
-            Axis_knob(f, &m_cam_matrix, "cam_matrix_knob", "Camera Matrix");
+            Float_knob(f, &m_cam_fov, "cam_fov_knob", " cFov");
             
             // Main knobs
             Int_knob(f, &m_port, "port_number", "Port");
@@ -407,6 +402,7 @@ class Aton: public Iop
             Bool_knob(f, &m_enable_aovs, "enable_aovs_knob", "Enable AOVs");
             Newline(f);
             Bool_knob(f, &m_multiframes, "multi_frame_knob", "Enable Multiple Frames");
+            Button(f, "live_camera_knob", "Create Live Camera");
 
             Divider(f, "Capture");
             Knob* limit_knob = Int_knob(f, &m_slimit, "limit_knob", "Limit");
@@ -421,6 +417,12 @@ class Aton: public Iop
             Button(f, "capture_knob", "Capture");
             Button(f, "import_latest_knob", "Import latest");
             Button(f, "import_all_knob", "Import all");
+            
+            for (int i=0; i<16; i++)
+            {
+                std::string knob_name = (boost::format("cM%s")%i).str();
+                Float_knob(f, &m_cam_matrix, knob_name.c_str(), knob_name.c_str());
+            }
 
             // Status Bar knobs
             BeginToolbar(f, "status_bar");
@@ -454,6 +456,11 @@ class Aton: public Iop
             if (_knob->is("multi_frame_knob"))
             {
                 m_node->m_current_frame = uiContext().frame();
+                return 1;
+            }
+            if (_knob->is("live_camera_knob"))
+            {
+                createLiveCamera();
                 return 1;
             }
             if (_knob->is("capture_knob"))
@@ -862,6 +869,54 @@ class Aton: public Iop
             }
         }
     
+        void createLiveCamera()
+        {
+            std::string focalExpr;
+            focalExpr = (boost::format("(haperture / (2 * tan(pi * %s.cam_fov_knob / 360)))")%m_node->m_node_name).str();
+            
+            std::string cmd; // Our python command buffer
+            cmd = (boost::format("cam = nuke.nodes.Camera();"
+                                 "cam['useMatrix'].setValue(True);"
+                                 "cam['focal'].setExpression('%s');"
+                                 "cam['haperture'].setValue(36);"
+                                 "cam['vaperture'].setValue(24);"
+                                 "cam['matrix'].setExpression('%s.cM0', 0);"
+                                 "cam['matrix'].setExpression('%s.cM1', 1);"
+                                 "cam['matrix'].setExpression('%s.cM2', 2);"
+                                 "cam['matrix'].setExpression('%s.cM3', 3);"
+                                 "cam['matrix'].setExpression('%s.cM4', 4);"
+                                 "cam['matrix'].setExpression('%s.cM5', 5);"
+                                 "cam['matrix'].setExpression('%s.cM6', 6);"
+                                 "cam['matrix'].setExpression('%s.cM7', 7);"
+                                 "cam['matrix'].setExpression('%s.cM8', 8);"
+                                 "cam['matrix'].setExpression('%s.cM9', 9);"
+                                 "cam['matrix'].setExpression('%s.cM10', 10);"
+                                 "cam['matrix'].setExpression('%s.cM11', 11);"
+                                 "cam['matrix'].setExpression('%s.cM12', 12);"
+                                 "cam['matrix'].setExpression('%s.cM13', 13);"
+                                 "cam['matrix'].setExpression('%s.cM14', 14);"
+                                 "cam['matrix'].setExpression('%s.cM15', 15);")%focalExpr
+                                                                               %m_node->m_node_name
+                                                                               %m_node->m_node_name
+                                                                               %m_node->m_node_name
+                                                                               %m_node->m_node_name
+                                                                               %m_node->m_node_name
+                                                                               %m_node->m_node_name
+                                                                               %m_node->m_node_name
+                                                                               %m_node->m_node_name
+                                                                               %m_node->m_node_name
+                                                                               %m_node->m_node_name
+                                                                               %m_node->m_node_name
+                                                                               %m_node->m_node_name
+                                                                               %m_node->m_node_name
+                                                                               %m_node->m_node_name
+                                                                               %m_node->m_node_name
+                                                                               %m_node->m_node_name).str();
+            
+            script_command(cmd.c_str(), true, false);
+            script_unlock();
+        }
+    
         void setStatus(const long long& progress = 0,
                        const long long& ram = 0,
                        const long long& p_ram = 0,
@@ -882,6 +937,25 @@ class Aton: public Iop
                                                                      %hour%minute%second
                                                                      %frame%f_count%progress).str();
             knob("status_knob")->set_text(str_status.c_str());
+        }
+    
+        void setCameraKnobs(const float& fov, const Matrix4& matrix)
+        {
+            std::string knob_value = (boost::format("%s")%fov).str();
+            knob("cam_fov_knob")->set_text(knob_value.c_str());
+            
+            int k_index = 0;
+            for (int i=0; i<4; i++)
+            {
+                for (int j=0; j<4; j++)
+                {
+                    float value_m = *(matrix[i]+j);
+                    knob_value = (boost::format("%s")%value_m).str();
+                    std::string knob_name = (boost::format("cM%s")%k_index).str();
+                    knob(knob_name.c_str())->set_text(knob_value.c_str());
+                    k_index ++;
+                }
+            }
         }
     
         bool firstEngineRendersWholeRequest() const { return true; }
@@ -975,7 +1049,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                       node->m_frames.end(),
                                       _frame) == node->m_frames.end())
                         {
-                            FrameBuffer fB(_frame, _xres, _yres, _fov, _matrix);
+                            FrameBuffer fB(_frame, _xres, _yres);
                             if (!node->m_frames.empty())
                                 fB = node->m_framebuffers.back();
                             node->m_mutex.lock();
@@ -986,7 +1060,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     }
                     else
                     {
-                        FrameBuffer fB(_frame, _xres, _yres, _fov, _matrix);
+                        FrameBuffer fB(_frame, _xres, _yres);
                         if (!node->m_frames.empty())
                         {
                             f_index = node->getFrameIndex(node->m_current_frame);
@@ -1021,23 +1095,23 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                             node->resetChannels(node->m_channels);
                             node->m_mutex.unlock();
                         }
-                        if (fB.isCameraChanged(_fov, _matrix))
-                        {
-                            node->m_mutex.lock();
-                            fB.setCamera(_fov, _matrix);
-                            std::stringstream stream;
-                            stream << (fB.getFov());
-                            std::string fov = stream.str();
-                            node->knob("cam_fov_knob")->set_text(fov.c_str());
-                            node->m_mutex.unlock();
-                        }
                     }
-                    
+
                     // Get image area to calculate the progress
                     _regionArea = d.rArea();
                     
                     // Get delta time per IPR iteration
                     delta_time = _active_time;
+                                        
+                    // Set Camera
+                    if (fB.isCameraChanged(_fov, _matrix))
+                    {
+                        node->m_mutex.lock();
+                        fB.setCamera(_fov, _matrix);
+                        node->setCameraKnobs(fB.getCameraFov(),
+                                             fB.getCameraMatrix());
+                        node->m_mutex.unlock();
+                    }
                     
                     // Set Arnold Core version
                     fB.setArnoldVersion(d.version());

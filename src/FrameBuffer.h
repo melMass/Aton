@@ -156,9 +156,11 @@ namespace aton
             const bool& isReady() { return _ready; }
         
             // Get Camera Fov
-            const float& getFov() { return _fov; }
+            const float& getCameraFov() { return _fov; }
         
-            void setCamera(const float& fov, const std::vector<float> matrix);
+            const Matrix4& getCameraMatrix() { return _matrix; }
+        
+            void setCamera(const float& fov, const std::vector<float>& matrix);
         
         private:
             double _frame;

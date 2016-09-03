@@ -65,11 +65,7 @@ FrameBuffer::FrameBuffer(const double& currentFrame,
                                                             _time(0),
                                                             _ram(0),
                                                             _pram(0),
-                                                            _ready(false)
-{
-    this->setCamera(fov, matrix);
-}
-
+                                                            _ready(false) {}
 // Add new buffer
 void FrameBuffer::addBuffer(const char* aov,
                             const int& spp)
@@ -201,13 +197,13 @@ bool FrameBuffer::isResolutionChanged(const unsigned int& w,
 }
 
 bool FrameBuffer::isCameraChanged(const float &fov,
-                                  const std::vector<float> &matrix)
+                                  const std::vector<float>& matrix)
 {
 
-    Matrix4 matrix4 = Matrix4(matrix[0], matrix[1], matrix[2], matrix[3],
-                              matrix[4], matrix[5], matrix[6], matrix[7],
-                              matrix[8], matrix[9], matrix[10], matrix[11],
-                              matrix[12], matrix[13], matrix[14], matrix[15]);
+    Matrix4 matrix4 = Matrix4(matrix[0], matrix[4], matrix[8], matrix[12],
+                              matrix[1], matrix[5], matrix[9], matrix[13],
+                              matrix[2], matrix[6], matrix[10], matrix[14],
+                              matrix[3], matrix[7], matrix[11], matrix[15]);
     
     return (_fov != fov || _matrix != matrix4);
 }
@@ -291,7 +287,7 @@ void FrameBuffer::setArnoldVersion(const int& version)
     _version = stream.str();
 }
 
-void FrameBuffer::setCamera(const float& fov, const std::vector<float> matrix)
+void FrameBuffer::setCamera(const float& fov, const std::vector<float>& matrix)
 {
     _fov = fov;
     _matrix = Matrix4(matrix[0], matrix[1], matrix[2], matrix[3],
