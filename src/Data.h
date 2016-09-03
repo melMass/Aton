@@ -80,7 +80,7 @@ namespace aton
         const float& camFov() const { return mCamFov; }
         
         // Camera matrix
-        const float& camMatrix(int index) const { return mCamMatrix[index]; }
+        const std::vector<float>& camMatrix() const { return mCamMatrixStore; }
         
         // Samples-per-pixel, aka channel depth
         const int& spp() const { return mSpp; }

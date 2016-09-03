@@ -55,7 +55,9 @@ namespace aton
         public:
             FrameBuffer(const double& currentFrame = 0,
                         const int& w = 0,
-                        const int& h = 0);
+                        const int& h = 0,
+                        const float& fov = 0,
+                        const std::vector<float> matrix = std::vector<float>());
         
             // Add new buffer
             void addBuffer(const char* aov = NULL,
@@ -88,7 +90,7 @@ namespace aton
             bool isFirstBufferName(const char* aovName);
         
             // Check if Frame has been changed
-            bool isFrameChanged(const double& frame);
+            bool isFrameChanged(const double& frame) { return frame != _frame; }
         
             // Check if Aovs have been changed
             bool isAovsChanged(const std::vector<std::string>& aovs);
@@ -96,6 +98,9 @@ namespace aton
             // Check if Resolution has been changed
             bool isResolutionChanged(const unsigned int& w,
                                      const unsigned int& h);
+        
+            // Check if Camera fov has been changed
+            bool isCameraChanged(const float& fov, const std::vector<float>& matrix);
         
             // Resize the containers to match the resolution
             void setResolution(const unsigned int& w,
@@ -108,13 +113,13 @@ namespace aton
             bool isBufferExist(const char* aovName);
         
             // Get width of the buffer
-            const int& getWidth();
+            const int& getWidth() { return _width; }
         
             // Get height of the buffer
-            const int& getHeight();
+            const int& getHeight() { return _height; }
 
             // Get size of the buffers aka AOVs count
-            size_t size();
+            size_t size() { return _aovs.size(); }
         
             // Resize the buffers
             void resize(const size_t& s);
@@ -126,29 +131,34 @@ namespace aton
                          const int& dtime = 0);
         
             // Get status parameters
-            const long long& getProgress();
-            const long long& getRAM();
-            const long long& getPRAM();
-            const int& getTime();
+            const long long& getProgress() { return _progress; }
+            const long long& getRAM() { return _ram; }
+            const long long& getPRAM() { return _pram; }
+            const int& getTime() { return _time; }
         
             // Set Arnold core version
             void setArnoldVersion(const int& version);
         
             // Get Arnold core version
-            const char* getArnoldVersion();
+            const char* getArnoldVersion() { return _version.c_str(); }
         
             // Set the frame number of this framebuffer
-            void setFrame(const double& frame);
+            void setFrame(const double& frame) { _frame = frame; }
         
             // Get the frame number of this framebuffer
-            const double& getFrame();
+            const double& getFrame() { return _frame; }
         
             // Check if this framebuffer is empty
-            bool empty();
+            bool empty() { return (_buffers.empty() && _aovs.empty()); }
         
             // To keep False while writing the buffer
-            void ready(const bool& ready);
-            const bool& isReady();
+            void ready(const bool& ready) { _ready = ready; }
+            const bool& isReady() { return _ready; }
+        
+            // Get Camera Fov
+            const float& getFov() { return _fov; }
+        
+            void setCamera(const float& fov, const std::vector<float> matrix);
         
         private:
             double _frame;
@@ -159,6 +169,8 @@ namespace aton
             int _width;
             int _height;
             bool _ready;
+            float _fov;
+            Matrix4 _matrix;
             std::string _version;
             std::vector<RenderBuffer> _buffers;
             std::vector<std::string> _aovs;

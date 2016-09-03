@@ -52,6 +52,8 @@ class Aton: public Iop
         ChannelSet                m_channels;         // Channels aka AOVs object
         int                       m_port;             // Port we're listening on (knob)
         int                       m_slimit;           // The limit size
+        float                     m_cam_fov;          // Default Camera fov
+        Matrix4                   m_cam_matrix;       // Default Camera matrix
         bool                      m_multiframes;      // Enable Multiple Frames toogle
         bool                      m_all_frames;       // Capture All Frames toogle
         bool                      m_stamp;            // Enable Frame stamp toogle
@@ -78,6 +80,8 @@ class Aton: public Iop
                           m_channels(Mask_RGBA),
                           m_port(getPort()),
                           m_slimit(20),
+                          m_cam_fov(50),
+                          m_cam_matrix(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0),
                           m_multiframes(true),
                           m_all_frames(false),
                           m_stamp(isVersionValid()),
@@ -256,6 +260,17 @@ class Aton: public Iop
                               fB.getFrame(),
                               fB.getArnoldVersion());
                     
+//                    // Set Camera
+//                    if (fB.getFov() != m_node->m_cam_fov)
+//                    {
+//                        
+//                        std::stringstream stream;
+//                        stream << (fB.getFov());
+//                        std::string fov = stream.str();
+//                        m_node->m_cam_fov = fB.getFov();
+//                        knob("cam_fov_knob")->set_text(fov.c_str());
+//                    }
+                    
                     // Set the format
                     const int width = fB.getWidth();
                     const int height = fB.getHeight();
@@ -381,7 +396,9 @@ class Aton: public Iop
             // Hidden knobs
             Format_knob(f, &m_fmtp, "formats_knob", "format");
             Bool_knob(f, &m_capturing, "capturing_knob");
-
+            Float_knob(f, &m_cam_fov, "cam_fov_knob", "Camera Fov");
+            Axis_knob(f, &m_cam_matrix, "cam_matrix_knob", "Camera Matrix");
+            
             // Main knobs
             Int_knob(f, &m_port, "port_number", "Port");
             Button(f, "clear_all_knob", "Clear All");
@@ -944,6 +961,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     // Copy data from d
                     int _xres = d.xres();
                     int _yres = d.yres();
+                    float _fov = d.camFov();
+                    std::vector<float> _matrix = d.camMatrix();
                     double _frame = static_cast<double>(d.currentFrame());
                     
                     if (current_frame != _frame)
@@ -956,7 +975,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                                       node->m_frames.end(),
                                       _frame) == node->m_frames.end())
                         {
-                            FrameBuffer fB(_frame, _xres, _yres);
+                            FrameBuffer fB(_frame, _xres, _yres, _fov, _matrix);
                             if (!node->m_frames.empty())
                                 fB = node->m_framebuffers.back();
                             node->m_mutex.lock();
@@ -967,7 +986,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     }
                     else
                     {
-                        FrameBuffer fB(_frame, _xres, _yres);
+                        FrameBuffer fB(_frame, _xres, _yres, _fov, _matrix);
                         if (!node->m_frames.empty())
                         {
                             f_index = node->getFrameIndex(node->m_current_frame);
@@ -1000,6 +1019,16 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                             fB.resize(1);
                             fB.ready(false);
                             node->resetChannels(node->m_channels);
+                            node->m_mutex.unlock();
+                        }
+                        if (fB.isCameraChanged(_fov, _matrix))
+                        {
+                            node->m_mutex.lock();
+                            fB.setCamera(_fov, _matrix);
+                            std::stringstream stream;
+                            stream << (fB.getFov());
+                            std::string fov = stream.str();
+                            node->knob("cam_fov_knob")->set_text(fov.c_str());
                             node->m_mutex.unlock();
                         }
                     }

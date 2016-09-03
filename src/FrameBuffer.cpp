@@ -55,14 +55,20 @@ RenderBuffer::RenderBuffer(const unsigned int& width,
 // FrameBuffer class
 FrameBuffer::FrameBuffer(const double& currentFrame,
                          const int& w,
-                         const int& h): _frame(currentFrame),
-                                        _width(w),
-                                        _height(h),
-                                        _progress(0),
-                                        _time(0),
-                                        _ram(0),
-                                        _pram(0),
-                                        _ready(false) {}
+                         const int& h,
+                         const float& fov,
+                         const std::vector<float> matrix): _frame(currentFrame),
+                                                            _width(w),
+                                                            _height(h),
+                                                            _fov(fov),
+                                                            _progress(0),
+                                                            _time(0),
+                                                            _ram(0),
+                                                            _pram(0),
+                                                            _ready(false)
+{
+    this->setCamera(fov, matrix);
+}
 
 // Add new buffer
 void FrameBuffer::addBuffer(const char* aov,
@@ -181,12 +187,6 @@ bool FrameBuffer::isFirstBufferName(const char* aovName)
     return strcmp(_aovs.front().c_str(), aovName) == 0;;
 }
 
-// Check if Frame has been changed
-bool FrameBuffer::isFrameChanged(const double& frame)
-{
-    return frame != _frame;
-}
-
 // Check if Aovs has been changed
 bool FrameBuffer::isAovsChanged(const std::vector<std::string>& aovs)
 {
@@ -198,6 +198,18 @@ bool FrameBuffer::isResolutionChanged(const unsigned int& w,
                                       const unsigned int& h)
 {
     return (w != _width || h != _height);
+}
+
+bool FrameBuffer::isCameraChanged(const float &fov,
+                                  const std::vector<float> &matrix)
+{
+
+    Matrix4 matrix4 = Matrix4(matrix[0], matrix[1], matrix[2], matrix[3],
+                              matrix[4], matrix[5], matrix[6], matrix[7],
+                              matrix[8], matrix[9], matrix[10], matrix[11],
+                              matrix[12], matrix[13], matrix[14], matrix[15]);
+    
+    return (_fov != fov || _matrix != matrix4);
 }
 
 // Resize the containers to match the resolution
@@ -239,15 +251,6 @@ bool FrameBuffer::isBufferExist(const char* aovName)
     return std::find(_aovs.begin(), _aovs.end(), aovName) != _aovs.end();
 }
 
-// Get width of the buffer
-const int& FrameBuffer::getWidth() { return _width; }
-
-// Get height of the buffer
-const int& FrameBuffer::getHeight() { return _height; }
-
-// Get size of the buffers aka AOVs count
-size_t FrameBuffer::size() { return _aovs.size(); }
-
 // Resize the buffers
 void FrameBuffer::resize(const size_t& s)
 {
@@ -274,12 +277,6 @@ void FrameBuffer::setTime(const int& time,
     _time = dtime > time ? time : time - dtime;
 }
 
-// Get status parameters
-const long long& FrameBuffer::getProgress() { return _progress; }
-const long long& FrameBuffer::getRAM() { return _ram; }
-const long long& FrameBuffer::getPRAM() { return _pram; }
-const int& FrameBuffer::getTime() { return _time; }
-
 // Set Arnold core version
 void FrameBuffer::setArnoldVersion(const int& version)
 {
@@ -294,18 +291,12 @@ void FrameBuffer::setArnoldVersion(const int& version)
     _version = stream.str();
 }
 
-// Get Arnold core version
-const char* FrameBuffer::getArnoldVersion() { return _version.c_str(); }
+void FrameBuffer::setCamera(const float& fov, const std::vector<float> matrix)
+{
+    _fov = fov;
+    _matrix = Matrix4(matrix[0], matrix[1], matrix[2], matrix[3],
+                      matrix[4], matrix[5], matrix[6], matrix[7],
+                      matrix[8], matrix[9], matrix[10], matrix[11],
+                      matrix[12], matrix[13], matrix[14], matrix[15]);
+}
 
-// Set the frame number of this framebuffer
-void FrameBuffer::setFrame(const double& frame) { _frame = frame; }
-
-// Get the frame number of this framebuffer
-const double& FrameBuffer::getFrame() { return _frame; }
-
-// Check if this framebuffer is empty
-bool FrameBuffer::empty() { return (_buffers.empty() && _aovs.empty()) ; }
-
-// To keep False while writing the buffer
-void FrameBuffer::ready(const bool& ready) { _ready = ready; }
-const bool& FrameBuffer::isReady() { return _ready; }
