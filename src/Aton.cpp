@@ -871,19 +871,21 @@ class Aton: public Iop
     
         void createLiveCamera()
         {
-            std::string focalExpr;
-            focalExpr = (boost::format("(haperture / (2 * tan(pi * %s.cam_fov_knob / 360)))")%m_node->m_node_name).str();
+            // Our python command buffer
+            std::string cmd, focalExpr;
             
-            std::string cmd; // Our python command buffer
+            // Set Focal Length
+            focalExpr = (boost::format("%s.cam_fov_knob!=0?(haperture/(2*tan(pi*%s.cam_fov_knob/360))):this")%m_node->m_node_name
+                                                                                                             %m_node->m_node_name).str();
+            // Set Matrix
             cmd = (boost::format("exec('''cam = nuke.nodes.Camera()\n"
-                                         "cam['useMatrix'].setValue(True)\n"
-                                         "cam['focal'].setExpression('%s')\n"
-                                         "cam['haperture'].setValue(36)\n"
-                                         "cam['vaperture'].setValue(24)\n"
-                                         "for i in range(0, 16):\n\t"
-                                            "cam['matrix'].setExpression('%s.cM'+str(i), i)''')")%focalExpr
-                                                                                                 %m_node->m_node_name).str();
-            
+                                 "cam['focal'].setExpression('%s')\n"
+                                 "cam['useMatrix'].setValue(True)\n"
+                                 "cam['haperture'].setValue(36)\n"
+                                 "cam['vaperture'].setValue(24)\n"
+                                 "for i in range(0, 16):\n\t"
+                                     "cam['matrix'].setExpression('%s.cM'+str(i), i)''')")%focalExpr
+                                                                                          %m_node->m_node_name).str();
             script_command(cmd.c_str(), true, false);
             script_unlock();
         }
