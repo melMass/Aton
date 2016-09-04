@@ -402,6 +402,7 @@ class Aton: public Iop
             Bool_knob(f, &m_enable_aovs, "enable_aovs_knob", "Enable AOVs");
             Newline(f);
             Bool_knob(f, &m_multiframes, "multi_frame_knob", "Enable Multiple Frames");
+            Newline(f);
             Button(f, "live_camera_knob", "Create Live Camera");
 
             Divider(f, "Capture");
@@ -926,7 +927,7 @@ class Aton: public Iop
                     knob_value = (boost::format("%s")%value_m).str();
                     std::string knob_name = (boost::format("cM%s")%k_index).str();
                     knob(knob_name.c_str())->set_text(knob_value.c_str());
-                    k_index ++;
+                    k_index++;
                 }
             }
         }
