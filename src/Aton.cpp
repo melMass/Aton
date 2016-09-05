@@ -953,12 +953,13 @@ static void timeChange(unsigned index, unsigned nthreads, void* data)
         size_t fbSize = node->m_framebuffers.size();
         if (node->m_multiframes && fbSize > 1 && prevFrame != uiFrame)
         {
-            node->flagForUpdate();
-            prevFrame = uiFrame;
             int f_index = node->getFrameIndex(uiFrame);
             FrameBuffer& fB = node->m_framebuffers[f_index];
             node->setCameraKnobs(fB.getCameraFov(),
                                  fB.getCameraMatrix());
+            node->flagForUpdate();
+            prevFrame = uiFrame;
+
         }
         else
             this_thread::sleep(posix_time::millisec(ms));
