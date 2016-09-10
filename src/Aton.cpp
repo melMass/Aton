@@ -58,6 +58,7 @@ class Aton: public Iop
         bool                      m_all_frames;       // Capture All Frames toogle
         bool                      m_stamp;            // Enable Frame stamp toogle
         bool                      m_enable_aovs;      // Enable AOVs toogle
+        bool                      m_live_camera;      // Enable Live Camera toogle
         bool                      m_inError;          // Error handling
         bool                      m_formatExists;     // If the format was already exist
         bool                      m_capturing;        // Capturing signal
@@ -83,9 +84,10 @@ class Aton: public Iop
                           m_cam_fov(50),
                           m_cam_matrix(0),
                           m_multiframes(true),
+                          m_enable_aovs(true),
+                          m_live_camera(false),
                           m_all_frames(false),
                           m_stamp(isVersionValid()),
-                          m_enable_aovs(true),
                           m_inError(false),
                           m_formatExists(false),
                           m_capturing(false),
@@ -403,7 +405,7 @@ class Aton: public Iop
             Newline(f);
             Bool_knob(f, &m_multiframes, "multi_frame_knob", "Enable Multiple Frames");
             Newline(f);
-            Button(f, "live_camera_knob", "Create Live Camera");
+            Bool_knob(f, &m_live_camera, "live_camera_knob", "Enable Live Camera");
 
             Divider(f, "Capture");
             Knob* limit_knob = Int_knob(f, &m_slimit, "limit_knob", "Limit");
@@ -461,7 +463,7 @@ class Aton: public Iop
             }
             if (_knob->is("live_camera_knob"))
             {
-                createLiveCamera();
+                liveCameraToogle();
                 return 1;
             }
             if (_knob->is("capture_knob"))
@@ -870,23 +872,30 @@ class Aton: public Iop
             }
         }
     
-        void createLiveCamera()
+        void liveCameraToogle()
         {
             // Our python command buffer
             std::string cmd, focalExpr;
             
-            // Set Focal Length
-            focalExpr = (boost::format("%s.cam_fov_knob!=0?(haperture/(2*tan(pi*%s.cam_fov_knob/360))):this")%m_node->m_node_name
-                                                                                                             %m_node->m_node_name).str();
-            // Set Matrix
-            cmd = (boost::format("exec('''cam = nuke.nodes.Camera()\n"
-                                 "cam['focal'].setExpression('%s')\n"
-                                 "cam['useMatrix'].setValue(True)\n"
-                                 "cam['haperture'].setValue(36)\n"
-                                 "cam['vaperture'].setValue(24)\n"
-                                 "for i in range(0, 16):\n\t"
-                                     "cam['matrix'].setExpression('%s.cM'+str(i), i)''')")%focalExpr
-                                                                                          %m_node->m_node_name).str();
+            if (m_node->m_live_camera)
+            {
+                // Set Focal Length
+                focalExpr = (boost::format("%s.cam_fov_knob!=0?(haperture/(2*tan(pi*%s.cam_fov_knob/360))):this")%m_node->m_node_name
+                                                                                                                 %m_node->m_node_name).str();
+                // Set Matrix
+                cmd = (boost::format("exec('''cam = nuke.nodes.Camera(name='%s_Camera')\n"
+                                     "cam['focal'].setExpression('%s')\n"
+                                     "cam['useMatrix'].setValue(True)\n"
+                                     "cam['haperture'].setValue(36)\n"
+                                     "cam['vaperture'].setValue(24)\n"
+                                     "for i in range(0, 16):\n\t"
+                                         "cam['matrix'].setExpression('%s.cM'+str(i), i)''')")%m_node->m_node_name
+                                                                                              %focalExpr
+                                                                                              %m_node->m_node_name).str();
+            }
+            else
+                cmd = (boost::format("nuke.delete(nuke.toNode('%s_Camera'))")%m_node->m_node_name).str();
+
             script_command(cmd.c_str(), true, false);
             script_unlock();
         }
@@ -955,11 +964,11 @@ static void timeChange(unsigned index, unsigned nthreads, void* data)
         {
             int f_index = node->getFrameIndex(uiFrame);
             FrameBuffer& fB = node->m_framebuffers[f_index];
-            node->setCameraKnobs(fB.getCameraFov(),
-                                 fB.getCameraMatrix());
+            if (node->m_live_camera)
+                node->setCameraKnobs(fB.getCameraFov(),
+                                     fB.getCameraMatrix());
             node->flagForUpdate();
             prevFrame = uiFrame;
-
         }
         else
             this_thread::sleep(posix_time::millisec(ms));
@@ -1083,7 +1092,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     delta_time = _active_time;
                                         
                     // Set Camera
-                    if (fB.isCameraChanged(_fov, _matrix))
+                    if (node->m_live_camera && fB.isCameraChanged(_fov,
+                                                                  _matrix))
                     {
                         node->m_mutex.lock();
                         fB.setCamera(_fov, _matrix);
