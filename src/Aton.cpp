@@ -964,6 +964,7 @@ static void timeChange(unsigned index, unsigned nthreads, void* data)
         {
             int f_index = node->getFrameIndex(uiFrame);
             FrameBuffer& fB = node->m_framebuffers[f_index];
+            
             if (node->m_live_camera)
                 node->setCameraKnobs(fB.getCameraFov(),
                                      fB.getCameraMatrix());
