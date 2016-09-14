@@ -163,20 +163,21 @@ driver_open
     catch(const std::exception &e)
     {
         data->host = false;
-        if (data->extraHost)
+        if (!data->extraHost)
         {
-            try
-            {
-                data->extra_client = new aton::Client(extra_host, port);
-                data->extra_client->openImage(header);
-            }
-            catch(const std::exception &e)
-            {
-                const char *err = e.what();
-                AiMsgError("Aton display driver %s", err);
-            }
+            const char *err = e.what();
+            AiMsgError("Aton display driver %s", err);
         }
-        else
+    }
+    
+    if (data->extraHost)
+    {
+        try
+        {
+            data->extra_client = new aton::Client(extra_host, port);
+            data->extra_client->openImage(header);
+        }
+        catch(const std::exception &e)
         {
             const char *err = e.what();
             AiMsgError("Aton display driver %s", err);
