@@ -16,7 +16,7 @@ AI_DRIVER_NODE_EXPORT_METHODS(AtonDriverMtd);
 struct ShaderData
 {
     aton::Client* client, *extra_client;
-    bool extraHost;
+    bool host, extraHost;
     int xres, yres, min_x, min_y, max_x, max_y;
 };
 
@@ -151,25 +151,36 @@ driver_open
     data->extraHost = false;
     if (!ec) data->extraHost = true;
     
+    // Make image header & send to server
+    aton::Data header(data->xres, data->yres, 0, 0, 0, 0,
+                      rArea, version, currentFrame, cam_fov, cam_matrix);
+    
     try // Now we can connect to the server and start rendering
     {
-        // Make image header & send to server
-        aton::Data header(data->xres, data->yres, 0, 0, 0, 0,
-                          rArea, version, currentFrame, cam_fov, cam_matrix);
-    
         data->client = new aton::Client(host, port);
         data->client->openImage(header);
-        
-        if (data->extraHost)
-        {
-            data->extra_client = new aton::Client(extra_host, port);
-            data->extra_client->openImage(header);
-        }
     }
     catch(const std::exception &e)
     {
-        const char *err = e.what();
-        AiMsgError("Aton display driver %s", err);
+        data->host = false;
+        if (data->extraHost)
+        {
+            try
+            {
+                data->extra_client = new aton::Client(extra_host, port);
+                data->extra_client->openImage(header);
+            }
+            catch(const std::exception &e)
+            {
+                const char *err = e.what();
+                AiMsgError("Aton display driver %s", err);
+            }
+        }
+        else
+        {
+            const char *err = e.what();
+            AiMsgError("Aton display driver %s", err);
+        }
     }
 }
 
@@ -220,7 +231,8 @@ driver_write_bucket
                           spp, ram, time, aov_name, ptr);
 
         // Send it to the server
-        data->client->sendPixels(packet);
+        if (data->host)
+            data->client->sendPixels(packet);
         if (data->extraHost)
             data->extra_client->sendPixels(packet);
     }
@@ -233,7 +245,8 @@ driver_close
     ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
     try
     {
-        data->client->closeImage();
+        if (data->host)
+            data->client->closeImage();
         if (data->extraHost)
             data->extra_client->closeImage();
     }
@@ -249,7 +262,8 @@ node_finish
    
     // Release the driver
     ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
-    delete data->client;
+    if (data->host)
+        delete data->client;
     if (data->extraHost)
         delete data->extra_client;
     
