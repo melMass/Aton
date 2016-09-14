@@ -81,7 +81,7 @@ class Aton: public Iop
                           m_channels(Mask_RGBA),
                           m_port(getPort()),
                           m_slimit(20),
-                          m_cam_fov(50),
+                          m_cam_fov(0),
                           m_cam_matrix(0),
                           m_multiframes(true),
                           m_enable_aovs(true),
@@ -884,10 +884,10 @@ class Aton: public Iop
                                                                                                                  %m_node->m_node_name).str();
                 // Set Matrix
                 cmd = (boost::format("exec('''cam = nuke.nodes.Camera(name='%s_Camera')\n"
-                                     "cam['focal'].setExpression('%s')\n"
-                                     "cam['useMatrix'].setValue(True)\n"
                                      "cam['haperture'].setValue(36)\n"
                                      "cam['vaperture'].setValue(24)\n"
+                                     "cam['focal'].setExpression('%s')\n"
+                                     "cam['useMatrix'].setValue(True)\n"
                                      "for i in range(0, 16):\n\t"
                                          "cam['matrix'].setExpression('%s.cM'+str(i), i)''')")%m_node->m_node_name
                                                                                               %focalExpr
