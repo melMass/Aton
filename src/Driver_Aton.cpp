@@ -147,10 +147,12 @@ driver_open
     long long rArea = data->xres * data->yres;
 
     boost::system::error_code ec;
-    boost::asio::ip::address::from_string(extra_host, ec);
-    data->extraHost = false;
-    if (!ec) data->extraHost = true;
+    boost::asio::ip::address::from_string(host, ec);
+    data->host = ec ? false : true;
     
+    boost::asio::ip::address::from_string(extra_host, ec);
+    data->extraHost = ec ? false : true;
+
     // Make image header & send to server
     aton::Data header(data->xres, data->yres, 0, 0, 0, 0,
                       rArea, version, currentFrame, cam_fov, cam_matrix);
