@@ -1024,7 +1024,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     int _xres = d.xres();
                     int _yres = d.yres();
                     float _fov = d.camFov();
-                    std::vector<float> _matrix = d.camMatrix();
+                    Matrix4 _matrix = Matrix4(&d.camMatrix()[0]);
                     double _frame = static_cast<double>(d.currentFrame());
                     
                     if (current_frame != _frame)

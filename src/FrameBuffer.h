@@ -100,7 +100,7 @@ namespace aton
                                      const unsigned int& h);
         
             // Check if Camera fov has been changed
-            bool isCameraChanged(const float& fov, const std::vector<float>& matrix);
+            bool isCameraChanged(const float& fov, const Matrix4& matrix);
         
             // Resize the containers to match the resolution
             void setResolution(const unsigned int& w,
@@ -160,7 +160,7 @@ namespace aton
         
             const Matrix4& getCameraMatrix() { return _matrix; }
         
-            void setCamera(const float& fov, const std::vector<float>& matrix);
+            void setCamera(const float& fov, const Matrix4& matrix);
         
         private:
             double _frame;

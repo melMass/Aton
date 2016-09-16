@@ -94,18 +94,14 @@ driver_open
     
     // Get Camera
     AtNode* camera = (AtNode*)AiNodeGetPtr(options, "camera");
-    AtMatrix cam_at_matrix;
-    AiNodeGetMatrix(camera, "matrix", cam_at_matrix);
+    AtMatrix cMat;
+    AiNodeGetMatrix(camera, "matrix", cMat);
     
     float cam_fov = AiNodeGetFlt(camera, "fov");
-    float cam_matrix[16] = {cam_at_matrix[0][0], cam_at_matrix[0][1],
-                            cam_at_matrix[0][2], cam_at_matrix[0][3],
-                            cam_at_matrix[1][0], cam_at_matrix[1][1],
-                            cam_at_matrix[1][2], cam_at_matrix[1][3],
-                            cam_at_matrix[2][0], cam_at_matrix[2][1],
-                            cam_at_matrix[2][2], cam_at_matrix[2][3],
-                            cam_at_matrix[3][0], cam_at_matrix[3][1],
-                            cam_at_matrix[3][2], cam_at_matrix[3][3]};
+    float cam_matrix[16] = {cMat[0][0], cMat[1][0], cMat[2][0], cMat[3][0],
+                            cMat[0][1], cMat[1][1], cMat[2][1], cMat[3][1],
+                            cMat[0][2], cMat[1][2], cMat[2][2], cMat[3][2],
+                            cMat[0][3], cMat[1][3], cMat[2][3], cMat[3][3]};
     
     // Get Resolution
     int xres = AiNodeGetInt(options, "xres");

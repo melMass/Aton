@@ -196,16 +196,10 @@ bool FrameBuffer::isResolutionChanged(const unsigned int& w,
     return (w != _width || h != _height);
 }
 
-bool FrameBuffer::isCameraChanged(const float &fov,
-                                  const std::vector<float>& matrix)
+bool FrameBuffer::isCameraChanged(const float& fov,
+                                  const Matrix4& matrix)
 {
-
-    Matrix4 matrix4 = Matrix4(matrix[0], matrix[1], matrix[2], matrix[3],
-                              matrix[4], matrix[5], matrix[6], matrix[7],
-                              matrix[8], matrix[9], matrix[10], matrix[11],
-                              matrix[12], matrix[13], matrix[14], matrix[15]);
-    
-    return (_fov != fov || _matrix != matrix4);
+    return (_fov != fov || _matrix != matrix);
 }
 
 // Resize the containers to match the resolution
@@ -287,12 +281,9 @@ void FrameBuffer::setArnoldVersion(const int& version)
     _version = stream.str();
 }
 
-void FrameBuffer::setCamera(const float& fov, const std::vector<float>& matrix)
+void FrameBuffer::setCamera(const float& fov, const Matrix4& matrix)
 {
     _fov = fov;
-    _matrix = Matrix4(matrix[0], matrix[1], matrix[2], matrix[3],
-                      matrix[4], matrix[5], matrix[6], matrix[7],
-                      matrix[8], matrix[9], matrix[10], matrix[11],
-                      matrix[12], matrix[13], matrix[14], matrix[15]);
+    _matrix = matrix;
 }
 
