@@ -405,7 +405,7 @@ class Aton: public Iop
             Newline(f);
             Bool_knob(f, &m_multiframes, "multi_frame_knob", "Enable Multiple Frames");
             Newline(f);
-            Bool_knob(f, &m_live_camera, "live_camera_knob", "Enable Live Camera");
+            Knob* live_cam_knob = Bool_knob(f, &m_live_camera, "live_camera_knob", "Enable Live Camera");
 
             Divider(f, "Capture");
             Knob* limit_knob = Int_knob(f, &m_slimit, "limit_knob", "Limit");
@@ -435,6 +435,7 @@ class Aton: public Iop
             // Set Flags
             limit_knob->set_flag(Knob::NO_RERENDER, true);
             path_knob->set_flag(Knob::NO_RERENDER, true);
+            live_cam_knob->set_flag(Knob::NO_RERENDER, true);
             all_frames_knob->set_flag(Knob::NO_RERENDER, true);
             stamp_knob->set_flag(Knob::NO_RERENDER, true);
             stamp_scale_knob->set_flag(Knob::NO_RERENDER, true);
