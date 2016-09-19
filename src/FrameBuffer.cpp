@@ -55,17 +55,14 @@ RenderBuffer::RenderBuffer(const unsigned int& width,
 // FrameBuffer class
 FrameBuffer::FrameBuffer(const double& currentFrame,
                          const int& w,
-                         const int& h,
-                         const float& fov,
-                         const std::vector<float> matrix): _frame(currentFrame),
-                                                            _width(w),
-                                                            _height(h),
-                                                            _fov(fov),
-                                                            _progress(0),
-                                                            _time(0),
-                                                            _ram(0),
-                                                            _pram(0),
-                                                            _ready(false) {}
+                         const int& h): _frame(currentFrame),
+                                        _width(w),
+                                        _height(h),
+                                        _progress(0),
+                                        _time(0),
+                                        _ram(0),
+                                        _pram(0),
+                                        _ready(false) {}
 // Add new buffer
 void FrameBuffer::addBuffer(const char* aov,
                             const int& spp)

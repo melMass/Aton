@@ -55,9 +55,7 @@ namespace aton
         public:
             FrameBuffer(const double& currentFrame = 0,
                         const int& w = 0,
-                        const int& h = 0,
-                        const float& fov = 0,
-                        const std::vector<float> matrix = std::vector<float>());
+                        const int& h = 0);
         
             // Add new buffer
             void addBuffer(const char* aov = NULL,
