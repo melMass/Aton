@@ -580,8 +580,16 @@ class Aton(QtWidgets.QDialog):
             pass
 
         # Temporary makeing hidden cameras visible before scene export
-        hCams = [x for x in cmds.listCameras() if not cmds.getAttr("%s.visibility"%x) or
-                                                  not cmds.getAttr("%s.visibility"%cmds.listRelatives(x, s=1)[0])]
+        hCams = []
+        for x in cmds.listCameras():
+            vis_shape = cmds.getAttr("%s.visibility" %x)
+            vis_parent = None
+            parent = cmds.listRelatives(x, s=1)
+            if parent:
+                vis_parent = cmds.getAttr("%s.visibility" % parent[0])
+            if not vis_shape or not vis_parent:
+                hCams.append(x)
+        
         for i in hCams: cmds.showHidden(i)
 
         if self.sequence_enabled:
