@@ -1,6 +1,6 @@
 __author__ = "Vahan Sosoyan, Dan Bradham"
 __copyright__ = "2016 All rights reserved. See Copyright.txt for more details."
-__version__ = "v1.1.6b"
+__version__ = "v1.1.6"
 
 import sys
 from timeit import default_timer
@@ -581,19 +581,17 @@ class Aton(QtWidgets.QDialog):
 
         # Temporary makeing hidden cameras visible before scene export
         hCams = []
-        for x in cmds.listCameras():
-            vis_shape = cmds.getAttr("%s.visibility" %x)
-            vis_parent = None
-            parent = cmds.listRelatives(x, s=1)
-            if parent:
-                vis_parent = cmds.getAttr("%s.visibility" % parent[0])
-            if not vis_shape or not vis_parent:
-                hCams.append(x)
-        
+        for i in cmds.listCameras():
+            if not cmds.getAttr(i + ".visibility"):
+                hCams.append(i)
+            sl = cmds.listRelatives(i, s=1)
+            if sl and not cmds.getAttr(sl[0] + ".visibility"):
+                hCams.append(sl[0])
+
         for i in hCams: cmds.showHidden(i)
 
+        # Set Progressive refinement to off
         if self.sequence_enabled:
-            # Set Progressive refinement to off
             cmds.setAttr("defaultArnoldRenderOptions.progressive_rendering", False)
 
         try: # Start IPR
