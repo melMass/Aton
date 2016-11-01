@@ -1,4 +1,4 @@
-__author__ = "Vahan Sosoyan, Dan Bradham"
+__author__ = "Vahan Sosoyan, Dan Bradham, Bjoern Siegert"
 __copyright__ = "2016 All rights reserved. See Copyright.txt for more details."
 __version__ = "v1.1.6"
 
