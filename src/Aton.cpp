@@ -1093,8 +1093,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     delta_time = _active_time;
                                         
                     // Set Camera
-                    if (node->m_live_camera && fB.isCameraChanged(_fov,
-                                                                  _matrix))
+                    if (fB.isCameraChanged(_fov, _matrix))
                     {
                         node->m_mutex.lock();
                         fB.setCamera(_fov, _matrix);
