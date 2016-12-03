@@ -878,7 +878,7 @@ class Aton: public Iop
             // Our python command buffer
             std::string cmd, focalExpr;
             
-            if (m_node->m_live_camera)
+            if (m_live_camera)
             {
                 // Set Focal Length
                 focalExpr = (boost::format("%s.cam_fov_knob!=0?(haperture/(2*tan(pi*%s.cam_fov_knob/360))):this")%m_node->m_node_name
