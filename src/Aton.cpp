@@ -536,7 +536,7 @@ class Aton: public Iop
             gotoContext(ctxt, true);
         }
     
-        int getFrameIndex(double currentFrame, std::vector<double>& frames)
+        int getFrameIndex(double currentFrame, const std::vector<double>& frames)
         {
             int f_index = 0;
             
