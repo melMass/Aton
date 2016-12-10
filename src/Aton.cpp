@@ -256,7 +256,7 @@ class Aton: public Iop
 
             if (!m_node->m_framebuffers.empty())
             {
-                const int f_index = getFrameIndex(uiContext().frame());
+                const int f_index = getFrameIndex(uiContext().frame(), m_node->m_frames);
                 FrameBuffer& fB = m_node->m_framebuffers[f_index];
                 
                 if (!fB.empty())
@@ -357,7 +357,7 @@ class Aton: public Iop
 
         void engine(int y, int x, int r, ChannelMask channels, Row& out)
         {
-            const int f = getFrameIndex(uiContext().frame());
+            const int f = getFrameIndex(uiContext().frame(), m_node->m_frames);
             std::vector<FrameBuffer>& fBs = m_node->m_framebuffers;
             
             foreach(z, channels)
@@ -536,11 +536,9 @@ class Aton: public Iop
             gotoContext(ctxt, true);
         }
     
-        int getFrameIndex(double currentFrame)
+        int getFrameIndex(double currentFrame, std::vector<double> frames)
         {
             int f_index = 0;
-            std::vector<double>& frames = m_node->m_frames;
-
             if (frames.size() > 1)
             {
                 if (!m_multiframes)
@@ -549,7 +547,6 @@ class Aton: public Iop
                 int nearFIndex = INT_MIN;
                 int minFIndex = INT_MAX;
                 std::vector<double>::iterator it;
-                m_mutex.lock();
                 for(it = frames.begin(); it != frames.end(); ++it)
                 {
                     if (currentFrame == *it)
@@ -569,7 +566,6 @@ class Aton: public Iop
                         f_index = static_cast<int>(it - frames.begin());
                     }
                 }
-                m_mutex.unlock();
             }
             return f_index;
         }
@@ -963,7 +959,7 @@ static void timeChange(unsigned index, unsigned nthreads, void* data)
         const size_t fbSize = node->m_framebuffers.size();
         if (node->m_multiframes && fbSize > 1 && prevFrame != uiFrame)
         {
-            const int f_index = node->getFrameIndex(uiFrame);
+            const int f_index = node->getFrameIndex(uiFrame, node->m_frames);
             FrameBuffer& fB = node->m_framebuffers[f_index];
             if (node->m_live_camera)
                 node->setCameraKnobs(fB.getCameraFov(),
@@ -1052,7 +1048,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         FrameBuffer fB(_frame, _xres, _yres);
                         if (!node->m_frames.empty())
                         {
-                            f_index = node->getFrameIndex(node->m_current_frame);
+                            f_index = node->getFrameIndex(node->m_current_frame,
+                                                          node->m_frames);
                             fB = node->m_framebuffers[f_index];
                         }
                         node->m_mutex.lock();
@@ -1064,7 +1061,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     }
                     
                     // Get current FrameBuffer
-                    f_index = node->getFrameIndex(_frame);
+                    f_index = node->getFrameIndex(_frame, node->m_frames);
                     FrameBuffer& fB = node->m_framebuffers[f_index];
                     
                     // Reset Frame and Buffers if changed
