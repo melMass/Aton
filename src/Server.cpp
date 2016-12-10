@@ -112,7 +112,7 @@ Data Server::listen()
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mCurrentFrame), sizeof(int)));
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mCamFov), sizeof(float)));
                 
-                int camMatrixSize = 16;
+                const int camMatrixSize = 16;
                 d.mCamMatrixStore.resize(camMatrixSize);
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mCamMatrixStore[0]), sizeof(float)*camMatrixSize));
                 break;
@@ -147,7 +147,7 @@ Data Server::listen()
                 d.mAovName = aov_name;
 
                 // Get pixels
-                int num_samples = d.bucket_size_x() * d.bucket_size_y() * d.spp();
+                const int num_samples = d.bucket_size_x() * d.bucket_size_y() * d.spp();
                 d.mPixelStore.resize(num_samples);
                 read(mSocket, buffer(reinterpret_cast<char*>(&d.mPixelStore[0]), sizeof(float)*num_samples));
                 break;

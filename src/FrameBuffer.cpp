@@ -35,7 +35,7 @@ RenderBuffer::RenderBuffer(const unsigned int& width,
                            const unsigned int& height,
                            const int& spp)
 {
-    int size = width * height;
+    const int size = width * height;
     
     switch (spp)
     {
@@ -96,7 +96,7 @@ const float& FrameBuffer::getBufferPix(const int& b,
                                        const int& c) const
 {
     const RenderBuffer& rb = _buffers[b];
-    unsigned int index = (_width * y) + x;
+    const unsigned int index = (_width * y) + x;
     if (c < 3 && !rb._color_data.empty())
         return rb._color_data[index][c];
     else
@@ -206,7 +206,7 @@ void FrameBuffer::setResolution(const unsigned int& w,
     _width = w;
     _height = h;
     
-    int bfSize = _width * _height;
+    const int bfSize = _width * _height;
     
     std::vector<RenderBuffer>::iterator iRB;
     for(iRB = _buffers.begin(); iRB != _buffers.end(); ++iRB)
@@ -253,7 +253,7 @@ void FrameBuffer::setProgress(const long long& progress)
 
 void FrameBuffer::setRAM(const long long& ram)
 {
-    int ramGb = static_cast<int>(ram / 1048576);
+    const int ramGb = static_cast<int>(ram / 1048576);
     _ram = ramGb;
     _pram = ramGb > _pram ? ramGb : _pram;
 
@@ -268,10 +268,10 @@ void FrameBuffer::setTime(const int& time,
 void FrameBuffer::setArnoldVersion(const int& version)
 {
     // Construct a string from the version number passed
-    int archV = (version % 10000000) / 1000000;
-    int majorV = (version % 1000000) / 10000;
-    int minorV = (version % 10000) / 100;
-    int fixV = version % 100;
+    const int archV = (version % 10000000) / 1000000;
+    const int majorV = (version % 1000000) / 10000;
+    const int minorV = (version % 10000) / 100;
+    const int fixV = version % 100;
     
     std::stringstream stream;
     stream << archV << "." << majorV << "." << minorV << "." << fixV;

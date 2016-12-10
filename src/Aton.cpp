@@ -256,7 +256,7 @@ class Aton: public Iop
 
             if (!m_node->m_framebuffers.empty())
             {
-                int f_index = getFrameIndex(uiContext().frame());
+                const int f_index = getFrameIndex(uiContext().frame());
                 FrameBuffer& fB = m_node->m_framebuffers[f_index];
                 
                 if (!fB.empty())
@@ -305,7 +305,7 @@ class Aton: public Iop
                     
                     if (m_enable_aovs && fB.isReady())
                     {
-                        int fb_size = static_cast<int>(fB.size());
+                        const int fb_size = static_cast<int>(fB.size());
                         
                         if (channels.size() != fb_size)
                             channels.clear();
@@ -357,14 +357,14 @@ class Aton: public Iop
 
         void engine(int y, int x, int r, ChannelMask channels, Row& out)
         {
-            int f = getFrameIndex(uiContext().frame());
+            const int f = getFrameIndex(uiContext().frame());
             std::vector<FrameBuffer>& fBs = m_node->m_framebuffers;
             
             foreach(z, channels)
             {
                 int b = 0;
                 int xx = x;
-                int c = colourIndex(z);
+                const int c = colourIndex(z);
                 float* cOut = out.writable(z) + x;
                 const float* END = cOut + (r - x);
                 
@@ -908,10 +908,10 @@ class Aton: public Iop
                        const double& frame = 0,
                        const char* version = "")
         {
-            int hour = time / 3600000;
-            int minute = (time % 3600000) / 60000;
-            int second = ((time % 3600000) % 60000) / 1000;
-            size_t f_count = m_node->m_framebuffers.size();
+            const int hour = time / 3600000;
+            const int minute = (time % 3600000) / 60000;
+            const int second = ((time % 3600000) % 60000) / 1000;
+            const size_t f_count = m_node->m_framebuffers.size();
 
             std::string str_status = (boost::format("Arnold: %s | "
                                                     "Memory: %sMB / %sMB | "
@@ -955,15 +955,15 @@ static void timeChange(unsigned index, unsigned nthreads, void* data)
     using namespace boost;
     Aton* node = reinterpret_cast<Aton*>(data);
     double uiFrame, prevFrame = 0;
-    int ms = 20;
+    const int ms = 20;
 
     while (node->m_legit)
     {
         uiFrame = node->uiContext().frame();
-        size_t fbSize = node->m_framebuffers.size();
+        const size_t fbSize = node->m_framebuffers.size();
         if (node->m_multiframes && fbSize > 1 && prevFrame != uiFrame)
         {
-            int f_index = node->getFrameIndex(uiFrame);
+            const int f_index = node->getFrameIndex(uiFrame);
             FrameBuffer& fB = node->m_framebuffers[f_index];
             if (node->m_live_camera)
                 node->setCameraKnobs(fB.getCameraFov(),
@@ -1022,11 +1022,11 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                 case 0: // Open a new image
                 {
                     // Copy data from d
-                    int _xres = d.xres();
-                    int _yres = d.yres();
-                    float _fov = d.camFov();
-                    Matrix4 _matrix = Matrix4(&d.camMatrix()[0]);
-                    double _frame = static_cast<double>(d.currentFrame());
+                    const int _xres = d.xres();
+                    const int _yres = d.yres();
+                    const float _fov = d.camFov();
+                    const Matrix4 _matrix = Matrix4(&d.camMatrix()[0]);
+                    const double _frame = static_cast<double>(d.currentFrame());
                     
                     if (current_frame != _frame)
                         current_frame = _frame;
@@ -1120,8 +1120,8 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                     // Get frame buffer
                     FrameBuffer& fB = node->m_framebuffers[f_index];
                     const char* _aov_name = d.aovName();
-                    int _xres = d.xres();
-                    int _yres = d.yres();
+                    const int _xres = d.xres();
+                    const int _yres = d.yres();
 
                     if(fB.isResolutionChanged(_xres, _yres))
                     {
@@ -1153,8 +1153,6 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                         const long long& _ram = d.ram();
                         const int& _time = d.time();
                         
-                        int x, y, xpos, ypos, c, offset;
-
                         // Set active time
                         _active_time = _time;
                         
@@ -1170,9 +1168,10 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                             fB.ready(true);
                         
                         // Get buffer index
-                        int b = fB.getBufferIndex(_aov_name);
+                        const int b = fB.getBufferIndex(_aov_name);
                     
                         // Writing to buffer
+                        int x, y, c, xpos, ypos, offset;
                         for (x = 0; x < _width; ++x)
                         {
                             for (y = 0; y < _height; ++y)

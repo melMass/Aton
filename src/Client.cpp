@@ -63,7 +63,8 @@ void Client::openImage(Data& header)
     write(mSocket, buffer(reinterpret_cast<char*>(&header.mVersion), sizeof(int)));
     write(mSocket, buffer(reinterpret_cast<char*>(&header.mCurrentFrame), sizeof(float)));
     write(mSocket, buffer(reinterpret_cast<char*>(&header.mCamFov), sizeof(float)));
-    int camMatrixSize = 16;
+    
+    const int camMatrixSize = 16;
     write(mSocket, buffer(reinterpret_cast<char*>(&header.mCamMatrix[0]), sizeof(float)*camMatrixSize));
 }
 
@@ -84,7 +85,7 @@ void Client::sendPixels(Data& data)
     size_t aov_size = strlen(data.mAovName) + 1;
 
     // Get size of overall samples
-    int num_samples = data.mBucket_size_x * data.mBucket_size_y * data.mSpp;
+    const int num_samples = data.mBucket_size_x * data.mBucket_size_y * data.mSpp;
     
     // Sending data to buffer
     write(mSocket, buffer(reinterpret_cast<char*>(&data.mXres), sizeof(int)));

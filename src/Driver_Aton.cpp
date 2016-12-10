@@ -75,7 +75,7 @@ driver_open
     char arch[3], major[3], minor[3], fix[3];
     AiGetVersion(arch, major, minor, fix);
     
-    int version = atoi(arch) * 1000000 +
+    const int version = atoi(arch) * 1000000 +
                   atoi(major) * 10000 +
                   atoi(minor) * 100 +
                   atoi(fix);
@@ -84,34 +84,34 @@ driver_open
     
     // Get Frame number
     AtNode* options = AiUniverseGetOptions();
-    float currentFrame = AiNodeGetFlt(options, "frame");
+    const float currentFrame = AiNodeGetFlt(options, "frame");
     
     // Get Host and Port
     const char* host = AiNodeGetStr(node, "host");
     const char* extra_host = AiNodeGetStr(node, "extra_host");
     
-    int port = AiNodeGetInt(node, "port");
+    const int port = AiNodeGetInt(node, "port");
     
     // Get Camera
     AtNode* camera = (AtNode*)AiNodeGetPtr(options, "camera");
     AtMatrix cMat;
     AiNodeGetMatrix(camera, "matrix", cMat);
     
-    float cam_fov = AiNodeGetFlt(camera, "fov");
-    float cam_matrix[16] = {cMat[0][0], cMat[1][0], cMat[2][0], cMat[3][0],
-                            cMat[0][1], cMat[1][1], cMat[2][1], cMat[3][1],
-                            cMat[0][2], cMat[1][2], cMat[2][2], cMat[3][2],
-                            cMat[0][3], cMat[1][3], cMat[2][3], cMat[3][3]};
+    const float cam_fov = AiNodeGetFlt(camera, "fov");
+    const float cam_matrix[16] = {cMat[0][0], cMat[1][0], cMat[2][0], cMat[3][0],
+                                  cMat[0][1], cMat[1][1], cMat[2][1], cMat[3][1],
+                                  cMat[0][2], cMat[1][2], cMat[2][2], cMat[3][2],
+                                  cMat[0][3], cMat[1][3], cMat[2][3], cMat[3][3]};
     
     // Get Resolution
-    int xres = AiNodeGetInt(options, "xres");
-    int yres = AiNodeGetInt(options, "yres");
+    const int xres = AiNodeGetInt(options, "xres");
+    const int yres = AiNodeGetInt(options, "yres");
     
     // Get Regions
-    int min_x = AiNodeGetInt(options, "region_min_x");
-    int min_y = AiNodeGetInt(options, "region_min_y");
-    int max_x = AiNodeGetInt(options, "region_max_x");
-    int max_y = AiNodeGetInt(options, "region_max_y");
+    const int min_x = AiNodeGetInt(options, "region_min_x");
+    const int min_y = AiNodeGetInt(options, "region_min_y");
+    const int max_x = AiNodeGetInt(options, "region_max_x");
+    const int max_y = AiNodeGetInt(options, "region_max_y");
     
     // Setting Origin
     data->min_x = (min_x == INT_MIN) ? 0 : min_x;
@@ -140,7 +140,7 @@ driver_open
         data->yres = yres + (max_y - yres + 1);
     
     // Get area of region
-    long long rArea = data->xres * data->yres;
+    const long long rArea = data->xres * data->yres;
 
     boost::system::error_code ec;
     boost::asio::ip::address::from_string(host, ec);
@@ -209,8 +209,8 @@ driver_write_bucket
     while (AiOutputIteratorGetNext(iterator, &aov_name, &pixel_type, &bucket_data))
     {
         const float* ptr = reinterpret_cast<const float*>(bucket_data);
-        long long ram = AiMsgUtilGetUsedMemory();
-        unsigned int time = AiMsgUtilGetElapsedTime();
+        const long long ram = AiMsgUtilGetUsedMemory();
+        const unsigned int time = AiMsgUtilGetElapsedTime();
 
         switch (pixel_type)
         {
