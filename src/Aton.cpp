@@ -536,10 +536,15 @@ class Aton: public Iop
             gotoContext(ctxt, true);
         }
     
-        int getFrameIndex(double currentFrame, std::vector<double> frames)
+        int getFrameIndex(double currentFrame, std::vector<double>& frames)
         {
             int f_index = 0;
-            if (frames.size() > 1)
+            
+            m_mutex.lock();
+            std::vector<double> f = frames;
+            m_mutex.unlock();
+            
+            if (f.size() > 1)
             {
                 if (!m_multiframes)
                     currentFrame = m_node->m_current_frame;
@@ -547,23 +552,23 @@ class Aton: public Iop
                 int nearFIndex = INT_MIN;
                 int minFIndex = INT_MAX;
                 std::vector<double>::iterator it;
-                for(it = frames.begin(); it != frames.end(); ++it)
+                for(it = f.begin(); it != f.end(); ++it)
                 {
                     if (currentFrame == *it)
                     {
-                        f_index = static_cast<int>(it - frames.begin());
+                        f_index = static_cast<int>(it - f.begin());
                         break;
                     }
                     else if (currentFrame > *it && nearFIndex < *it)
                     {
                         nearFIndex = static_cast<int>(*it);
-                        f_index = static_cast<int>(it - frames.begin());
+                        f_index = static_cast<int>(it - f.begin());
                         continue;
                     }
                     else if (*it < minFIndex && nearFIndex == INT_MIN)
                     {
                         minFIndex = static_cast<int>(*it);
-                        f_index = static_cast<int>(it - frames.begin());
+                        f_index = static_cast<int>(it - f.begin());
                     }
                 }
             }
