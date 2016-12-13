@@ -934,7 +934,7 @@ class Aton: public Iop
             {
                 for (int j=0; j<4; j++)
                 {
-                    float value_m = *(matrix[i]+j);
+                    const float value_m = *(matrix[i]+j);
                     knob_value = (boost::format("%s")%value_m).str();
                     std::string knob_name = (boost::format("cM%s")%k_index).str();
                     knob(knob_name.c_str())->set_text(knob_value.c_str());
@@ -1205,7 +1205,7 @@ static void atonListen(unsigned index, unsigned nthreads, void* data)
                             node->m_mutex.unlock();
                             
                             // Update the image
-                            Box box(_x, h - _y - _height, _x + _width, h - _y);
+                            const Box box(_x, h - _y - _height, _x + _width, h - _y);
                             node->flagForUpdate(box);
                         }
                     }

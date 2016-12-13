@@ -76,9 +76,9 @@ driver_open
     AiGetVersion(arch, major, minor, fix);
     
     const int version = atoi(arch) * 1000000 +
-                  atoi(major) * 10000 +
-                  atoi(minor) * 100 +
-                  atoi(fix);
+                        atoi(major) * 10000 +
+                        atoi(minor) * 100 +
+                        atoi(fix);
     
     ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
     

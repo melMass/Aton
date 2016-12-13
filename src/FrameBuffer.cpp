@@ -82,7 +82,7 @@ void FrameBuffer::setBufferPix(const int& b,
                                const float& pix)
 {
     RenderBuffer& rb = _buffers[b];
-    unsigned int index = (_width * y) + x;
+    const unsigned int index = (_width * y) + x;
     if (c < 3 && spp != 1)
         rb._color_data[index][c] = pix;
     else
@@ -110,7 +110,7 @@ int FrameBuffer::getBufferIndex(const Channel& z)
     if (_aovs.size() > 1)
     {
         using namespace chStr;
-        std::string layer = getLayerName(z);
+        const std::string& layer = getLayerName(z);
 
         std::vector<std::string>::iterator it;
         for(it = _aovs.begin(); it != _aovs.end(); ++it)
