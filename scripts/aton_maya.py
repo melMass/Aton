@@ -1,6 +1,6 @@
 __author__ = "Vahan Sosoyan, Dan Bradham, Bjoern Siegert"
 __copyright__ = "2016 All rights reserved. See Copyright.txt for more details."
-__version__ = "v1.1.6"
+__version__ = "1.1.6"
 
 import sys
 from timeit import default_timer
@@ -9,6 +9,7 @@ import maya.mel as mel
 import maya.OpenMaya as OM
 import pymel.core as pm
 from maya import cmds, OpenMayaUI
+from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
 
 try:
     from arnold import *
@@ -17,8 +18,8 @@ except ImportError:
     cmds.warning("MtoA was not found.")
 
 # Check the Maya version for PySide
-mayaVersion = cmds.about(apiVersion=True)
-if mayaVersion >= 201700:
+MAYA_VERSION = cmds.about(apiVersion=True)
+if MAYA_VERSION >= 201700:
     from PySide2 import QtCore, QtWidgets
     from shiboken2 import wrapInstance
 else:
@@ -30,24 +31,42 @@ def maya_main_window():
     main_window_ptr = OpenMayaUI.MQtUtil.mainWindow()
     return wrapInstance(long(main_window_ptr), QtWidgets.QWidget)
 
-class Aton(QtWidgets.QDialog):
-
-    def __init__(self, parent = maya_main_window()):
-        super(Aton, self).__init__(parent)
-
-        self.windowName = "Aton"
-        if cmds.window(self.windowName, exists = True):
-            cmds.deleteUI(self.windowName, wnd = True)
-
+class Aton(MayaQWidgetDockableMixin, QtWidgets.QDialog):
+    def __init__(self, parent = None):
+        # Init Attributes
         self.timeChangedCB = None
         self.selectionChangedCB = None
+        self.defaultPort = self.getSceneOption(0)
+        self.defaultRefinement = self.getSceneOption(12)
         self.frame_sequence = AiFrameSequence()
         self.frame_sequence.started.connect(self.sequence_started)
         self.frame_sequence.stopped.connect(self.sequence_stopped)
         self.frame_sequence.stepped.connect(self.sequence_stepped)
-        self.defaultPort = self.getSceneOption(0)
-        self.defaultRefinement = self.getSceneOption(12)
+
+        # Delete already existing UI instances
+        self.deleteInstances()
+
+        # Init UI
+        super(self.__class__, self).__init__(parent)
+        self.setObjectName(self.__class__.__name__)
         self.setupUi()
+
+    def deleteInstances(self):
+        ''' Delete any instances of this class '''
+        if MAYA_VERSION >= 201700:
+            WorkspaceName = self.__class__.__name__ + 'WorkspaceControl'
+            if cmds.workspaceControlState(WorkspaceName, exists=True):
+                cmds.deleteUI(WorkspaceName)
+        else:
+            for obj in maya_main_window().children():
+                if type(obj) == maya.app.general.mayaMixin.MayaQDockWidget:
+                    if obj.widget().objectName() == self.__class__.__name__:
+                        maya_main_window().removeDockWidget(obj)
+                        obj.setParent(None)
+                        obj.deleteLater()
+
+    def dockCloseEventTriggered(self):
+        self.deleteInstances()
 
     def getActiveCamera(self):
         ''' Returns active camera shape name '''
@@ -140,13 +159,10 @@ class Aton(QtWidgets.QDialog):
             self.stepSpinBox.setValue(1)
             self.seqCheckBox.setChecked(False)
 
-        self.setObjectName(self.windowName)
-        self.setWindowTitle("Aton %s"%__version__)
+        self.setWindowTitle(self.__class__.__name__)
         self.setWindowFlags(QtCore.Qt.Tool)
         self.setAttribute(QtCore.Qt.WA_AlwaysShowToolTips)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
-        self.setMinimumSize(420, 440)
-        self.setMaximumSize(420, 440)
 
         mainLayout = QtWidgets.QVBoxLayout()
         mainLayout.setContentsMargins(5,5,5,5)
@@ -513,7 +529,6 @@ class Aton(QtWidgets.QDialog):
                     cmds.setAttr(attr, "%s %s %s %s"%(rMinX, rMinY, rMaxX, rMaxY), type="string")
                 else:
                     cmds.setAttr(attr, "", type="string")
-
 
     def getNukeCropNode(self, *args):
         ''' Get crop node data from Nuke '''
@@ -944,4 +959,4 @@ def sleep_until(conditions, wake_condition=None, timeout=None):
 
 if __name__ == "__main__":
     aton = Aton()
-    aton.show()
+    aton.show(dockable=True)
