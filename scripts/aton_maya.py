@@ -2,7 +2,7 @@ __author__ = "Vahan Sosoyan, Dan Bradham, Bjoern Siegert"
 __copyright__ = "2016 All rights reserved. See Copyright.txt for more details."
 __version__ = "1.1.6"
 
-import sys, os
+import sys
 from timeit import default_timer
 
 import maya.mel as mel
