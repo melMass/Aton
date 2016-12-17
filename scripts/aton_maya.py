@@ -2,7 +2,7 @@ __author__ = "Vahan Sosoyan, Dan Bradham, Bjoern Siegert"
 __copyright__ = "2016 All rights reserved. See Copyright.txt for more details."
 __version__ = "1.1.6"
 
-import sys
+import sys, os
 from timeit import default_timer
 
 import maya.mel as mel
@@ -17,9 +17,10 @@ try:
 except ImportError:
     cmds.warning("MtoA was not found.")
 
-# Check the Maya version for PySide
-MAYA_VERSION = cmds.about(apiVersion=True)
-if MAYA_VERSION >= 201700:
+# Check Maya version
+MAYA_2017 = True if cmds.about(api=True) >= 201700 else False
+
+if MAYA_2017:
     from PySide2 import QtCore, QtWidgets
     from shiboken2 import wrapInstance
 else:
@@ -43,30 +44,17 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         self.frame_sequence.stopped.connect(self.sequence_stopped)
         self.frame_sequence.stepped.connect(self.sequence_stepped)
 
+        if MAYA_2017:
+            self.workspaceName = self.__class__.__name__ + 'WorkspaceControl'
+
         # Delete already existing UI instances
         self.deleteInstances()
 
         # Init UI
         super(self.__class__, self).__init__(parent)
         self.setObjectName(self.__class__.__name__)
-        self.setupUi()
-
-    def deleteInstances(self):
-        ''' Delete any instances of this class '''
-        if MAYA_VERSION >= 201700:
-            WorkspaceName = self.__class__.__name__ + 'WorkspaceControl'
-            if cmds.workspaceControlState(WorkspaceName, exists=True):
-                cmds.deleteUI(WorkspaceName)
-        else:
-            for obj in maya_main_window().children():
-                if type(obj) == maya.app.general.mayaMixin.MayaQDockWidget:
-                    if obj.widget().objectName() == self.__class__.__name__:
-                        maya_main_window().removeDockWidget(obj)
-                        obj.setParent(None)
-                        obj.deleteLater()
-
-    def dockCloseEventTriggered(self):
-        self.deleteInstances()
+        self.setWindowTitle(self.__class__.__name__)
+        self.setupUI()
 
     def getActiveCamera(self):
         ''' Returns active camera shape name '''
@@ -107,9 +95,29 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QDialog):
                       12 : lambda: cmds.getAttr("defaultArnoldRenderOptions.progressive_rendering")}[attr]()
         return result
 
-    def setupUi(self):
+    def deleteInstances(self):
+        ''' Delete any instances of this class '''
+        if MAYA_2017:
+            for obj in maya_main_window().children():
+                if obj.__class__.__name__ == self.__class__.__name__:
+                    obj.setParent(None)
+                    obj.deleteLater()
+            if cmds.workspaceControlState(self.workspaceName, q=True, exists=True):
+                cmds.workspaceControl(self.workspaceName, e=True, close=True)
+                cmds.deleteUI(self.workspaceName)
+        else:
+            for obj in maya_main_window().children():
+                if type(obj) == maya.app.general.mayaMixin.MayaQDockWidget:
+                    if obj.widget().objectName() == self.__class__.__name__:
+                        obj.setParent(None)
+                        obj.deleteLater()
+
+    def dockCloseEventTriggered(self):
+        self.deleteInstances()
+
+    def setupUI(self):
         ''' Building the GUI '''
-        def resUpdateUi(value):
+        def resUpdateUI(value):
             self.resolutionSpinBox.setValue(value * 5)
 
         def resInfoUpdate(value):
@@ -117,10 +125,10 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             yres = self.getSceneOption(3) * value / 100
             resolutionInfoLabel.setText("%sx%s"%(xres, yres))
 
-        def camUpdateUi(value):
+        def camUpdateUI(value):
             self.cameraAaSpinBox.setValue(value)
 
-        def portUpdateUi(value):
+        def portUpdateUI(value):
             self.portSpinBox.setValue(value + self.defaultPort)
 
         def sequence_toggled(value):
@@ -132,7 +140,7 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             self.endSpinBox.setEnabled(isChecked)
             self.stepSpinBox.setEnabled(isChecked)
 
-        def resetUi(*args):
+        def resetUI(*args):
             self.portSpinBox.setValue(self.defaultPort)
             portSlider.setValue(0)
             self.extraHostLineEdit.setText("")
@@ -159,8 +167,6 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QDialog):
             self.stepSpinBox.setValue(1)
             self.seqCheckBox.setChecked(False)
 
-        self.setWindowTitle(self.__class__.__name__)
-        self.setWindowFlags(QtCore.Qt.Tool)
         self.setAttribute(QtCore.Qt.WA_AlwaysShowToolTips)
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 
@@ -169,7 +175,7 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         mainLayout.setSpacing(2)
 
         generalGroupBox = QtWidgets.QGroupBox("General")
-        generalGroupBox.setMaximumSize(420, 110)
+        generalGroupBox.setMaximumSize(9999, 150)
         generalLayout = QtWidgets.QVBoxLayout(generalGroupBox)
 
         # Port Layout
@@ -207,8 +213,6 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         cameraLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
         cameraLabel.setMaximumSize(75, 20)
         self.cameraComboBox = QtWidgets.QComboBox()
-        self.cameraComboBox.setMinimumSize(0, 20)
-        self.cameraComboBox.setMaximumSize(500, 20)
         self.cameraComboBoxDict = {}
         self.cameraComboBox.addItem("Current view")
         for i in cmds.listCameras():
@@ -218,7 +222,7 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         cameraLayout.addWidget(self.cameraComboBox)
 
         overridesGroupBox = QtWidgets.QGroupBox("Overrides")
-        overridesGroupBox.setMaximumSize(420, 200)
+        overridesGroupBox.setMaximumSize(9999, 350)
         overridesLayout = QtWidgets.QVBoxLayout(overridesGroupBox)
 
         # Resolution Layout
@@ -237,13 +241,15 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         resolutionSlider.setMaximum(40)
         xres, yres = self.getSceneOption(2), self.getSceneOption(3)
         resolutionInfoLabel = QtWidgets.QLabel("%sx%s"%(xres, yres))
+        resolutionInfoLabel.setMaximumSize(100, 20)
         resolutionInfoLabel.setEnabled(False)
         resolutionLayout.addWidget(resolutionLabel)
         resolutionLayout.addWidget(self.resolutionSpinBox)
         resolutionLayout.addWidget(resolutionSlider)
         resolutionLayout.addWidget(resolutionInfoLabel)
 
-        # Camera Layout
+
+        # Camera AA Layout
         cameraAaLayout = QtWidgets.QHBoxLayout()
         cameraAaLabel = QtWidgets.QLabel("Camera (AA):")
         cameraAaLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
@@ -288,18 +294,12 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         renderRegionLayout.addWidget(self.renderRegionTSpinBox)
         renderRegionLayout.addWidget(renderRegionGetNukeButton)
 
-        for i in [renderRegionLabel,
-                  renderRegionYLabel,
-                  renderRegionRLabel,
-                  renderRegionTLabel]:
-            i.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
-
         for i in [self.renderRegionXSpinBox,
                   self.renderRegionYSpinBox,
                   self.renderRegionRSpinBox,
                   self.renderRegionTSpinBox]:
             i.setRange(-99999,99999)
-            i.setMaximumSize(40,20)
+            i.setMaximumSize(50,99)
             i.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
 
         self.renderRegionRSpinBox.setValue(self.getSceneOption(2))
@@ -365,7 +365,7 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
         # Ignore Layout
         ignoresGroupBox = QtWidgets.QGroupBox("Ignore")
-        ignoresGroupBox.setMaximumSize(420, 50)
+        ignoresGroupBox.setMaximumSize(9999, 75)
         ignoresLayout = QtWidgets.QVBoxLayout(ignoresGroupBox)
         ignoreLayout = QtWidgets.QHBoxLayout()
         ignoreLabel = QtWidgets.QLabel("Ignore:")
@@ -388,7 +388,7 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
         # Sequence Layout
         sequenceGroupBox = QtWidgets.QGroupBox('Sequence')
-        sequenceGroupBox.setMaximumSize(420, 55)
+        sequenceGroupBox.setMaximumSize(9999, 75)
         sequenceLayout = QtWidgets.QHBoxLayout(sequenceGroupBox)
         self.seqCheckBox = QtWidgets.QCheckBox()
         self.seqCheckBox.setMaximumSize(15, 25)
@@ -429,7 +429,7 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         resetButton = QtWidgets.QPushButton("Reset")
         startButton.clicked.connect(self.render)
         stopButton.clicked.connect(self.stop)
-        resetButton.clicked.connect(resetUi)
+        resetButton.clicked.connect(resetUI)
         mainButtonslayout.addWidget(startButton)
         mainButtonslayout.addWidget(stopButton)
         mainButtonslayout.addWidget(resetButton)
@@ -454,8 +454,8 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         mainLayout.addLayout(mainButtonslayout)
 
         # UI Updates
-        self.connect(portSlider, QtCore.SIGNAL("valueChanged(int)"), portUpdateUi)
-        self.connect(resolutionSlider, QtCore.SIGNAL("valueChanged(int)"), resUpdateUi)
+        self.connect(portSlider, QtCore.SIGNAL("valueChanged(int)"), portUpdateUI)
+        self.connect(resolutionSlider, QtCore.SIGNAL("valueChanged(int)"), resUpdateUI)
         self.connect(self.resolutionSpinBox, QtCore.SIGNAL("valueChanged(int)"), resInfoUpdate)
 
         # IPR Updates
@@ -955,7 +955,6 @@ def sleep_until(conditions, wake_condition=None, timeout=None):
                 break
 
             qt_sleep(0.1)
-
 
 if __name__ == "__main__":
     aton = Aton()
