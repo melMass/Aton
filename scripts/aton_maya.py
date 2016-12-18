@@ -30,7 +30,7 @@ else:
 
 def maya_main_window():
     main_window_ptr = OpenMayaUI.MQtUtil.mainWindow()
-    return wrapInstance(long(main_window_ptr), QtWidgets.QWidget)
+    return wrapInstance(long(main_window_ptr), QtWidgets.QMainWindow)
 
 class Aton(MayaQWidgetDockableMixin, QtWidgets.QDialog):
     def __init__(self):
@@ -43,9 +43,6 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         self.frame_sequence.started.connect(self.sequence_started)
         self.frame_sequence.stopped.connect(self.sequence_stopped)
         self.frame_sequence.stepped.connect(self.sequence_stepped)
-
-        if MAYA_2017:
-            self.workspaceName = self.__class__.__name__ + 'WorkspaceControl'
 
         # Delete already existing UI instances
         self.deleteInstances()
@@ -100,16 +97,17 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         ''' Delete any instances of this class '''
         mayaWindow = maya_main_window()
         if MAYA_2017:
-            # for obj in mayaWindow.children():
-            #     if obj.objectName() == self.__class__.__name__:
-            #         obj.setParent(None)
-            #         obj.deleteLater()
-            if cmds.workspaceControlState(self.workspaceName, q=True, exists=True):
+            for obj in mayaWindow.children():
+                if obj.objectName() == self.__class__.__name__:
+                    obj.setParent(None)
+                    obj.deleteLater()
+            workspaceName = self.__class__.__name__ + 'WorkspaceControl'
+            if cmds.workspaceControlState(workspaceName, q=True, exists=True):
                 try:
-                    cmds.workspaceControl(self.workspaceName, e=True, close=True)
-                    cmds.deleteUI(self.workspaceName)
+                    cmds.workspaceControl(workspaceName, e=True, close=True)
+                    cmds.deleteUI(workspaceName)
                 except RuntimeError:
-                    cmds.workspaceControlState(self.workspaceName, remove=True)
+                    cmds.workspaceControlState(workspaceName, remove=True)
 
         else:
             for obj in mayaWindow.children():
