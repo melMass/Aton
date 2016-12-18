@@ -9,7 +9,7 @@ import maya.mel as mel
 import maya.OpenMaya as OM
 import pymel.core as pm
 from maya import cmds, OpenMayaUI
-from maya.app.general.mayaMixin import MayaQWidgetDockableMixin
+from maya.app.general.mayaMixin import MayaQWidgetDockableMixin, MayaQDockWidget
 
 try:
     from arnold import *
@@ -33,7 +33,7 @@ def maya_main_window():
     return wrapInstance(long(main_window_ptr), QtWidgets.QWidget)
 
 class Aton(MayaQWidgetDockableMixin, QtWidgets.QDialog):
-    def __init__(self, parent = None):
+    def __init__(self):
         # Init Attributes
         self.timeChangedCB = None
         self.selectionChangedCB = None
@@ -51,9 +51,10 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         self.deleteInstances()
 
         # Init UI
-        super(self.__class__, self).__init__(parent)
+        super(self.__class__, self).__init__(maya_main_window())
         self.setObjectName(self.__class__.__name__)
         self.setWindowTitle(self.__class__.__name__)
+        self.setWindowFlags(QtCore.Qt.Tool)
         self.setupUI()
 
     def getActiveCamera(self):
@@ -97,18 +98,24 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QDialog):
 
     def deleteInstances(self):
         ''' Delete any instances of this class '''
+        mayaWindow = maya_main_window()
         if MAYA_2017:
-            for obj in maya_main_window().children():
-                if obj.__class__.__name__ == self.__class__.__name__:
-                    obj.setParent(None)
-                    obj.deleteLater()
+            # for obj in mayaWindow.children():
+            #     if obj.objectName() == self.__class__.__name__:
+            #         obj.setParent(None)
+            #         obj.deleteLater()
             if cmds.workspaceControlState(self.workspaceName, q=True, exists=True):
-                cmds.workspaceControl(self.workspaceName, e=True, close=True)
-                cmds.deleteUI(self.workspaceName)
+                try:
+                    cmds.workspaceControl(self.workspaceName, e=True, close=True)
+                    cmds.deleteUI(self.workspaceName)
+                except RuntimeError:
+                    cmds.workspaceControlState(self.workspaceName, remove=True)
+
         else:
-            for obj in maya_main_window().children():
-                if type(obj) == maya.app.general.mayaMixin.MayaQDockWidget:
+            for obj in mayaWindow.children():
+                if type(obj) == MayaQDockWidget:
                     if obj.widget().objectName() == self.__class__.__name__:
+                        mayaWindow.removeDockWidget(obj)
                         obj.setParent(None)
                         obj.deleteLater()
 
@@ -273,6 +280,7 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         renderRegionLayout = QtWidgets.QHBoxLayout()
         renderRegionLabel = QtWidgets.QLabel("Region X:")
         renderRegionLabel.setMinimumSize(75, 20)
+        renderRegionLabel.setMaximumSize(75, 99)
         renderRegionLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
         self.renderRegionXSpinBox = QtWidgets.QSpinBox()
         renderRegionYLabel = QtWidgets.QLabel("Y:")
