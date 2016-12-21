@@ -32,7 +32,7 @@ def maya_main_window():
     main_window_ptr = OpenMayaUI.MQtUtil.mainWindow()
     return wrapInstance(long(main_window_ptr), QtWidgets.QMainWindow)
 
-class Aton(MayaQWidgetDockableMixin, QtWidgets.QDialog):
+class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
     def __init__(self):
         # Init Attributes
         self.timeChangedCB = None
@@ -44,14 +44,18 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         self.frame_sequence.stopped.connect(self.sequence_stopped)
         self.frame_sequence.stepped.connect(self.sequence_stepped)
 
+        # UI Names
+        self.objName = self.__class__.__name__.lower()
+        self.wsCtrlName = self.__class__.__name__.lower() + 'WorkspaceControl'
+
         # Delete already existing UI instances
         self.deleteInstances()
 
         # Init UI
         super(self.__class__, self).__init__(maya_main_window())
-        self.setObjectName(self.__class__.__name__)
+        self.setObjectName(self.objName)
         self.setWindowTitle(self.__class__.__name__)
-        self.setWindowFlags(QtCore.Qt.Tool)
+        self.setProperty("saveWindowPref", True)
         self.setupUI()
 
     def getActiveCamera(self):
@@ -97,28 +101,39 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         ''' Delete any instances of this class '''
         mayaWindow = maya_main_window()
         if MAYA_2017:
-            for obj in mayaWindow.children():
-                if obj.objectName() == self.__class__.__name__:
-                    obj.setParent(None)
-                    obj.deleteLater()
-            workspaceName = self.__class__.__name__ + 'WorkspaceControl'
-            if cmds.workspaceControlState(workspaceName, q=True, exists=True):
-                try:
-                    cmds.workspaceControl(workspaceName, e=True, close=True)
-                    cmds.deleteUI(workspaceName)
-                except RuntimeError:
-                    cmds.workspaceControlState(workspaceName, remove=True)
+            try:
+                cmds.workspaceControl(self.wsCtrlName, e=True, close=True)
+            except RuntimeError:
+                pass
+            try:
+                cmds.workspaceControlState(self.wsCtrlName, remove=True)
+            except RuntimeError:
+                pass
 
+            if cmds.window(self.wsCtrlName, q=True, ex=True):
+                cmds.deleteUI(self.wsCtrlName)
+
+            if cmds.window(self.objName, q=True, ex=True):
+                cmds.deleteUI(self.objName)
         else:
             for obj in mayaWindow.children():
                 if type(obj) == MayaQDockWidget:
-                    if obj.widget().objectName() == self.__class__.__name__:
+                    if obj.widget().objectName() == self.objName:
                         mayaWindow.removeDockWidget(obj)
                         obj.setParent(None)
                         obj.deleteLater()
 
     def dockCloseEventTriggered(self):
         self.deleteInstances()
+
+    def show(self, docked=True):
+        if docked:
+            super(self.__class__, self).show(dockable=True, area='right', floating=False)
+            if MAYA_2017:
+                cmds.workspaceControl(self.wsCtrlName, e=True, ttc=["AttributeEditor", -1])
+            self.raise_()
+        else:
+            super(self.__class__, self).show(dockable=True)
 
     def setupUI(self):
         ''' Building the GUI '''
@@ -252,7 +267,6 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         resolutionLayout.addWidget(self.resolutionSpinBox)
         resolutionLayout.addWidget(resolutionSlider)
         resolutionLayout.addWidget(resolutionInfoLabel)
-
 
         # Camera AA Layout
         cameraAaLayout = QtWidgets.QHBoxLayout()
@@ -855,6 +869,7 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QDialog):
         ''' Removes callback when closing the GUI '''
         self.stop()
         self.frame_sequence.stop()
+        self.deleteInstances()
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Escape:
@@ -964,4 +979,4 @@ def sleep_until(conditions, wake_condition=None, timeout=None):
 
 if __name__ == "__main__":
     aton = Aton()
-    aton.show(dockable=True)
+    aton.show()
