@@ -34,11 +34,12 @@ def maya_main_window():
 
 class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
     def __init__(self):
-        # Init Attributes
+        # Attributes
         self.timeChangedCB = None
         self.selectionChangedCB = None
         self.defaultPort = self.getSceneOption(0)
-        self.defaultRefinement = self.getSceneOption(12)
+
+        # Sequence mode
         self.frame_sequence = AiFrameSequence()
         self.frame_sequence.started.connect(self.sequence_started)
         self.frame_sequence.stopped.connect(self.sequence_stopped)
@@ -584,11 +585,14 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
     def render(self):
         ''' Starts the render '''
         try: # If MtoA was not found
-            defaultTranslator = cmds.getAttr("defaultArnoldDisplayDriver.aiTranslator")
+            defaultMergeAOVs = cmds.getAttr("defaultArnoldDriver.mergeAOVs")
+            defaultAiTranslator = cmds.getAttr("defaultArnoldDisplayDriver.aiTranslator")
         except ValueError:
             cmds.warning("Current renderer is not set to Arnold.")
             return
 
+        # Setting necessary options
+        cmds.setAttr("defaultArnoldDriver.mergeAOVs",  True)
         cmds.setAttr("defaultArnoldDisplayDriver.aiTranslator", "aton", type="string")
 
         # Updating extraHost and port from UI
@@ -627,6 +631,7 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
 
         # Set Progressive refinement to off
         if self.sequence_enabled:
+            self.defaultRefinement = self.getSceneOption(12)
             cmds.setAttr("defaultArnoldRenderOptions.progressive_rendering", False)
 
         try: # Start IPR
@@ -644,7 +649,8 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
 
         # Setting back to default
         for i in hCams: cmds.hide(i)
-        cmds.setAttr("defaultArnoldDisplayDriver.aiTranslator", defaultTranslator, type="string")
+        cmds.setAttr("defaultArnoldDriver.mergeAOVs",  defaultMergeAOVs)
+        cmds.setAttr("defaultArnoldDisplayDriver.aiTranslator", defaultAiTranslator, type="string")
         cmds.setAttr("defaultArnoldDisplayDriver.port", self.defaultPort)
 
     def getFrames(self):
