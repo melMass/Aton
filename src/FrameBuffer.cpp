@@ -64,7 +64,7 @@ FrameBuffer::FrameBuffer(const double& currentFrame,
                                         _pram(0),
                                         _ready(false) {}
 // Add new buffer
-void FrameBuffer::addBuffer(const char* aov,
+void FrameBuffer::addBuffer(const char *aov,
                             const int& spp)
 {
     RenderBuffer buffer(_width, _height, spp);
@@ -132,7 +132,7 @@ int FrameBuffer::getBufferIndex(const Channel& z)
 }
 
 // Get the current buffer index
-int FrameBuffer::getBufferIndex(const char* aovName)
+int FrameBuffer::getBufferIndex(const char *aovName)
 {
     int b_index = 0;
     if (_aovs.size() > 1)
@@ -151,9 +151,9 @@ int FrameBuffer::getBufferIndex(const char* aovName)
 }
 
 // Get N buffer/aov name name
-const char* FrameBuffer::getBufferName(const int& index)
+const char *FrameBuffer::getBufferName(const int& index)
 {
-    const char* aovName = "";
+    const char *aovName = "";
 
     if(!_aovs.empty())
     {
@@ -175,7 +175,7 @@ const char* FrameBuffer::getBufferName(const int& index)
 }
 
 // Get last buffer/aov name
-bool FrameBuffer::isFirstBufferName(const char* aovName)
+bool FrameBuffer::isFirstBufferName(const char *aovName)
 {
     return strcmp(_aovs.front().c_str(), aovName) == 0;;
 }
@@ -233,7 +233,7 @@ void FrameBuffer::clearAll()
 }
 
 // Check if the given buffer/aov name name is exist
-bool FrameBuffer::isBufferExist(const char* aovName)
+bool FrameBuffer::isBufferExist(const char *aovName)
 {
     return std::find(_aovs.begin(), _aovs.end(), aovName) != _aovs.end();
 }
