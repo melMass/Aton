@@ -265,8 +265,10 @@ void FrameBuffer::setTime(const int& time,
 }
 
 // Set Arnold core version
-void FrameBuffer::setArnoldVersion(const int& version)
+void FrameBuffer::setAiVersion(const int& version)
 {
+    _versionInt = version;
+    
     // Construct a string from the version number passed
     const int archV = (version % 10000000) / 1000000;
     const int majorV = (version % 1000000) / 10000;
@@ -275,7 +277,7 @@ void FrameBuffer::setArnoldVersion(const int& version)
     
     std::stringstream stream;
     stream << archV << "." << majorV << "." << minorV << "." << fixV;
-    _version = stream.str();
+    _versionStr = stream.str();
 }
 
 void FrameBuffer::setCamera(const float& fov, const Matrix4& matrix)

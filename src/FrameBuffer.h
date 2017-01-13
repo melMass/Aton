@@ -135,10 +135,11 @@ namespace aton
             const int& getTime() { return _time; }
         
             // Set Arnold core version
-            void setArnoldVersion(const int& version);
+            void setAiVersion(const int& version);
         
             // Get Arnold core version
-            const char* getArnoldVersion() { return _version.c_str(); }
+            const int& getAiVersionInt() { return _versionInt; }
+            const char* getAiVersionStr() { return _versionStr.c_str(); }
         
             // Set the frame number of this framebuffer
             void setFrame(const double& frame) { _frame = frame; }
@@ -171,7 +172,8 @@ namespace aton
             bool _ready;
             float _fov;
             Matrix4 _matrix;
-            std::string _version;
+            int _versionInt;
+            std::string _versionStr;
             std::vector<RenderBuffer> _buffers;
             std::vector<std::string> _aovs;
     };

@@ -30,7 +30,7 @@ static const char* const CLASS = "Aton";
 
 // Help
 static const char* const HELP =
-    "Aton v1.1.6 \n"
+    "Aton v1.2.0 \n"
     "Listens for renders coming from the Aton display driver. "
     "For more info go to http://sosoyan.github.io/Aton/";
 
@@ -238,7 +238,7 @@ class Aton: public Iop
             }
         }
 
-        void append(Hash& hash)
+        void append(Hash &hash)
         {
             hash.append(m_node->m_hash_count);
             hash.append(uiContext().frame());
@@ -257,7 +257,7 @@ class Aton: public Iop
             if (!m_node->m_framebuffers.empty())
             {
                 const int f_index = getFrameIndex(uiContext().frame(), m_node->m_frames);
-                FrameBuffer& fB = m_node->m_framebuffers[f_index];
+                FrameBuffer &fB = m_node->m_framebuffers[f_index];
                 
                 if (!fB.empty())
                 {
@@ -267,7 +267,7 @@ class Aton: public Iop
                               fB.getPRAM(),
                               fB.getTime(),
                               fB.getFrame(),
-                              fB.getArnoldVersion());
+                              fB.getAiVersionStr());
                     
                     // Set the format
                     const int width = fB.getWidth();
@@ -301,7 +301,7 @@ class Aton: public Iop
                     }
                     
                     // Set the channels
-                    ChannelSet& channels = m_node->m_channels;
+                    ChannelSet &channels = m_node->m_channels;
                     
                     if (m_enable_aovs && fB.isReady())
                     {
@@ -358,7 +358,7 @@ class Aton: public Iop
         void engine(int y, int x, int r, ChannelMask channels, Row& out)
         {
             const int f = getFrameIndex(uiContext().frame(), m_node->m_frames);
-            std::vector<FrameBuffer>& fBs = m_node->m_framebuffers;
+            std::vector<FrameBuffer> &fBs = m_node->m_framebuffers;
             
             foreach(z, channels)
             {
@@ -499,7 +499,7 @@ class Aton: public Iop
             return 0;
         }
     
-        void resetChannels(ChannelSet& channels)
+        void resetChannels(ChannelSet &channels)
         {
             if (channels.size() > 4)
             {
@@ -517,7 +517,7 @@ class Aton: public Iop
             // to status stamp text be consistant with Linux version
             std::string validVer = "9.0v7";
             Version recVer(validVer);
-            const Version& curVer = version();
+            const Version &curVer = version();
             return curVer >= recVer;
         }
     
@@ -994,7 +994,7 @@ static void atonListen(unsigned index, unsigned nthreads, void *data)
         Data d;
 
         // For progress percentage
-        long long progress, _regionArea = 0;
+        long long progress, regionArea = 0;
         
         int f_index = 0;
         
@@ -1025,26 +1025,32 @@ static void atonListen(unsigned index, unsigned nthreads, void *data)
                     // Copy data from d
                     const int _xres = d.xres();
                     const int _yres = d.yres();
+                    const int _version = d.version();
                     const float _fov = d.camFov();
+                    const long long _area = d.rArea();
                     const Matrix4 _matrix = Matrix4(&d.camMatrix()[0]);
                     const double _frame = static_cast<double>(d.currentFrame());
                     
-                    if (current_frame != _frame)
-                        current_frame = _frame;
+                    // Get image area to calculate the progress
+                    regionArea = _area;
                     
+                    // Get delta time per IPR iteration
+                    delta_time = _active_time;
+                    
+                    std::vector<double> &m_frs = node->m_frames;
+                    std::vector<FrameBuffer> &m_fbs = node->m_framebuffers;
+
                     // Create FrameBuffer
                     if (node->m_multiframes)
                     {
-                        if (std::find(node->m_frames.begin(),
-                                      node->m_frames.end(),
-                                      _frame) == node->m_frames.end())
+                        if (std::find(m_frs.begin(), m_frs.end(), _frame) == m_frs.end())
                         {
                             FrameBuffer fB(_frame, _xres, _yres);
-                            if (!node->m_frames.empty())
-                                fB = node->m_framebuffers.back();
+                            if (!m_frs.empty())
+                                fB = m_fbs.back();
                             node->m_mutex.lock();
-                            node->m_frames.push_back(_frame);
-                            node->m_framebuffers.push_back(fB);
+                            m_frs.push_back(_frame);
+                            m_fbs.push_back(fB);
                             node->m_mutex.unlock();
                         }
                     }
@@ -1053,21 +1059,20 @@ static void atonListen(unsigned index, unsigned nthreads, void *data)
                         FrameBuffer fB(_frame, _xres, _yres);
                         if (!node->m_frames.empty())
                         {
-                            f_index = node->getFrameIndex(node->m_current_frame,
-                                                          node->m_frames);
-                            fB = node->m_framebuffers[f_index];
+                            f_index = node->getFrameIndex(node->m_current_frame, m_frs);
+                            fB = m_fbs[f_index];
                         }
                         node->m_mutex.lock();
-                        node->m_frames = std::vector<double>();
-                        node->m_framebuffers = std::vector<FrameBuffer>();
-                        node->m_frames.push_back(_frame);
-                        node->m_framebuffers.push_back(fB);
+                        m_frs = std::vector<double>();
+                        m_fbs = std::vector<FrameBuffer>();
+                        m_frs.push_back(_frame);
+                        m_fbs.push_back(fB);
                         node->m_mutex.unlock();
                     }
                     
                     // Get current FrameBuffer
-                    f_index = node->getFrameIndex(_frame, node->m_frames);
-                    FrameBuffer& fB = node->m_framebuffers[f_index];
+                    f_index = node->getFrameIndex(_frame, m_frs);
+                    FrameBuffer& fB = m_fbs[f_index];
                     
                     // Reset Frame and Buffers if changed
                     if (!fB.empty() && !active_aovs.empty())
@@ -1087,14 +1092,8 @@ static void atonListen(unsigned index, unsigned nthreads, void *data)
                             node->m_mutex.unlock();
                         }
                     }
-
-                    // Get image area to calculate the progress
-                    _regionArea = d.rArea();
                     
-                    // Get delta time per IPR iteration
-                    delta_time = _active_time;
-                                        
-                    // Set Camera
+                    // Setting Camera
                     if (fB.isCameraChanged(_fov, _matrix))
                     {
                         node->m_mutex.lock();
@@ -1103,14 +1102,16 @@ static void atonListen(unsigned index, unsigned nthreads, void *data)
                                              fB.getCameraMatrix());
                         node->m_mutex.unlock();
                     }
-                    
+
                     // Set Arnold Core version
-                    fB.setArnoldVersion(d.version());
+                    if (fB.getAiVersionInt() != _version)
+                        fB.setAiVersion(_version);
                     
                     // Set time to current frame
-                    if (node->m_multiframes &&
-                        node->uiContext().frame() != current_frame)
-                        node->setCurrentFrame(current_frame);
+                    if (node->m_multiframes && node->uiContext().frame() != _frame)
+                        node->setCurrentFrame(_frame);
+                    if (current_frame != _frame)
+                        current_frame = _frame;
                     
                     // Reset active AOVs
                     if(!active_aovs.empty())
@@ -1194,8 +1195,8 @@ static void atonListen(unsigned index, unsigned nthreads, void *data)
                         if(!node->m_capturing && fB.isFirstBufferName(_aov_name))
                         {
                             // Calculate the progress percentage
-                            _regionArea -= (_width*_height);
-                            progress = 100 - (_regionArea * 100) / (w * h);
+                            regionArea -= (_width*_height);
+                            progress = 100 - (regionArea * 100) / (w * h);
 
                             // Set status parameters
                             node->m_mutex.lock();
