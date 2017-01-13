@@ -1,6 +1,6 @@
 __author__ = "Vahan Sosoyan, Dan Bradham, Bjoern Siegert"
 __copyright__ = "2016 All rights reserved. See Copyright.txt for more details."
-__version__ = "1.1.6"
+__version__ = "1.2.0"
 
 import sys
 from timeit import default_timer
@@ -83,19 +83,22 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         ''' Returns requested scene options attribute value '''
         result = 0
         if cmds.getAttr("defaultRenderGlobals.ren") == "arnold":
-            result = {0 : lambda: self.getPort(),
-                      1 : lambda: self.getActiveCamera(),
-                      2 : lambda: cmds.getAttr("defaultResolution.width"),
-                      3 : lambda: cmds.getAttr("defaultResolution.height"),
-                      4 : lambda: cmds.getAttr("defaultArnoldRenderOptions.AASamples"),
-                      5 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreMotionBlur"),
-                      6 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreSubdivision"),
-                      7 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreDisplacement"),
-                      8 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreBump"),
-                      9 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreSss"),
-                      10 : lambda: cmds.playbackOptions(q=True, minTime=True),
-                      11 : lambda: cmds.playbackOptions(q=True, maxTime=True),
-                      12 : lambda: cmds.getAttr("defaultArnoldRenderOptions.progressive_rendering")}[attr]()
+            try:
+                result = {0 : lambda: self.getPort(),
+                          1 : lambda: self.getActiveCamera(),
+                          2 : lambda: cmds.getAttr("defaultResolution.width"),
+                          3 : lambda: cmds.getAttr("defaultResolution.height"),
+                          4 : lambda: cmds.getAttr("defaultArnoldRenderOptions.AASamples"),
+                          5 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreMotionBlur"),
+                          6 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreSubdivision"),
+                          7 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreDisplacement"),
+                          8 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreBump"),
+                          9 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreSss"),
+                          10 : lambda: cmds.playbackOptions(q=True, minTime=True),
+                          11 : lambda: cmds.playbackOptions(q=True, maxTime=True),
+                          12 : lambda: cmds.getAttr("defaultArnoldRenderOptions.progressive_rendering")}[attr]()
+            except ValueError:
+                return result
         return result
 
     def deleteInstances(self):
