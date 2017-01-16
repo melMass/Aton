@@ -1109,7 +1109,11 @@ static void atonListen(unsigned index, unsigned nthreads, void *data)
                     
                     // Set time to current frame
                     if (node->m_multiframes && node->uiContext().frame() != _frame)
+                    {
+                        node->m_mutex.lock();
                         node->setCurrentFrame(_frame);
+                        node->m_mutex.unlock();
+                    }
                     if (current_frame != _frame)
                         current_frame = _frame;
                     
