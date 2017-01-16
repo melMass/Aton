@@ -79,7 +79,7 @@ namespace aton
             int getBufferIndex(const Channel& z);
         
             // Get the current buffer index
-            int getBufferIndex(const char * aovName);
+            int getBufferIndex(const char* aovName);
         
             // Get N buffer/aov name name
             const char* getBufferName(const int& index);

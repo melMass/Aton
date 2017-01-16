@@ -15,14 +15,14 @@ AI_DRIVER_NODE_EXPORT_METHODS(AtonDriverMtd);
 
 struct ShaderData
 {
-    aton::Client *client, *extra_client;
+    aton::Client* client, *extra_client;
     bool host, extraHost;
     int xres, yres, min_x, min_y, max_x, max_y;
 };
 
-const char *getHost()
+const char* getHost()
 {
-    const char *aton_host = getenv("ATON_HOST");
+    const char* aton_host = getenv("ATON_HOST");
     
     if (aton_host == NULL)
         aton_host = "127.0.0.1";
@@ -36,7 +36,7 @@ const char *getHost()
 
 int getPort()
 {
-    const char *def_port = getenv("ATON_PORT");
+    const char* def_port = getenv("ATON_PORT");
     int aton_port;
     
     if (def_port == NULL)
@@ -49,9 +49,9 @@ int getPort()
 
 node_parameters
 {
+    AiParameterINT("port", getPort());
     AiParameterSTR("host", getHost());
     AiParameterSTR("extra_host", "");
-    AiParameterINT("port", getPort());
     AiMetaDataSetStr(mds, NULL, "maya.translator", "aton");
     AiMetaDataSetStr(mds, NULL, "maya.attr_prefix", "");
     AiMetaDataSetBool(mds, NULL, "display_driver", true);
@@ -83,17 +83,17 @@ driver_open
     ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
     
     // Get Frame number
-    AtNode *options = AiUniverseGetOptions();
+    AtNode* options = AiUniverseGetOptions();
     const float currentFrame = AiNodeGetFlt(options, "frame");
     
     // Get Host and Port
-    const char *host = AiNodeGetStr(node, "host");
-    const char *extra_host = AiNodeGetStr(node, "extra_host");
+    const char* host = AiNodeGetStr(node, "host");
+    const char* extra_host = AiNodeGetStr(node, "extra_host");
     
     const int port = AiNodeGetInt(node, "port");
     
     // Get Camera
-    AtNode *camera = (AtNode*)AiNodeGetPtr(options, "camera");
+    AtNode* camera = (AtNode*)AiNodeGetPtr(options, "camera");
     AtMatrix cMat;
     AiNodeGetMatrix(camera, "matrix", cMat);
     
@@ -163,7 +163,7 @@ driver_open
         data->host = false;
         if (!data->extraHost)
         {
-            const char *err = e.what();
+            const char* err = e.what();
             AiMsgError("Aton display driver %s", err);
         }
     }
@@ -177,7 +177,7 @@ driver_open
         }
         catch(const std::exception &e)
         {
-            const char *err = e.what();
+            const char* err = e.what();
             AiMsgError("Aton display driver %s", err);
         }
     }
@@ -194,12 +194,12 @@ driver_process_bucket { }
 
 driver_write_bucket
 {
-    ShaderData *data = (ShaderData*)AiDriverGetLocalData(node);
+    ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
 
     int pixel_type;
     int spp = 0;
-    const void *bucket_data;
-    const char *aov_name;
+    const void* bucket_data;
+    const char* aov_name;
     
     if (data->min_x < 0)
         bucket_xo = bucket_xo - data->min_x;
@@ -208,7 +208,7 @@ driver_write_bucket
     
     while (AiOutputIteratorGetNext(iterator, &aov_name, &pixel_type, &bucket_data))
     {
-        const float *ptr = reinterpret_cast<const float*>(bucket_data);
+        const float* ptr = reinterpret_cast<const float*>(bucket_data);
         const long long ram = AiMsgUtilGetUsedMemory();
         const unsigned int time = AiMsgUtilGetElapsedTime();
 
@@ -249,7 +249,7 @@ driver_close
         if (data->extraHost)
             data->extra_client->closeImage();
     }
-    catch (const std::exception &e)
+    catch (const std::exception& e)
     {
         AiMsgError("Error occured when trying to close connection");
     }

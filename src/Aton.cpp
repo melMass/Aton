@@ -35,16 +35,16 @@ static const char* const HELP =
     "For more info go to http://sosoyan.github.io/Aton/";
 
 // Our time change callback method
-static void timeChange(unsigned index, unsigned nthreads, void *data);
+static void timeChange(unsigned index, unsigned nthreads, void* data);
 
 // Our listener method
-static void atonListen(unsigned index, unsigned nthreads, void *data);
+static void atonListen(unsigned index, unsigned nthreads, void* data);
 
 // Nuke node
 class Aton: public Iop
 {
     public:
-        Aton                     *m_node;             // First node pointer
+        Aton*                     m_node;             // First node pointer
         Server                    m_server;           // Aton::Server
         Lock                      m_mutex;            // Mutex for locking the pixel buffer
         Format                    m_fmt;              // The nuke display format
@@ -66,8 +66,8 @@ class Aton: public Iop
         double                    m_current_frame;    // Used to hold current frame
         double                    m_stamp_scale;      // Frame stamp size
         unsigned int              m_hash_count;       // Refresh hash counter
-        const char               *m_path;             // Default path for Write node
-        const char               *m_comment;          // Comment for the frame stamp
+        const char*               m_path;             // Default path for Write node
+        const char*               m_comment;          // Comment for the frame stamp
         std::string               m_node_name;        // Node name
         std::string               m_status;           // Status bar text
         std::string               m_connectionError;  // Connection error report
@@ -75,7 +75,7 @@ class Aton: public Iop
         std::vector<FrameBuffer>  m_framebuffers;     // Framebuffers holder
         std::vector<std::string>  m_garbageList;      // List of captured files to be deleted
 
-        Aton(Node *node): Iop(node),
+        Aton(Node* node): Iop(node),
                           m_node(firstNode()),
                           m_fmt(Format(0, 0, 1.0)),
                           m_channels(Mask_RGBA),
@@ -105,7 +105,7 @@ class Aton: public Iop
 
         ~Aton() { disconnect(); }
         
-        Aton *firstNode() { return dynamic_cast<Aton*>(firstOp()); }
+        Aton* firstNode() { return dynamic_cast<Aton*>(firstOp()); }
 
         // It seems additional instances of a node get copied/constructed upon
         // very frequent calls to asapUpdate() and this causes us a few
@@ -154,7 +154,7 @@ class Aton: public Iop
             unsigned int i;
             for (i = 0; i < Format::size(); ++i)
             {
-                const char *f_name = Format::index(i)->name();
+                const char* f_name = Format::index(i)->name();
                 if (f_name != NULL && m_node_name == f_name)
                     m_formatExists = true;
             }
@@ -238,7 +238,7 @@ class Aton: public Iop
             }
         }
 
-        void append(Hash &hash)
+        void append(Hash& hash)
         {
             hash.append(m_node->m_hash_count);
             hash.append(uiContext().frame());
@@ -257,7 +257,7 @@ class Aton: public Iop
             if (!m_node->m_framebuffers.empty())
             {
                 const int f_index = getFrameIndex(uiContext().frame(), m_node->m_frames);
-                FrameBuffer &fB = m_node->m_framebuffers[f_index];
+                FrameBuffer& fB = m_node->m_framebuffers[f_index];
                 
                 if (!fB.empty())
                 {
@@ -276,14 +276,14 @@ class Aton: public Iop
                     if (m_node->m_fmt.width() != width ||
                         m_node->m_fmt.height() != height)
                     {
-                        Format *m_fmt_ptr = &m_node->m_fmt;
+                        Format* m_fmt_ptr = &m_node->m_fmt;
                         if (m_node->m_formatExists)
                         {
                             bool fmtFound = false;
                             unsigned int i;
                             for (i=0; i < Format::size(); ++i)
                             {
-                                const char *f_name = Format::index(i)->name();
+                                const char* f_name = Format::index(i)->name();
                                 if (f_name != NULL && m_node->m_node_name == f_name)
                                 {
                                     m_fmt_ptr = Format::index(i);
@@ -301,7 +301,7 @@ class Aton: public Iop
                     }
                     
                     // Set the channels
-                    ChannelSet &channels = m_node->m_channels;
+                    ChannelSet& channels = m_node->m_channels;
                     
                     if (m_enable_aovs && fB.isReady())
                     {
@@ -358,15 +358,15 @@ class Aton: public Iop
         void engine(int y, int x, int r, ChannelMask channels, Row& out)
         {
             const int f = getFrameIndex(uiContext().frame(), m_node->m_frames);
-            std::vector<FrameBuffer> &fBs = m_node->m_framebuffers;
+            std::vector<FrameBuffer>& fBs = m_node->m_framebuffers;
             
             foreach(z, channels)
             {
                 int b = 0;
                 int xx = x;
                 const int c = colourIndex(z);
-                float *cOut = out.writable(z) + x;
-                const float *END = cOut + (r - x);
+                float* cOut = out.writable(z) + x;
+                const float* END = cOut + (r - x);
                 
                 m_mutex.lock();
                 if (m_enable_aovs && !fBs.empty() && fBs[f].isReady())
@@ -405,17 +405,17 @@ class Aton: public Iop
             Newline(f);
             Bool_knob(f, &m_multiframes, "multi_frame_knob", "Enable Multiple Frames");
             Newline(f);
-            Knob *live_cam_knob = Bool_knob(f, &m_live_camera, "live_camera_knob", "Enable Live Camera");
+            Knob* live_cam_knob = Bool_knob(f, &m_live_camera, "live_camera_knob", "Enable Live Camera");
 
             Divider(f, "Capture");
-            Knob *limit_knob = Int_knob(f, &m_slimit, "limit_knob", "Limit");
-            Knob *all_frames_knob = Bool_knob(f, &m_all_frames, "all_frames_knob", "Capture All Frames");
-            Knob *path_knob = File_knob(f, &m_path, "path_knob", "Path");
+            Knob* limit_knob = Int_knob(f, &m_slimit, "limit_knob", "Limit");
+            Knob* all_frames_knob = Bool_knob(f, &m_all_frames, "all_frames_knob", "Capture All Frames");
+            Knob* path_knob = File_knob(f, &m_path, "path_knob", "Path");
 
             Newline(f);
-            Knob *stamp_knob = Bool_knob(f, &m_stamp, "stamp_knob", "Frame Stamp");
-            Knob *stamp_scale_knob = Float_knob(f, &m_stamp_scale, "stamp_scale_knob", "Scale");
-            Knob *comment_knob = String_knob(f, &m_comment, "comment_knob", "Comment");
+            Knob* stamp_knob = Bool_knob(f, &m_stamp, "stamp_knob", "Frame Stamp");
+            Knob* stamp_scale_knob = Float_knob(f, &m_stamp_scale, "stamp_scale_knob", "Scale");
+            Knob* comment_knob = String_knob(f, &m_comment, "comment_knob", "Comment");
             Newline(f);
             Button(f, "capture_knob", "Capture");
             Button(f, "import_latest_knob", "Import latest");
@@ -429,7 +429,7 @@ class Aton: public Iop
 
             // Status Bar knobs
             BeginToolbar(f, "status_bar");
-            Knob *statusKnob = String_knob(f, &m_status, "status_knob", "");
+            Knob* statusKnob = String_knob(f, &m_status, "status_knob", "");
             EndToolbar(f);
 
             // Set Flags
@@ -445,7 +445,7 @@ class Aton: public Iop
             statusKnob->set_flag(Knob::OUTPUT_ONLY, true);
         }
 
-        int knob_changed(Knob *_knob)
+        int knob_changed(Knob* _knob)
         {
             if (_knob->is("port_number"))
             {
@@ -499,7 +499,7 @@ class Aton: public Iop
             return 0;
         }
     
-        void resetChannels(ChannelSet &channels)
+        void resetChannels(ChannelSet& channels)
         {
             if (channels.size() > 4)
             {
@@ -517,7 +517,7 @@ class Aton: public Iop
             // to status stamp text be consistant with Linux version
             std::string validVer = "9.0v7";
             Version recVer(validVer);
-            const Version &curVer = version();
+            const Version& curVer = version();
             return curVer >= recVer;
         }
     
@@ -577,7 +577,7 @@ class Aton: public Iop
     
         std::string getPath()
         {
-            char *aton_path = getenv("ATON_CAPTURE_PATH");
+            char* aton_path = getenv("ATON_CAPTURE_PATH");
             
             // Get OS specific tmp directory path
             using namespace boost::filesystem;
@@ -593,7 +593,7 @@ class Aton: public Iop
     
         int getPort()
         {
-            const char *def_port = getenv("ATON_PORT");
+            const char* def_port = getenv("ATON_PORT");
             int aton_port;
             
             if (def_port == NULL)
@@ -639,7 +639,7 @@ class Aton: public Iop
                 const boost::regex filter(exp);
 
                 // Iterating through directory to find matching files
-                BOOST_FOREACH(path const &p, std::make_pair(it, end))
+                BOOST_FOREACH(path const& p, std::make_pair(it, end))
                 {
                     if(is_regular_file(p))
                     {
@@ -907,7 +907,7 @@ class Aton: public Iop
                        const long long& p_ram = 0,
                        const int& time = 0,
                        const double& frame = 0,
-                       const char *version = "")
+                       const char* version = "")
         {
             const int hour = time / 3600000;
             const int minute = (time % 3600000) / 60000;
@@ -944,17 +944,17 @@ class Aton: public Iop
         }
     
         bool firstEngineRendersWholeRequest() const { return true; }
-        const char *Class() const { return CLASS; }
-        const char *displayName() const { return CLASS; }
-        const char *node_help() const { return HELP; }
+        const char* Class() const { return CLASS; }
+        const char* displayName() const { return CLASS; }
+        const char* node_help() const { return HELP; }
         static const Iop::Description desc;
 };
 
 // Update on frame change thread method
-static void timeChange(unsigned index, unsigned nthreads, void *data)
+static void timeChange(unsigned index, unsigned nthreads, void* data)
 {
     using namespace boost;
-    Aton *node = reinterpret_cast<Aton*>(data);
+    Aton* node = reinterpret_cast<Aton*>(data);
     double uiFrame, prevFrame = 0;
     const int ms = 20;
 
@@ -978,12 +978,12 @@ static void timeChange(unsigned index, unsigned nthreads, void *data)
 }
 
 // Listening thread method
-static void atonListen(unsigned index, unsigned nthreads, void *data)
+static void atonListen(unsigned index, unsigned nthreads, void* data)
 {
     bool killThread = false;
     std::vector<std::string> active_aovs;
 
-    Aton *node = reinterpret_cast<Aton*> (data);
+    Aton* node = reinterpret_cast<Aton*> (data);
 
     while (!killThread)
     {
@@ -1037,8 +1037,8 @@ static void atonListen(unsigned index, unsigned nthreads, void *data)
                     // Get delta time per IPR iteration
                     delta_time = _active_time;
                     
-                    std::vector<double> &m_frs = node->m_frames;
-                    std::vector<FrameBuffer> &m_fbs = node->m_framebuffers;
+                    std::vector<double>& m_frs = node->m_frames;
+                    std::vector<FrameBuffer>& m_fbs = node->m_framebuffers;
 
                     // Create FrameBuffer
                     if (node->m_multiframes)
@@ -1126,7 +1126,7 @@ static void atonListen(unsigned index, unsigned nthreads, void *data)
                 {
                     // Get frame buffer
                     FrameBuffer& fB = node->m_framebuffers[f_index];
-                    const char *_aov_name = d.aovName();
+                    const char* _aov_name = d.aovName();
                     const int _xres = d.xres();
                     const int _yres = d.yres();
 
@@ -1233,5 +1233,5 @@ static void atonListen(unsigned index, unsigned nthreads, void *data)
 }
 //=====
 // nuke builder stuff
-static Iop *constructor(Node* node){ return new Aton(node); }
+static Iop* constructor(Node* node){ return new Aton(node); }
 const Iop::Description Aton::desc(CLASS, 0, constructor);
