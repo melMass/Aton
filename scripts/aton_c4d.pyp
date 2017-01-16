@@ -136,7 +136,7 @@ class Aton(gui.GeDialog):
         def AddSliderGroup(id=GenLabelID(), label="", value=0, min=0, max=0, offset=0):
             self.AddStaticText(GenLabelID(), 0, self.LabelWidth, 0, label)
             self.AddEditSlider(id, c4d.BFH_SCALEFIT, 50, self.LabelHight)
-            self.SetLong(id, value, min+offset, max+offset)
+            self.SetInt32(id, value, min+offset, max+offset)
 
         def AddTextGroup(id, label):
             self.AddStaticText(GenLabelID(), 0, self.LabelWidth, 0, label)
@@ -239,9 +239,9 @@ class Aton(gui.GeDialog):
         self.Enable(self.SequenceStartLabelID, False)
         self.Enable(self.SequenceEndLabelID, False)
         self.Enable(self.SequenceStepLabelID, False)
-        self.SetLong(self.SequenceStartID, self.getSceneOption(4))
-        self.SetLong(self.SequenceEndID, self.getSceneOption(5))
-        self.SetLong(self.SequenceStepID, self.getSceneOption(6))
+        self.SetInt32(self.SequenceStartID, self.getSceneOption(4))
+        self.SetInt32(self.SequenceEndID, self.getSceneOption(5))
+        self.SetInt32(self.SequenceStepID, self.getSceneOption(6))
         EndGroup()
 
         # Main Buttuns
@@ -255,17 +255,17 @@ class Aton(gui.GeDialog):
 
     def resetLayout(self):
         '''Resets Layout to default state'''
-        self.SetLong(self.PortID, self.defaultPort, self.defaultPort, self.defaultPort+15)
+        self.SetInt32(self.PortID, self.defaultPort, self.defaultPort, self.defaultPort+15)
         self.SetString(self.ExtraHostID, "")
         self.SetInt32(self.CameraID, 0)
-        self.SetLong(self.ResolutionID, 100, 1, 200)
+        self.SetInt32(self.ResolutionID, 100, 1, 200)
         self.resInfoUpdate(100)
-        self.SetLong(self.CameraAAID, 3, -3, 16)
+        self.SetInt32(self.CameraAAID, 3, -3, 16)
         self.SetInt32(self.RenderRegionXID, 0)
         self.SetInt32(self.RenderRegionYID, 0)
         self.SetInt32(self.RenderRegionRID, self.getSceneOption(2))
         self.SetInt32(self.RenderRegionTID, self.getSceneOption(3))
-        self.SetLong(self.OverscanID, 0, 0, 500)
+        self.SetInt32(self.OverscanID, 0, 0, 500)
         self.SetBool(self.MotionBlurID, False)
         self.SetBool(self.SubdivID, False)
         self.SetBool(self.DisplaceID, False)
@@ -278,9 +278,9 @@ class Aton(gui.GeDialog):
         self.Enable(self.SequenceStartLabelID, False)
         self.Enable(self.SequenceEndLabelID, False)
         self.Enable(self.SequenceStepLabelID, False)
-        self.SetLong(self.SequenceStartID, self.getSceneOption(4))
-        self.SetLong(self.SequenceEndID, self.getSceneOption(5))
-        self.SetLong(self.SequenceStepID, self.getSceneOption(6))
+        self.SetInt32(self.SequenceStartID, self.getSceneOption(4))
+        self.SetInt32(self.SequenceEndID, self.getSceneOption(5))
+        self.SetInt32(self.SequenceStepID, self.getSceneOption(6))
 
     def getSceneOption(self, attr):
         '''Get Scence options'''
