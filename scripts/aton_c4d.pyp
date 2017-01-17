@@ -9,7 +9,6 @@ from c4d import bitmaps, documents, gui, plugins
 PLUGIN_ID = 1038628
 
 ATON_PORT = 464624139
-ATON_EXTRA_HOST = 537681327
 
 # from c4dtoa_symols.h
 ARNOLD_RENDER_OVERRIDES = 1038579
@@ -49,7 +48,6 @@ class Aton(gui.GeDialog):
 
     # UI IDs
     PortID = 100
-    ExtraHostID = 110
     CameraID = 120
     ResolutionID = 130
     ResolutionInfoID = 131
@@ -115,7 +113,6 @@ class Aton(gui.GeDialog):
         doc = documents.GetActiveDocument()
         doc.SetSelection(self.driver)
         c4d.CallCommand(100004787)
-        c4d.CallCommand(12113, 12113)
 
     def CreateLayout(self):
         '''Creating Layout UI'''
@@ -151,11 +148,6 @@ class Aton(gui.GeDialog):
         # Port
         self.GroupBegin(GenLabelID(), c4d.BFH_SCALEFIT|c4d.BFV_SCALEFIT, 2, 1, 0)
         AddSliderGroup(self.PortID, "Port:", self.defaultPort, 1, 16, self.defaultPort-1)
-        self.GroupEnd()
-
-        # Extra Host
-        self.GroupBegin(GenLabelID(), c4d.BFH_SCALEFIT|c4d.BFV_SCALEFIT, 2, 1)
-        AddTextGroup(self.ExtraHostID, "Extra Host:")
         self.GroupEnd()
 
         # Camera
@@ -256,7 +248,6 @@ class Aton(gui.GeDialog):
     def resetLayout(self):
         '''Resets Layout to default state'''
         self.SetInt32(self.PortID, self.defaultPort, self.defaultPort, self.defaultPort+15)
-        self.SetString(self.ExtraHostID, "")
         self.SetInt32(self.CameraID, 0)
         self.SetInt32(self.ResolutionID, 100, 1, 200)
         self.resInfoUpdate(100)
@@ -442,12 +433,10 @@ class Aton(gui.GeDialog):
 
     def startIPR(self):
         '''Main Function to Start Rendering'''
-        # Updating extraHost and port from UI
+        # Updating port and host from UI
         if self.defaultPort != 0:
             port = self.GetInt32(self.PortID)
-            extraHost = self.GetString(self.ExtraHostID)
             self.driver.GetDataInstance().SetInt32(ATON_PORT, port)
-            self.driver.GetDataInstance().SetString(ATON_EXTRA_HOST, extraHost)
         else:
             self.logMessage("Aton driver is not loaded", 2)
             return
