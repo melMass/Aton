@@ -14,7 +14,7 @@ ATON_EXTRA_HOST = 537681327
 # from c4dtoa_symols.h
 ARNOLD_RENDER_OVERRIDES = 1038579
 ARNOLD_DRIVER = 1030141
-ARNOLD_RENDER_COMMAND = 1038578  # 1: start IPR, 2: stop IPR, 3: pause/unpause, 4: render
+ARNOLD_RENDER_COMMAND = 1038578  # 1: Start IPR, 2: Stop IPR, 3: Pause/Unpause, 4: Trigger to refresh 5: Render sequence
 
 # from arnold_renderer.h
 C4DTOA_RENDEROVERRIDE_DRIVER = 1000                 # [Link] The driver object used as the display driver. The default display driver is used when does not set.
