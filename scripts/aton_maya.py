@@ -167,7 +167,6 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         def resetUI(*args):
             self.portSpinBox.setValue(self.defaultPort)
             portSlider.setValue(0)
-            self.extraHostLineEdit.setText("")
             self.cameraComboBox.setCurrentIndex(0)
             self.resolutionSpinBox.setValue(100)
             resolutionSlider.setValue(20)
@@ -199,7 +198,7 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         mainLayout.setSpacing(2)
 
         generalGroupBox = QtWidgets.QGroupBox("General")
-        generalGroupBox.setMaximumSize(9999, 150)
+        generalGroupBox.setMaximumSize(9999, 100)
         generalLayout = QtWidgets.QVBoxLayout(generalGroupBox)
 
         # Port Layout
@@ -220,16 +219,6 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         portLayout.addWidget(portLabel)
         portLayout.addWidget(self.portSpinBox)
         portLayout.addWidget(portSlider)
-
-        # Extra Host Layout
-        extraHostLayout = QtWidgets.QHBoxLayout()
-        extraHostLabel = QtWidgets.QLabel("Extra host:")
-        extraHostLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
-        extraHostLabel.setMinimumSize(75, 20)
-        extraHostLabel.setMaximumSize(75, 20)
-        self.extraHostLineEdit = QtWidgets.QLineEdit()
-        extraHostLayout.addWidget(extraHostLabel)
-        extraHostLayout.addWidget(self.extraHostLineEdit)
 
         # Camera Layout
         cameraLayout = QtWidgets.QHBoxLayout()
@@ -460,8 +449,6 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
 
         # Add Layouts to Main
         generalLayout.addLayout(portLayout)
-        generalLayout.addLayout(extraHostLayout)
-
         generalLayout.addLayout(cameraLayout)
         overridesLayout.addLayout(resolutionLayout)
         overridesLayout.addLayout(cameraAaLayout)
@@ -598,11 +585,9 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         cmds.setAttr("defaultArnoldDriver.mergeAOVs",  True)
         cmds.setAttr("defaultArnoldDisplayDriver.aiTranslator", "aton", type="string")
 
-        # Updating extraHost and port from UI
+        # Updating port from UI
         if self.defaultPort != 0:
-            extraHost = self.extraHostLineEdit.text()
             port = self.portSpinBox.value()
-            cmds.setAttr("defaultArnoldDisplayDriver.extraHost", extraHost, type="string")
             cmds.setAttr("defaultArnoldDisplayDriver.port", port)
         else:
             cmds.warning("Current renderer is not set to Arnold or Aton driver is not loaded.")

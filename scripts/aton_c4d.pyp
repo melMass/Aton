@@ -433,7 +433,7 @@ class Aton(gui.GeDialog):
 
     def startIPR(self):
         '''Main Function to Start Rendering'''
-        # Updating port and host from UI
+        # Updating port from UI
         if self.defaultPort != 0:
             port = self.GetInt32(self.PortID)
             self.driver.GetDataInstance().SetInt32(ATON_PORT, port)
