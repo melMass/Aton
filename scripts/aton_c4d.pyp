@@ -8,6 +8,7 @@ from c4d import bitmaps, documents, gui, plugins
 # Aton_c4d Plugin ID
 PLUGIN_ID = 1038628
 
+ATON_HOST = 464911602
 ATON_PORT = 464624139
 
 # from c4dtoa_symols.h
@@ -48,6 +49,7 @@ class Aton(gui.GeDialog):
 
     # UI IDs
     PortID = 100
+    HostID = 110
     CameraID = 120
     ResolutionID = 130
     ResolutionInfoID = 131
@@ -80,39 +82,9 @@ class Aton(gui.GeDialog):
         '''Main initilaizer'''
         self.objName = self.__class__.__name__
         self.createDriver(self.objName)
-        self.defaultPort = self.getSceneOption(0)
-        self.cameras = self.getSceneOption(1)
-
-    def logMessage(self, msg, type=0):
-        '''Log Messages Handling'''
-        name = self.objName.upper()
-        if type == 0:
-            log = "%s | INFO: %s."%(name, msg)
-        if type == 1:
-            log = "%s | WARNING: %s."%(name, msg)
-        if type == 2:
-            log = "%s | ERROR: %s."%(name, msg)
-        print log
-
-    def DestroyWindow(self):
-        c4d.CallCommand(ARNOLD_RENDER_COMMAND, 2)
-        self.removeDriver()
-
-    def createDriver(self, name):
-        '''Creates driver object in the scene'''
-        doc = documents.GetActiveDocument()
-        self.driver = doc.SearchObject(name)
-        if self.driver is None:
-            self.driver = c4d.BaseObject(ARNOLD_DRIVER)
-            doc.InsertObject(self.driver)
-            self.driver.GetDataInstance().SetInt32(c4d.C4DAI_DRIVER_TYPE, C4DAIN_DRIVER_ATON)
-            self.driver.SetName(name)
-
-    def removeDriver(self):
-        '''Removes the driver object'''
-        doc = documents.GetActiveDocument()
-        doc.SetSelection(self.driver)
-        c4d.CallCommand(100004787)
+        self.defaultHost = self.getSceneOption(0)
+        self.defaultPort = self.getSceneOption(1)
+        self.cameras = self.getSceneOption(2)
 
     def CreateLayout(self):
         '''Creating Layout UI'''
@@ -145,6 +117,12 @@ class Aton(gui.GeDialog):
 
         StartGroup("General")
 
+        # Host
+        self.GroupBegin(GenLabelID(), c4d.BFH_SCALEFIT|c4d.BFV_SCALEFIT, 2, 1)
+        AddTextGroup(self.HostID, "Host:")
+        self.SetString(self.HostID, self.defaultHost)
+        self.GroupEnd()
+
         # Port
         self.GroupBegin(GenLabelID(), c4d.BFH_SCALEFIT|c4d.BFV_SCALEFIT, 2, 1, 0)
         AddSliderGroup(self.PortID, "Port:", self.defaultPort, 1, 16, self.defaultPort-1)
@@ -167,8 +145,8 @@ class Aton(gui.GeDialog):
         # Resolution
         self.GroupBegin(GenLabelID(), c4d.BFH_SCALEFIT|c4d.BFV_SCALEFIT, 3, 1, 0)
         AddSliderGroup(self.ResolutionID, "Resolution %:", 100, 1, 200)
-        self.AddStaticText(self.ResolutionInfoID, 0, 75, 0, "%sx%s"%(self.getSceneOption(2),
-                                                                     self.getSceneOption(3)))
+        self.AddStaticText(self.ResolutionInfoID, 0, 75, 0, "%sx%s"%(self.getSceneOption(3),
+                                                                     self.getSceneOption(4)))
         self.Enable(self.ResolutionInfoID, False)
         self.GroupEnd()
 
@@ -190,13 +168,13 @@ class Aton(gui.GeDialog):
         self.AddButton(self.RenderRegionGetID, 0, 0, 0, "Get")
         self.SetInt32(self.RenderRegionXID, 0)
         self.SetInt32(self.RenderRegionYID, 0)
-        self.SetInt32(self.RenderRegionRID, self.getSceneOption(2))
-        self.SetInt32(self.RenderRegionTID, self.getSceneOption(3))
+        self.SetInt32(self.RenderRegionRID, self.getSceneOption(3))
+        self.SetInt32(self.RenderRegionTID, self.getSceneOption(4))
         self.GroupEnd()
 
         # Overscan
         self.GroupBegin(GenLabelID(), c4d.BFH_SCALEFIT|c4d.BFV_SCALEFIT, 3, 1, 0)
-        AddSliderGroup(self.OverscanID, "Overscan:", 0, 0, 500)
+        AddSliderGroup(self.OverscanID, "Overscan:", 0, 0, 512)
         self.AddButton(self.OverscanSetID, 0, 0, 0, "Set")
         self.GroupEnd()
         EndGroup()
@@ -231,9 +209,9 @@ class Aton(gui.GeDialog):
         self.Enable(self.SequenceStartLabelID, False)
         self.Enable(self.SequenceEndLabelID, False)
         self.Enable(self.SequenceStepLabelID, False)
-        self.SetInt32(self.SequenceStartID, self.getSceneOption(4))
-        self.SetInt32(self.SequenceEndID, self.getSceneOption(5))
-        self.SetInt32(self.SequenceStepID, self.getSceneOption(6))
+        self.SetInt32(self.SequenceStartID, self.getSceneOption(5))
+        self.SetInt32(self.SequenceEndID, self.getSceneOption(6))
+        self.SetInt32(self.SequenceStepID, self.getSceneOption(7))
         EndGroup()
 
         # Main Buttuns
@@ -247,6 +225,7 @@ class Aton(gui.GeDialog):
 
     def resetLayout(self):
         '''Resets Layout to default state'''
+        self.SetString(self.HostID, self.defaultHost)
         self.SetInt32(self.PortID, self.defaultPort, self.defaultPort, self.defaultPort+15)
         self.SetInt32(self.CameraID, 0)
         self.SetInt32(self.ResolutionID, 100, 1, 200)
@@ -254,8 +233,8 @@ class Aton(gui.GeDialog):
         self.SetInt32(self.CameraAAID, 3, -3, 16)
         self.SetInt32(self.RenderRegionXID, 0)
         self.SetInt32(self.RenderRegionYID, 0)
-        self.SetInt32(self.RenderRegionRID, self.getSceneOption(2))
-        self.SetInt32(self.RenderRegionTID, self.getSceneOption(3))
+        self.SetInt32(self.RenderRegionRID, self.getSceneOption(3))
+        self.SetInt32(self.RenderRegionTID, self.getSceneOption(4))
         self.SetInt32(self.OverscanID, 0, 0, 500)
         self.SetBool(self.MotionBlurID, False)
         self.SetBool(self.SubdivID, False)
@@ -269,9 +248,40 @@ class Aton(gui.GeDialog):
         self.Enable(self.SequenceStartLabelID, False)
         self.Enable(self.SequenceEndLabelID, False)
         self.Enable(self.SequenceStepLabelID, False)
-        self.SetInt32(self.SequenceStartID, self.getSceneOption(4))
-        self.SetInt32(self.SequenceEndID, self.getSceneOption(5))
-        self.SetInt32(self.SequenceStepID, self.getSceneOption(6))
+        self.SetInt32(self.SequenceStartID, self.getSceneOption(5))
+        self.SetInt32(self.SequenceEndID, self.getSceneOption(6))
+        self.SetInt32(self.SequenceStepID, self.getSceneOption(7))
+
+    def DestroyWindow(self):
+        c4d.CallCommand(ARNOLD_RENDER_COMMAND, 2)
+        self.removeDriver()
+
+    def logMessage(self, msg, type=0):
+        '''Log Messages Handling'''
+        name = self.objName.upper()
+        if type == 0:
+            log = "%s | INFO: %s."%(name, msg)
+        if type == 1:
+            log = "%s | WARNING: %s."%(name, msg)
+        if type == 2:
+            log = "%s | ERROR: %s."%(name, msg)
+        print log
+
+    def createDriver(self, name):
+        '''Creates driver object in the scene'''
+        doc = documents.GetActiveDocument()
+        self.driver = doc.SearchObject(name)
+        if self.driver is None:
+            self.driver = c4d.BaseObject(ARNOLD_DRIVER)
+            doc.InsertObject(self.driver)
+            self.driver.GetDataInstance().SetInt32(c4d.C4DAI_DRIVER_TYPE, C4DAIN_DRIVER_ATON)
+            self.driver.SetName(name)
+
+    def removeDriver(self):
+        '''Removes the driver object'''
+        doc = documents.GetActiveDocument()
+        doc.SetSelection(self.driver)
+        c4d.CallCommand(100004787)
 
     def getSceneOption(self, attr):
         '''Get Scence options'''
@@ -279,13 +289,14 @@ class Aton(gui.GeDialog):
         doc = documents.GetActiveDocument()
         data = doc.GetActiveRenderData()
         try:
-            result = {0: lambda : self.getPort(),
-                      1: lambda : self.getCameras(),
-                      2: lambda : int(data[c4d.RDATA_XRES]),
-                      3: lambda : int(data[c4d.RDATA_YRES]),
-                      4: lambda : int(data[c4d.RDATA_FRAMEFROM].Get() * data[c4d.RDATA_FRAMERATE]),
-                      5: lambda : int(data[c4d.RDATA_FRAMETO].Get() * data[c4d.RDATA_FRAMERATE]),
-                      6: lambda : int(data[c4d.RDATA_FRAMESTEP])}[attr]()
+            result = {0: lambda : self.getHost(),
+                      1: lambda : self.getPort(),
+                      2: lambda : self.getCameras(),
+                      3: lambda : int(data[c4d.RDATA_XRES]),
+                      4: lambda : int(data[c4d.RDATA_YRES]),
+                      5: lambda : int(data[c4d.RDATA_FRAMEFROM].Get() * data[c4d.RDATA_FRAMERATE]),
+                      6: lambda : int(data[c4d.RDATA_FRAMETO].Get() * data[c4d.RDATA_FRAMERATE]),
+                      7: lambda : int(data[c4d.RDATA_FRAMESTEP])}[attr]()
         except ValueError:
             pass
         return result
@@ -300,8 +311,8 @@ class Aton(gui.GeDialog):
         # ovrScnValue = 0
         ovrScnValue = self.GetInt32(self.OverscanID) * resValue / 100
 
-        xres = self.getSceneOption(2) * resValue / 100
-        yres = self.getSceneOption(3) * resValue / 100
+        xres = self.getSceneOption(3) * resValue / 100
+        yres = self.getSceneOption(4) * resValue / 100
 
         renderRegionX = self.GetInt32(self.RenderRegionXID)
         renderRegionY = self.GetInt32(self.RenderRegionYID)
@@ -316,6 +327,15 @@ class Aton(gui.GeDialog):
                   5 : lambda: (yres - (renderRegionY * resValue / 100)) - 1 + ovrScnValue}[attr]()
 
         return result
+
+    def getHost(self):
+        ''' Returns the host from Aton driver '''
+        host = 0
+        try: # To init Arnold Render settings
+            host = self.driver.GetDataInstance().GetString(ATON_HOST)
+        except ValueError:
+            pass
+        return host
 
     def getPort(self):
         ''' Returns the port number from Aton driver '''
@@ -370,8 +390,8 @@ class Aton(gui.GeDialog):
 
     def resInfoUpdate(self, value):
         '''Updates UI Resolution info'''
-        xres = self.getSceneOption(2) * value / 100
-        yres = self.getSceneOption(3) * value / 100
+        xres = self.getSceneOption(3) * value / 100
+        yres = self.getSceneOption(4) * value / 100
         self.SetString(self.ResolutionInfoID, "%sx%s"%(xres, yres))
 
     def Command(self, id, msg):
@@ -433,10 +453,12 @@ class Aton(gui.GeDialog):
 
     def startIPR(self):
         '''Main Function to Start Rendering'''
-        # Updating port from UI
-        if self.defaultPort != 0:
+        # Updating host and port from UI
+        if self.defaultHost != 0 and self.defaultPort != 0:
             port = self.GetInt32(self.PortID)
+            host = self.GetString(self.HostID)
             self.driver.GetDataInstance().SetInt32(ATON_PORT, port)
+            self.driver.GetDataInstance().SetString(ATON_HOST, host)
         else:
             self.logMessage("Aton driver is not loaded", 2)
             return
