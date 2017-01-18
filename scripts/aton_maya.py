@@ -37,7 +37,8 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         # Attributes
         self.timeChangedCB = None
         self.selectionChangedCB = None
-        self.defaultPort = self.getSceneOption(0)
+        self.defaultHost = self.getSceneOption(0)
+        self.defaultPort = self.getSceneOption(1)
 
         # Sequence mode
         self.frame_sequence = AiFrameSequence()
@@ -59,94 +60,14 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         self.setProperty("saveWindowPref", True)
         self.setupUI()
 
-    def getActiveCamera(self):
-        ''' Returns active camera shape name '''
-        cam = cmds.modelEditor(cmds.playblast(ae=1), q=1, cam=1)
-        if cmds.listRelatives(cam) != None:
-            cam = cmds.listRelatives(cam)[0]
-        return cam
-
-    def getPort(self):
-        ''' Returns the port number from Aton driver '''
-        port = 0
-        try: # To init Arnold Render settings
-            port = cmds.getAttr("defaultArnoldDisplayDriver.port")
-        except ValueError:
-            mel.eval("unifiedRenderGlobalsWindow;")
-            try: # If aton driver is not loaded
-                port = cmds.getAttr("defaultArnoldDisplayDriver.port")
-            except ValueError:
-                pass
-        return port
-
-    def getSceneOption(self, attr):
-        ''' Returns requested scene options attribute value '''
-        result = 0
-        if cmds.getAttr("defaultRenderGlobals.ren") == "arnold":
-            try:
-                result = {0 : lambda: self.getPort(),
-                          1 : lambda: self.getActiveCamera(),
-                          2 : lambda: cmds.getAttr("defaultResolution.width"),
-                          3 : lambda: cmds.getAttr("defaultResolution.height"),
-                          4 : lambda: cmds.getAttr("defaultArnoldRenderOptions.AASamples"),
-                          5 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreMotionBlur"),
-                          6 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreSubdivision"),
-                          7 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreDisplacement"),
-                          8 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreBump"),
-                          9 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreSss"),
-                          10 : lambda: cmds.playbackOptions(q=True, minTime=True),
-                          11 : lambda: cmds.playbackOptions(q=True, maxTime=True),
-                          12 : lambda: cmds.getAttr("defaultArnoldRenderOptions.progressive_rendering")}[attr]()
-            except ValueError:
-                return result
-        return result
-
-    def deleteInstances(self):
-        ''' Delete any instances of this class '''
-        mayaWindow = maya_main_window()
-        if MAYA_2017:
-            try:
-                cmds.workspaceControl(self.wsCtrlName, e=True, close=True)
-            except RuntimeError:
-                pass
-            try:
-                cmds.workspaceControlState(self.wsCtrlName, remove=True)
-            except RuntimeError:
-                pass
-
-            if cmds.window(self.wsCtrlName, q=True, ex=True):
-                cmds.deleteUI(self.wsCtrlName)
-
-            if cmds.window(self.objName, q=True, ex=True):
-                cmds.deleteUI(self.objName)
-        else:
-            for obj in mayaWindow.children():
-                if type(obj) == MayaQDockWidget:
-                    if obj.widget().objectName() == self.objName:
-                        mayaWindow.removeDockWidget(obj)
-                        obj.setParent(None)
-                        obj.deleteLater()
-
-    def dockCloseEventTriggered(self):
-        self.deleteInstances()
-
-    def show(self, docked=True):
-        if docked:
-            super(self.__class__, self).show(dockable=True, area='right', floating=False)
-            if MAYA_2017:
-                cmds.workspaceControl(self.wsCtrlName, e=True, ttc=["AttributeEditor", -1])
-            self.raise_()
-        else:
-            super(self.__class__, self).show(dockable=True)
-
     def setupUI(self):
         ''' Building the GUI '''
         def resUpdateUI(value):
             self.resolutionSpinBox.setValue(value * 5)
 
         def resInfoUpdate(value):
-            xres = self.getSceneOption(2) * value / 100
-            yres = self.getSceneOption(3) * value / 100
+            xres = self.getSceneOption(3) * value / 100
+            yres = self.getSceneOption(4) * value / 100
             resolutionInfoLabel.setText("%sx%s"%(xres, yres))
 
         def camUpdateUI(value):
@@ -165,28 +86,29 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
             self.stepSpinBox.setEnabled(isChecked)
 
         def resetUI(*args):
+            self.hostLineEdit.setText(self.defaultHost)
             self.portSpinBox.setValue(self.defaultPort)
             portSlider.setValue(0)
             self.cameraComboBox.setCurrentIndex(0)
             self.resolutionSpinBox.setValue(100)
             resolutionSlider.setValue(20)
-            self.cameraAaSpinBox.setValue(self.getSceneOption(4))
-            cameraAaSlider.setValue(self.getSceneOption(4))
+            self.cameraAaSpinBox.setValue(self.getSceneOption(5))
+            cameraAaSlider.setValue(self.getSceneOption(5))
             self.renderRegionXSpinBox.setValue(0)
             self.renderRegionYSpinBox.setValue(0)
-            self.renderRegionRSpinBox.setValue(self.getSceneOption(2))
-            self.renderRegionTSpinBox.setValue(self.getSceneOption(3))
+            self.renderRegionRSpinBox.setValue(self.getSceneOption(3))
+            self.renderRegionTSpinBox.setValue(self.getSceneOption(4))
             overscanSlider.setValue(0)
-            self.motionBlurCheckBox.setChecked(self.getSceneOption(5))
-            self.subdivsCheckBox.setChecked(self.getSceneOption(6))
-            self.displaceCheckBox.setChecked(self.getSceneOption(7))
-            self.bumpCheckBox.setChecked(self.getSceneOption(8))
-            self.sssCheckBox.setChecked(self.getSceneOption(9))
+            self.motionBlurCheckBox.setChecked(self.getSceneOption(6))
+            self.subdivsCheckBox.setChecked(self.getSceneOption(7))
+            self.displaceCheckBox.setChecked(self.getSceneOption(8))
+            self.bumpCheckBox.setChecked(self.getSceneOption(9))
+            self.sssCheckBox.setChecked(self.getSceneOption(10))
             self.shaderComboBox.setCurrentIndex(0)
             textureRepeatSlider.setValue(4)
             self.selectedShaderCheckbox.setChecked(0)
-            self.startSpinBox.setValue(self.getSceneOption(10))
-            self.endSpinBox.setValue(self.getSceneOption(11))
+            self.startSpinBox.setValue(self.getSceneOption(11))
+            self.endSpinBox.setValue(self.getSceneOption(12))
             self.stepSpinBox.setValue(1)
             self.seqCheckBox.setChecked(False)
 
@@ -198,8 +120,19 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         mainLayout.setSpacing(2)
 
         generalGroupBox = QtWidgets.QGroupBox("General")
-        generalGroupBox.setMaximumSize(9999, 100)
+        generalGroupBox.setMaximumSize(9999, 150)
         generalLayout = QtWidgets.QVBoxLayout(generalGroupBox)
+
+        # Host Layout
+        hostLayout = QtWidgets.QHBoxLayout()
+        hostLabel = QtWidgets.QLabel("Host:")
+        hostLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
+        hostLabel.setMinimumSize(75, 20)
+        hostLabel.setMaximumSize(75, 20)
+        self.hostLineEdit = QtWidgets.QLineEdit()
+        self.hostLineEdit.setText(u"%s"%self.defaultHost)
+        hostLayout.addWidget(hostLabel)
+        hostLayout.addWidget(self.hostLineEdit)
 
         # Port Layout
         portLayout = QtWidgets.QHBoxLayout()
@@ -252,7 +185,7 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         resolutionSlider.setOrientation(QtCore.Qt.Horizontal)
         resolutionSlider.setValue(20)
         resolutionSlider.setMaximum(40)
-        xres, yres = self.getSceneOption(2), self.getSceneOption(3)
+        xres, yres = self.getSceneOption(3), self.getSceneOption(4)
         resolutionInfoLabel = QtWidgets.QLabel("%sx%s"%(xres, yres))
         resolutionInfoLabel.setMaximumSize(100, 20)
         resolutionInfoLabel.setEnabled(False)
@@ -270,7 +203,7 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         self.cameraAaSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
         self.cameraAaSpinBox.setMaximum(64)
         self.cameraAaSpinBox.setMinimum(-64)
-        self.cameraAaSpinBox.setValue(self.getSceneOption(4))
+        self.cameraAaSpinBox.setValue(self.getSceneOption(5))
         cameraAaSlider = QtWidgets.QSlider()
         cameraAaSlider.setOrientation(QtCore.Qt.Horizontal)
         cameraAaSlider.setValue(self.cameraAaSpinBox.value())
@@ -315,8 +248,8 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
             i.setMaximumSize(50,99)
             i.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
 
-        self.renderRegionRSpinBox.setValue(self.getSceneOption(2))
-        self.renderRegionTSpinBox.setValue(self.getSceneOption(3))
+        self.renderRegionRSpinBox.setValue(self.getSceneOption(3))
+        self.renderRegionTSpinBox.setValue(self.getSceneOption(4))
 
         # Overscan Layout
         overscanLayout = QtWidgets.QHBoxLayout()
@@ -384,15 +317,15 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         ignoreLabel = QtWidgets.QLabel("Ignore:")
         ignoreLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
         self.motionBlurCheckBox = QtWidgets.QCheckBox("Motion Blur")
-        self.motionBlurCheckBox.setChecked(self.getSceneOption(5))
+        self.motionBlurCheckBox.setChecked(self.getSceneOption(6))
         self.subdivsCheckBox = QtWidgets.QCheckBox("Subdivs")
-        self.subdivsCheckBox.setChecked(self.getSceneOption(6))
+        self.subdivsCheckBox.setChecked(self.getSceneOption(7))
         self.displaceCheckBox = QtWidgets.QCheckBox("Displace")
-        self.displaceCheckBox.setChecked(self.getSceneOption(7))
+        self.displaceCheckBox.setChecked(self.getSceneOption(8))
         self.bumpCheckBox = QtWidgets.QCheckBox("Bump")
-        self.bumpCheckBox.setChecked(self.getSceneOption(8))
+        self.bumpCheckBox.setChecked(self.getSceneOption(9))
         self.sssCheckBox = QtWidgets.QCheckBox("SSS")
-        self.sssCheckBox.setChecked(self.getSceneOption(9))
+        self.sssCheckBox.setChecked(self.getSceneOption(10))
         ignoreLayout.addWidget(self.motionBlurCheckBox)
         ignoreLayout.addWidget(self.subdivsCheckBox)
         ignoreLayout.addWidget(self.displaceCheckBox)
@@ -411,14 +344,14 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         self.startSpinBox = QtWidgets.QSpinBox()
         self.startSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
         self.startSpinBox.setRange(0, 99999)
-        self.startSpinBox.setValue(self.getSceneOption(10))
+        self.startSpinBox.setValue(self.getSceneOption(11))
         self.startSpinBox.setEnabled(False)
         self.endLabel = QtWidgets.QLabel('End frame:')
         self.endLabel.setEnabled(False)
         self.endSpinBox = QtWidgets.QSpinBox()
         self.endSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
         self.endSpinBox.setRange(0, 99999)
-        self.endSpinBox.setValue(self.getSceneOption(11))
+        self.endSpinBox.setValue(self.getSceneOption(12))
         self.endSpinBox.setEnabled(False)
         self.stepLabel = QtWidgets.QLabel('By frame:')
         self.stepLabel.setEnabled(False)
@@ -448,6 +381,7 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         mainButtonslayout.addWidget(resetButton)
 
         # Add Layouts to Main
+        generalLayout.addLayout(hostLayout)
         generalLayout.addLayout(portLayout)
         generalLayout.addLayout(cameraLayout)
         overridesLayout.addLayout(resolutionLayout)
@@ -489,10 +423,104 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
 
         self.setLayout(mainLayout)
 
+    def deleteInstances(self):
+        ''' Delete any instances of this class '''
+        mayaWindow = maya_main_window()
+        if MAYA_2017:
+            try:
+                cmds.workspaceControl(self.wsCtrlName, e=True, close=True)
+            except RuntimeError:
+                pass
+            try:
+                cmds.workspaceControlState(self.wsCtrlName, remove=True)
+            except RuntimeError:
+                pass
+
+            if cmds.window(self.wsCtrlName, q=True, ex=True):
+                cmds.deleteUI(self.wsCtrlName)
+
+            if cmds.window(self.objName, q=True, ex=True):
+                cmds.deleteUI(self.objName)
+        else:
+            for obj in mayaWindow.children():
+                if type(obj) == MayaQDockWidget:
+                    if obj.widget().objectName() == self.objName:
+                        mayaWindow.removeDockWidget(obj)
+                        obj.setParent(None)
+                        obj.deleteLater()
+
+    def dockCloseEventTriggered(self):
+        self.deleteInstances()
+
+    def show(self, docked=True):
+        if docked:
+            super(self.__class__, self).show(dockable=True, area='right', floating=False)
+            if MAYA_2017:
+                cmds.workspaceControl(self.wsCtrlName, e=True, ttc=["AttributeEditor", -1])
+            self.raise_()
+        else:
+            super(self.__class__, self).show(dockable=True)
+
+    def getActiveCamera(self):
+        ''' Returns active camera shape name '''
+        cam = cmds.modelEditor(cmds.playblast(ae=1), q=1, cam=1)
+        if cmds.listRelatives(cam) != None:
+            cam = cmds.listRelatives(cam)[0]
+        return cam
+
+    def getHost(self):
+        ''' Returns the host from Aton driver '''
+        host = 0
+        try: # To init Arnold Render settings
+            host = cmds.getAttr("defaultArnoldDisplayDriver.host")
+        except ValueError:
+            mel.eval("unifiedRenderGlobalsWindow;")
+            try: # If aton driver is not loaded
+                host = cmds.getAttr("defaultArnoldDisplayDriver.host")
+            except ValueError:
+                pass
+        return host
+
+    def getPort(self):
+        ''' Returns the port number from Aton driver '''
+        port = 0
+        try: # To init Arnold Render settings
+            port = cmds.getAttr("defaultArnoldDisplayDriver.port")
+        except ValueError:
+            mel.eval("unifiedRenderGlobalsWindow;")
+            try: # If aton driver is not loaded
+                port = cmds.getAttr("defaultArnoldDisplayDriver.port")
+            except ValueError:
+                pass
+        return port
+
+    def getSceneOption(self, attr):
+        ''' Returns requested scene options attribute value '''
+        result = 0
+        if cmds.getAttr("defaultRenderGlobals.ren") == "arnold":
+            try:
+                result = {0 : lambda: self.getHost(),
+                          1 : lambda: self.getPort(),
+                          2 : lambda: self.getActiveCamera(),
+                          3 : lambda: cmds.getAttr("defaultResolution.width"),
+                          4 : lambda: cmds.getAttr("defaultResolution.height"),
+                          5 : lambda: cmds.getAttr("defaultArnoldRenderOptions.AASamples"),
+                          6 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreMotionBlur"),
+                          7 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreSubdivision"),
+                          8 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreDisplacement"),
+                          9 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreBump"),
+                          10 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreSss"),
+                          11 : lambda: cmds.playbackOptions(q=True, minTime=True),
+                          12 : lambda: cmds.playbackOptions(q=True, maxTime=True),
+                          13 : lambda: cmds.getAttr("defaultArnoldRenderOptions.progressive_rendering")}[attr]()
+            except ValueError:
+                return result
+        return result
+
     def getCamera(self):
         ''' Returns current selected camera from GUI '''
         if self.cameraComboBox.currentIndex() == 0:
-            camera = self.getSceneOption(1)
+            camera = self.getSceneOption(2)
         else:
             camera = self.cameraComboBoxDict[self.cameraComboBox.currentIndex()]
             if cmds.listRelatives(camera, s=1) != None:
@@ -507,8 +535,8 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
 
         ovrScnValue = self.overscanSpinBox.value() * resValue / 100
 
-        xres = self.getSceneOption(2) * resValue / 100
-        yres = self.getSceneOption(3) * resValue / 100
+        xres = self.getSceneOption(3) * resValue / 100
+        yres = self.getSceneOption(4) * resValue / 100
 
         result = {0 : lambda: xres,
                   1 : lambda: yres,
@@ -518,28 +546,6 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
                   5 : lambda: (yres - (self.renderRegionYSpinBox.value() * resValue / 100)) - 1 + ovrScnValue}[attr]()
 
         return result
-
-    def setOverscan(self):
-        ovrScnValue = bool(self.overscanSpinBox.value())
-        if cmds.getAttr("defaultRenderGlobals.ren") == "arnold":
-            message = "Do you want to set the Overscan values in Render Setttings?"
-            result = cmds.confirmDialog(title='Overscan',
-                                        message=message,
-                                        button=['OK', 'Cancel'],
-                                        defaultButton='OK',
-                                        cancelButton='Cancel',
-                                        dismissString='Cancel',
-                                        icn="information")
-            if result == 'OK':
-                rMinX = self.getRegion(2, False)
-                rMinY = self.getRegion(3, False)
-                rMaxX = self.getRegion(4, False)
-                rMaxY = self.getRegion(5, False)
-                attr = "defaultArnoldRenderOptions.outputOverscan"
-                if ovrScnValue:
-                    cmds.setAttr(attr, "%s %s %s %s"%(rMinX, rMinY, rMaxX, rMaxY), type="string")
-                else:
-                    cmds.setAttr(attr, "", type="string")
 
     def getNukeCropNode(self, *args):
         ''' Get crop node data from Nuke '''
@@ -572,6 +578,28 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
 
                 return cropData
 
+    def setOverscan(self):
+        ovrScnValue = bool(self.overscanSpinBox.value())
+        if cmds.getAttr("defaultRenderGlobals.ren") == "arnold":
+            message = "Do you want to set the Overscan values in Render Setttings?"
+            result = cmds.confirmDialog(title='Overscan',
+                                        message=message,
+                                        button=['OK', 'Cancel'],
+                                        defaultButton='OK',
+                                        cancelButton='Cancel',
+                                        dismissString='Cancel',
+                                        icn="information")
+            if result == 'OK':
+                rMinX = self.getRegion(2, False)
+                rMinY = self.getRegion(3, False)
+                rMaxX = self.getRegion(4, False)
+                rMaxY = self.getRegion(5, False)
+                attr = "defaultArnoldRenderOptions.outputOverscan"
+                if ovrScnValue:
+                    cmds.setAttr(attr, "%s %s %s %s"%(rMinX, rMinY, rMaxX, rMaxY), type="string")
+                else:
+                    cmds.setAttr(attr, "", type="string")
+
     def render(self):
         ''' Starts the render '''
         try: # If MtoA was not found
@@ -585,9 +613,11 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         cmds.setAttr("defaultArnoldDriver.mergeAOVs",  True)
         cmds.setAttr("defaultArnoldDisplayDriver.aiTranslator", "aton", type="string")
 
-        # Updating port from UI
+        # Updating host and port from UI
         if self.defaultPort != 0:
+            host = self.hostLineEdit.text()
             port = self.portSpinBox.value()
+            cmds.setAttr("defaultArnoldDisplayDriver.host", host, type="string")
             cmds.setAttr("defaultArnoldDisplayDriver.port", port)
         else:
             cmds.warning("Current renderer is not set to Arnold or Aton driver is not loaded.")
@@ -619,7 +649,7 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
 
         # Set Progressive refinement to off
         if self.sequence_enabled:
-            self.defaultRefinement = self.getSceneOption(12)
+            self.defaultRefinement = self.getSceneOption(13)
             cmds.setAttr("defaultArnoldRenderOptions.progressive_rendering", False)
 
         try: # Start IPR
