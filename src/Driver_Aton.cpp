@@ -41,7 +41,7 @@ int getPort()
 
 struct ShaderData
 {
-    aton::Client* client, *extra_client;
+    aton::Client* client;
     int xres, yres, min_x, min_y, max_x, max_y;
 };
 
