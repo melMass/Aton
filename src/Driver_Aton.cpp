@@ -47,8 +47,8 @@ struct ShaderData
 
 node_parameters
 {
-    AiParameterINT("port", getPort());
     AiParameterSTR("host", getHost());
+    AiParameterINT("port", getPort());
     AiMetaDataSetStr(mds, NULL, "maya.translator", "aton");
     AiMetaDataSetStr(mds, NULL, "maya.attr_prefix", "");
     AiMetaDataSetBool(mds, NULL, "display_driver", true);
@@ -147,14 +147,17 @@ driver_open
     {
         if (data->client == NULL)
         {
-            data->client = new aton::Client(host, port);
+            boost::system::error_code ec;
+            boost::asio::ip::address::from_string(host, ec);
+            if (!ec)
+                data->client = new aton::Client(host, port);
         }
         data->client->openImage(header);
     }
     catch(const std::exception &e)
     {
         const char* err = e.what();
-        AiMsgError("Aton display driver %s", err);
+        AiMsgError("ATON | %s", err);
     }
 }
 
@@ -220,7 +223,7 @@ driver_close
     }
     catch (const std::exception& e)
     {
-        AiMsgError("Error occured when trying to close connection");
+        AiMsgError("ATON | Error occured when trying to close connection");
     }
 }
 
