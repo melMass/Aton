@@ -140,7 +140,7 @@ driver_open
     const long long rArea = data->xres * data->yres;
     
     // Make image header & send to server
-    aton::Data header(data->xres, data->yres, 0, 0, 0, 0,
+    aton::Data header(data->xres, data->yres, NULL, NULL, NULL, NULL,
                       rArea, version, currentFrame, cam_fov, cam_matrix);
 
     try // Now we can connect to the server and start rendering
@@ -204,7 +204,7 @@ driver_write_bucket
         
         // Create our data object
         aton::Data packet(data->xres, data->yres, bucket_xo, bucket_yo,
-                          bucket_size_x, bucket_size_y, 0, 0, 0, 0, 0,
+                          bucket_size_x, bucket_size_y, NULL, NULL, NULL, NULL, NULL,
                           spp, ram, time, aov_name, ptr);
 
         // Send it to the server
