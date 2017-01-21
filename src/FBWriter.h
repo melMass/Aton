@@ -251,7 +251,11 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
                     // Set Current Frame and update the UI
                     OutputContext ctxt = node->outputContext();
                     ctxt.setFrame(current_frame);
+                    
+                    node->m_mutex.lock();
                     node->gotoContext(ctxt, true);
+                    node->flagForUpdate();
+                    node->m_mutex.unlock();
                     break;
                 }
                 case 9: // This is sent when the parent process want to kill
