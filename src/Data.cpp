@@ -47,7 +47,7 @@ Data::Data(const int& xres,
         mCamMatrix = const_cast<float*>(cam_matrix);
 }
 
-void Data::deAllocAovName()
+void Data::dealloc()
 {
     delete[] mAovName;
     mAovName = NULL;

@@ -53,6 +53,7 @@ namespace aton
     class FrameBuffer
     {
         public:
+            FrameBuffer() {};
             FrameBuffer(const double& currentFrame = 0,
                         const int& w = 0,
                         const int& h = 0);
