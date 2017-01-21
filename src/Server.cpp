@@ -8,7 +8,6 @@ All rights reserved. See COPYING.txt for more details.
 #include "Client.h"
 #include <boost/lexical_cast.hpp>
 
-using namespace aton;
 using namespace boost::asio;
 
 Server::Server(): mPort(0),
@@ -76,7 +75,7 @@ void Server::connect(int port, bool search)
 void Server::quit()
 {
     std::string hostname("localhost");
-    aton::Client client(hostname, mPort);
+    Client client(hostname, mPort);
     client.quit();
 }
 

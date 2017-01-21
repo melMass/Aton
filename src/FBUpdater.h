@@ -10,7 +10,6 @@ All rights reserved. See COPYING.txt for more details.
 #include "Aton.h"
 #include "boost/thread/thread.hpp"
 
-using namespace aton;
 using namespace boost;
 
 // Our FrameBuffer updater thread

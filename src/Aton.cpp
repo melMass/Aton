@@ -8,8 +8,6 @@ All rights reserved. See COPYING.txt for more details.
 #include "FBWriter.h"
 #include "FBUpdater.h"
 
-using namespace aton;
-
 #include "boost/format.hpp"
 #include "boost/foreach.hpp"
 #include "boost/regex.hpp"
@@ -799,11 +797,11 @@ void Aton::liveCameraToogle()
 }
 
 void Aton::setStatus(const long long& progress,
-               const long long& ram,
-               const long long& p_ram,
-               const int& time,
-               const double& frame,
-               const char* version)
+                     const long long& ram,
+                     const long long& p_ram,
+                     const int& time,
+                     const double& frame,
+                     const char* version)
 {
     const int hour = time / 3600000;
     const int minute = (time % 3600000) / 60000;

@@ -7,8 +7,6 @@ All rights reserved. See COPYING.txt for more details.
 #include "FrameBuffer.h"
 #include "boost/format.hpp"
 
-using namespace aton;
-
 const std::string chStr::RGBA = "RGBA",
                   chStr::rgb = "rgb",
                   chStr::depth = "depth",

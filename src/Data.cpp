@@ -7,8 +7,6 @@ All rights reserved. See COPYING.txt for more details.
 #include "Data.h"
 #include <iostream>
 
-using namespace aton;
-
 Data::Data(const int& xres,
            const int& yres,
            const int& bucket_xo,

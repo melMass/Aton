@@ -7,7 +7,6 @@ All rights reserved. See COPYING.txt for more details.
 #include "Client.h"
 #include <boost/lexical_cast.hpp>
 
-using namespace aton;
 using namespace boost::asio;
 
 Client::Client(std::string hostname, int port): mHost(hostname),

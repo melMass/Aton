@@ -9,8 +9,6 @@ All rights reserved. See COPYING.txt for more details.
 
 #include "Aton.h"
 
-using namespace aton;
-
 // Our FrameBuffer writer thread
 static void FBWriter(unsigned index, unsigned nthreads, void* data)
 {
