@@ -9,8 +9,8 @@ All rights reserved. See COPYING.txt for more details.
 
 #include "DDImage/Iop.h"
 #include "DDImage/Row.h"
-#include "DDImage/Thread.h"
 #include "DDImage/Knobs.h"
+#include "DDImage/Thread.h"
 #include "DDImage/Version.h"
 
 using namespace DD::Image;
@@ -103,7 +103,6 @@ class Aton: public Iop
 
         void changePort(int port);
 
-        // Disconnect the server for it's port
         void disconnect();
 
         void append(Hash& hash);
@@ -150,6 +149,8 @@ class Aton: public Iop
                        const char* version = "");
     
         void setCameraKnobs(const float& fov, const Matrix4& matrix);
+    
+        void setCurrentFrame(const double& frame);
     
         bool firstEngineRendersWholeRequest() const { return true; }
         const char* Class() const { return CLASS; }

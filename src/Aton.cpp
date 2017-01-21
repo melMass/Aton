@@ -837,6 +837,21 @@ void Aton::setCameraKnobs(const float& fov, const Matrix4& matrix)
     }
 }
 
+void Aton::setCurrentFrame(const double& frame)
+{
+    // Set Current Frame and update the UI
+    OutputContext ctxt = outputContext();
+    double uiFrame = uiContext().frame();
+    
+    if (uiFrame != frame)
+    {
+        m_mutex.lock();
+        ctxt.setFrame(frame);
+        gotoContext(ctxt, true);
+        m_mutex.unlock();
+    }
+}
+
 // Nuke node builder
 static Iop* constructor(Node* node){ return new Aton(node); }
 const Iop::Description Aton::desc(CLASS, 0, constructor);

@@ -33,9 +33,6 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
         // Time to reset per every IPR iteration
         static int _active_time, delta_time = 0;
         
-        // Current Frame Number
-        double current_frame = 0;
-        
         // Loop over incoming data
         while ((d.type() == 2 || d.type() == 9) == false)
         {
@@ -55,13 +52,13 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
                 case 0: // Open a new image
                 {
                     // Copy data from d
-                    const int _xres = d.xres();
-                    const int _yres = d.yres();
-                    const int _version = d.version();
-                    const float _fov = d.camFov();
-                    const long long _area = d.rArea();
-                    const Matrix4 _matrix = Matrix4(&d.camMatrix()[0]);
-                    const double _frame = static_cast<double>(d.currentFrame());
+                    const int& _xres = d.xres();
+                    const int& _yres = d.yres();
+                    const int& _version = d.version();
+                    const float& _fov = d.camFov();
+                    const long long& _area = d.rArea();
+                    const Matrix4& _matrix = Matrix4(&d.camMatrix()[0]);
+                    const double& _frame = static_cast<double>(d.currentFrame());
                     
                     // Get image area to calculate the progress
                     regionArea = _area;
@@ -70,11 +67,7 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
                     delta_time = _active_time;
                     
                     // Set current frame
-                    if (current_frame != _frame)
-                    {
-                        current_frame = _frame;
-                        node->m_current_frame = _frame;
-                    }
+                    node->m_current_frame = _frame;
                     
                     std::vector<double>& m_frs = node->m_frames;
                     std::vector<FrameBuffer>& m_fbs = node->m_framebuffers;
@@ -156,8 +149,8 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
                     // Get frame buffer
                     FrameBuffer& fB = node->m_framebuffers[f_index];
                     const char* _aov_name = d.aovName();
-                    const int _xres = d.xres();
-                    const int _yres = d.yres();
+                    const int& _xres = d.xres();
+                    const int& _yres = d.yres();
 
                     if(fB.isResolutionChanged(_xres, _yres))
                     {
@@ -188,7 +181,7 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
                         const int& _spp = d.spp();
                         const long long& _ram = d.ram();
                         const int& _time = d.time();
-                        
+
                         // Set active time
                         _active_time = _time;
                         
@@ -240,6 +233,7 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
                             
                             // Update the image
                             const Box box = Box(_x, h - _y - _height, _x + _width, h - _y);
+                            node->setCurrentFrame(node->m_current_frame);
                             node->flagForUpdate(box);
                         }
                     }
@@ -248,14 +242,6 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
                 }
                 case 2: // Close image
                 {
-                    // Set Current Frame and update the UI
-                    OutputContext ctxt = node->outputContext();
-                    ctxt.setFrame(current_frame);
-                    
-                    node->m_mutex.lock();
-                    node->gotoContext(ctxt, true);
-                    node->flagForUpdate();
-                    node->m_mutex.unlock();
                     break;
                 }
                 case 9: // This is sent when the parent process want to kill

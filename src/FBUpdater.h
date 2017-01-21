@@ -8,9 +8,6 @@ All rights reserved. See COPYING.txt for more details.
 #define FBUpdater_h
 
 #include "Aton.h"
-#include "boost/thread/thread.hpp"
-
-using namespace boost;
 
 // Our FrameBuffer updater thread
 static void FBUpdater(unsigned index, unsigned nthreads, void* data)
@@ -35,12 +32,12 @@ static void FBUpdater(unsigned index, unsigned nthreads, void* data)
                 node->setCameraKnobs(fB.getCameraFov(),
                                      fB.getCameraMatrix());
             }
-            
+
             node->flagForUpdate();
             prevFrame = uiFrame;
         }
         else
-            this_thread::sleep(posix_time::millisec(ms));
+            SleepMS(ms);
     }
 }
 
