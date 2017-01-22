@@ -34,7 +34,7 @@ class Aton: public Iop
     public:
         Aton*                     m_node;             // First node pointer
         Server                    m_server;           // Aton::Server
-        Lock                      m_mutex;            // Mutex for locking the pixel buffer
+        ReadWriteLock             m_mutex;            // Mutex for locking the pixel buffer
         Format                    m_fmt;              // The nuke display format
         FormatPair                m_fmtp;             // Buffer format (knob)
         ChannelSet                m_channels;         // Channels aka AOVs object

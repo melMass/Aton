@@ -270,7 +270,7 @@ void Aton::engine(int y, int x, int r, ChannelMask channels, Row& out)
         float* cOut = out.writable(z) + x;
         const float* END = cOut + (r - x);
         
-        m_mutex.lock();
+        ReadGuard lock(m_mutex);
         if (m_enable_aovs && !fBs.empty() && fBs[f].isReady())
             b = fBs[f].getBufferIndex(z);
         
@@ -287,7 +287,6 @@ void Aton::engine(int y, int x, int r, ChannelMask channels, Row& out)
             ++cOut;
             ++xx;
         }
-        m_mutex.unlock();
     }
 }
 
@@ -434,7 +433,7 @@ int Aton::getFrameIndex(double currentFrame)
 {
     int f_index = 0;
     
-    m_mutex.lock();
+    m_mutex.readLock();
     std::vector<double> frs = m_node->m_frames;
     m_mutex.unlock();
     
@@ -840,15 +839,12 @@ void Aton::setCameraKnobs(const float& fov, const Matrix4& matrix)
 void Aton::setCurrentFrame(const double& frame)
 {
     // Set Current Frame and update the UI
-    OutputContext ctxt = outputContext();
-    double uiFrame = uiContext().frame();
-    
-    if (uiFrame != frame)
+    if (frame != uiContext().frame())
     {
-        m_mutex.lock();
+        OutputContext ctxt = outputContext();
+        ReadGuard lock(m_mutex);
         ctxt.setFrame(frame);
         gotoContext(ctxt, true);
-        m_mutex.unlock();
     }
 }
 

@@ -80,10 +80,9 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
                             FrameBuffer fB(_frame, _xres, _yres);
                             if (!m_frs.empty())
                                 fB = m_fbs.back();
-                            node->m_mutex.lock();
+                            WriteGuard lock(node->m_mutex);
                             m_frs.push_back(_frame);
                             m_fbs.push_back(fB);
-                            node->m_mutex.unlock();
                         }
                     }
                     else
@@ -94,12 +93,11 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
                             f_index = node->getFrameIndex(node->m_current_frame);
                             fB = m_fbs[f_index];
                         }
-                        node->m_mutex.lock();
+                        WriteGuard lock(node->m_mutex);
                         m_frs = std::vector<double>();
                         m_fbs = std::vector<FrameBuffer>();
                         m_frs.push_back(_frame);
                         m_fbs.push_back(fB);
-                        node->m_mutex.unlock();
                     }
                     
                     // Get current FrameBuffer
@@ -111,28 +109,25 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
                     {
                         if (fB.isFrameChanged(_frame))
                         {
-                            node->m_mutex.lock();
+                            WriteGuard lock(node->m_mutex);
                             fB.setFrame(_frame);
-                            node->m_mutex.unlock();
                         }
                         if(fB.isAovsChanged(active_aovs))
                         {
-                            node->m_mutex.lock();
+                            WriteGuard lock(node->m_mutex);
                             fB.resize(1);
                             fB.ready(false);
                             node->resetChannels(node->m_channels);
-                            node->m_mutex.unlock();
                         }
                     }
                     
                     // Setting Camera
                     if (fB.isCameraChanged(_fov, _matrix))
                     {
-                        node->m_mutex.lock();
+                        WriteGuard lock(node->m_mutex);
                         fB.setCamera(_fov, _matrix);
                         node->setCameraKnobs(fB.getCameraFov(),
                                              fB.getCameraMatrix());
-                        node->m_mutex.unlock();
                     }
 
                     // Set Arnold Core version
@@ -154,9 +149,8 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
 
                     if(fB.isResolutionChanged(_xres, _yres))
                     {
-                        node->m_mutex.lock();
+                        WriteGuard lock(node->m_mutex);
                         fB.setResolution(_xres, _yres);
-                        node->m_mutex.unlock();
                     }
 
                     // Get active aov names
@@ -190,7 +184,7 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
                         const int& h = fB.getHeight();
 
                         // Adding buffer
-                        node->m_mutex.lock();
+                        node->m_mutex.writeLock();
                         if(!fB.isBufferExist(_aov_name) && (node->m_enable_aovs || fB.empty()))
                             fB.addBuffer(_aov_name, _spp);
                         else
@@ -225,7 +219,7 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
                             progress = 100 - (regionArea * 100) / (w * h);
 
                             // Set status parameters
-                            node->m_mutex.lock();
+                            node->m_mutex.writeLock();
                             fB.setProgress(progress);
                             fB.setRAM(_ram);
                             fB.setTime(_time, delta_time);
