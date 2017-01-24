@@ -175,7 +175,7 @@ class Aton(gui.GeDialog):
         # Overscan
         self.GroupBegin(GenLabelID(), c4d.BFH_SCALEFIT|c4d.BFV_SCALEFIT, 3, 1, 0)
         AddSliderGroup(self.OverscanID, "Overscan:", 0, 0, 512)
-        self.AddButton(self.OverscanSetID, 0, 0, 0, "Set")
+        #self.AddButton(self.OverscanSetID, 0, 0, 0, "Set")
         self.GroupEnd()
         EndGroup()
 
