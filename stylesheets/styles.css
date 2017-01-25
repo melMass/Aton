@@ -323,3 +323,5 @@ footer {
     color:#444;
   }
 }
+
+.margined li {margin: 0 0 4px 0}
