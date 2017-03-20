@@ -13,7 +13,7 @@ using namespace DD::Image;
 
 namespace chStr
 {
-    extern const std::string RGBA, rgb, depth, Z, N, P,
+    extern const std::string RGBA, rgb, depth, Z, N, P, ID, _id,
                              _red, _green, _blue, _X, _Y, _Z;
 }
 

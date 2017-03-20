@@ -192,6 +192,8 @@ driver_write_bucket
 
         switch (pixel_type)
         {
+            case(AI_TYPE_INT):
+                spp = 1;
             case(AI_TYPE_FLOAT):
                 spp = 1;
                 break;

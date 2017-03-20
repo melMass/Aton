@@ -223,10 +223,12 @@ void Aton::_validate(bool for_real)
                         channels.insert(Chan_Green);
                         channels.insert(Chan_Blue);
                         channels.insert(Chan_Alpha);
+                        continue;
                     }
                     else if (bfName == Z && !channels.contains(Chan_Z))
                     {
                         channels.insert(Chan_Z);
+                        continue;
                     }
                     else if (bfName == N || bfName == P)
                     {
@@ -236,6 +238,15 @@ void Aton::_validate(bool for_real)
                             channels.insert(channel((bfName + _Y).c_str()));
                             channels.insert(channel((bfName + _Z).c_str()));
                         }
+                        continue;
+                    }
+                    else if (bfName == ID)
+                    {
+                        if (!channels.contains(channel((bfName + _id).c_str())))
+                        {
+                            channels.insert(channel((bfName + _id).c_str()));
+                        }
+                        continue;
                     }
                     else if (!channels.contains(channel((bfName + _red).c_str())))
                     {
