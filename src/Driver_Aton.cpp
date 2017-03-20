@@ -194,6 +194,7 @@ driver_write_bucket
         {
             case(AI_TYPE_INT):
                 spp = 1;
+                break;
             case(AI_TYPE_FLOAT):
                 spp = 1;
                 break;
