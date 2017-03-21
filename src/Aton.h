@@ -121,7 +121,7 @@ class Aton: public Iop
     
         bool isPathValid(std::string path);
     
-        int getFrameIndex(double currentFrame);
+        int getFrameIndex(std::vector<double>& frames, double currentFrame);
     
         std::string getPath();
     

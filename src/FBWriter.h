@@ -90,7 +90,7 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
                         FrameBuffer fB(_frame, _xres, _yres);
                         if (!node->m_frames.empty())
                         {
-                            f_index = node->getFrameIndex(node->m_current_frame);
+                            f_index = node->getFrameIndex(node->m_frames, node->m_current_frame);
                             fB = m_fbs[f_index];
                         }
                         WriteGuard lock(node->m_mutex);
@@ -101,7 +101,7 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
                     }
                     
                     // Get current FrameBuffer
-                    f_index = node->getFrameIndex(_frame);
+                    f_index = node->getFrameIndex(node->m_frames, _frame);
                     FrameBuffer& fB = m_fbs[f_index];
                     
                     // Reset Frame and Buffers if changed

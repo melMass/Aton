@@ -158,7 +158,7 @@ void Aton::_validate(bool for_real)
 
     if (!m_node->m_framebuffers.empty())
     {
-        const int f_index = getFrameIndex(uiContext().frame());
+        const int f_index = getFrameIndex(m_node->m_frames, uiContext().frame());
         FrameBuffer& fB = m_node->m_framebuffers[f_index];
         
         if (!fB.empty())
@@ -268,7 +268,7 @@ void Aton::_validate(bool for_real)
 
 void Aton::engine(int y, int x, int r, ChannelMask channels, Row& out)
 {
-    const int f = getFrameIndex(uiContext().frame());
+    const int f = getFrameIndex(m_node->m_frames, uiContext().frame());
     std::vector<FrameBuffer>& fBs = m_node->m_framebuffers;
     
     foreach(z, channels)
@@ -438,39 +438,37 @@ bool Aton::isPathValid(std::string path)
     return boost::filesystem::exists(dir);
 }
 
-int Aton::getFrameIndex(double currentFrame)
+int Aton::getFrameIndex(std::vector<double>& frames, double currentFrame)
 {
     int f_index = 0;
     
-    m_mutex.readLock();
-    std::vector<double> frs = m_node->m_frames;
-    m_mutex.unlock();
-    
-    if (frs.size() > 1)
+    if (frames.size() > 1)
     {
         if (!m_multiframes)
             currentFrame = m_node->m_current_frame;
         
         int nearFIndex = INT_MIN;
         int minFIndex = INT_MAX;
+        
+        ReadGuard lock(m_mutex);
         std::vector<double>::iterator it;
-        for(it = frs.begin(); it != frs.end(); ++it)
+        for(it = frames.begin(); it != frames.end(); ++it)
         {
             if (currentFrame == *it)
             {
-                f_index = static_cast<int>(it - frs.begin());
+                f_index = static_cast<int>(it - frames.begin());
                 break;
             }
             else if (currentFrame > *it && nearFIndex < *it)
             {
                 nearFIndex = static_cast<int>(*it);
-                f_index = static_cast<int>(it - frs.begin());
+                f_index = static_cast<int>(it - frames.begin());
                 continue;
             }
             else if (*it < minFIndex && nearFIndex == INT_MIN)
             {
                 minFIndex = static_cast<int>(*it);
-                f_index = static_cast<int>(it - frs.begin());
+                f_index = static_cast<int>(it - frames.begin());
             }
         }
     }

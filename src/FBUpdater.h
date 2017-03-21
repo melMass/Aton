@@ -25,7 +25,7 @@ static void FBUpdater(unsigned index, unsigned nthreads, void* data)
         if (node->m_multiframes && fbSize > 1 && uiFrame != prevFrame &&
                                                  uiFrame != opFrame)
         {
-            const int f_index = node->getFrameIndex(uiFrame);
+            const int f_index = node->getFrameIndex(node->m_frames, uiFrame);
             FrameBuffer& fB = node->m_framebuffers[f_index];
             if (node->m_live_camera)
             {
