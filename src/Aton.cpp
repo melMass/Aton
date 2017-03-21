@@ -242,8 +242,8 @@ void Aton::_validate(bool for_real)
                     }
                     else if (bfName == ID)
                     {
-                        if (!channels.contains(channel((bfName + _id).c_str())))
-                            channels.insert(channel((bfName + _id).c_str()));
+                        if (!channels.contains(channel((bfName + _red).c_str())))
+                            channels.insert(channel((bfName + _red).c_str()));
                         continue;
                     }
                     else if (!channels.contains(channel((bfName + _red).c_str())))
