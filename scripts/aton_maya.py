@@ -76,6 +76,17 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         def portUpdateUI(value):
             self.portSpinBox.setValue(value + self.defaultPort)
 
+        def host_toggled(value):
+            isChecked = bool(value)
+            hostLabel.setEnabled(isChecked)
+            self.hostLineEdit.setEnabled(isChecked)
+
+        def port_toggled(value):
+            isChecked = bool(value)
+            portLabel.setEnabled(isChecked)
+            self.portSpinBox.setEnabled(isChecked)
+            portSlider.setEnabled(isChecked)
+
         def sequence_toggled(value):
             isChecked = bool(value)
             self.startLabel.setEnabled(isChecked)
@@ -87,8 +98,10 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
 
         def resetUI(*args):
             self.hostLineEdit.setText(self.defaultHost)
+            self.hostCheckBox.setChecked(True)
             self.portSpinBox.setValue(self.defaultPort)
             portSlider.setValue(0)
+            self.portCheckBox.setChecked(True)
             self.cameraComboBox.setCurrentIndex(0)
             self.resolutionSpinBox.setValue(100)
             resolutionSlider.setValue(20)
@@ -131,8 +144,13 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         hostLabel.setMaximumSize(75, 20)
         self.hostLineEdit = QtWidgets.QLineEdit()
         self.hostLineEdit.setText(u"%s"%self.defaultHost)
+        self.hostCheckBox = QtWidgets.QCheckBox()
+        self.hostCheckBox.setChecked(True)
+        self.hostCheckBox.stateChanged.connect(host_toggled)
         hostLayout.addWidget(hostLabel)
         hostLayout.addWidget(self.hostLineEdit)
+        hostLayout.addWidget(self.hostCheckBox)
+
 
         # Port Layout
         portLayout = QtWidgets.QHBoxLayout()
@@ -149,9 +167,13 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         portSlider.setMinimum(0)
         portSlider.setMaximum(15)
         portSlider.setValue(0)
+        self.portCheckBox = QtWidgets.QCheckBox()
+        self.portCheckBox.setChecked(True)
+        self.portCheckBox.stateChanged.connect(port_toggled)
         portLayout.addWidget(portLabel)
         portLayout.addWidget(self.portSpinBox)
         portLayout.addWidget(portSlider)
+        portLayout.addWidget(self.portCheckBox)
 
         # Camera Layout
         cameraLayout = QtWidgets.QHBoxLayout()
@@ -615,10 +637,12 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
 
         # Updating host and port from UI
         if self.defaultPort != 0:
-            host = self.hostLineEdit.text()
-            port = self.portSpinBox.value()
-            cmds.setAttr("defaultArnoldDisplayDriver.host", host, type="string")
-            cmds.setAttr("defaultArnoldDisplayDriver.port", port)
+            if self.hostCheckBox.isChecked():
+                host = self.hostLineEdit.text()
+                cmds.setAttr("defaultArnoldDisplayDriver.host", host, type="string")
+            if self.portCheckBox.isChecked():
+                port = self.portSpinBox.value()
+                cmds.setAttr("defaultArnoldDisplayDriver.port", port)
         else:
             cmds.warning("Current renderer is not set to Arnold or Aton driver is not loaded.")
             return
@@ -669,7 +693,11 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         for i in hCams: cmds.hide(i)
         cmds.setAttr("defaultArnoldDriver.mergeAOVs",  defaultMergeAOVs)
         cmds.setAttr("defaultArnoldDisplayDriver.aiTranslator", defaultAiTranslator, type="string")
-        cmds.setAttr("defaultArnoldDisplayDriver.port", self.defaultPort)
+
+        if self.hostCheckBox.isChecked():
+            cmds.setAttr("defaultArnoldDisplayDriver.host", host, type="string")
+        if self.portCheckBox.isChecked():
+            cmds.setAttr("defaultArnoldDisplayDriver.port", self.defaultPort)
 
     def getFrames(self):
         frames = range(self.startSpinBox.value(),
