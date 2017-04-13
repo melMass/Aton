@@ -47,19 +47,34 @@ struct ShaderData
 
 node_parameters
 {
-    AiParameterSTR("host", getHost());
-    AiParameterINT("port", getPort());
+    AiParameterStr("host", getHost());
+    AiParameterInt("port", getPort());
+    
+#ifdef ARNOLD_5
+    AiMetaDataSetStr(nentry, NULL, "maya.translator", "aton");
+    AiMetaDataSetStr(nentry, NULL, "maya.attr_prefix", "");
+    AiMetaDataSetBool(nentry, NULL, "display_driver", true);
+    AiMetaDataSetBool(nentry, NULL, "single_layer_driver", false);
+#else
     AiMetaDataSetStr(mds, NULL, "maya.translator", "aton");
     AiMetaDataSetStr(mds, NULL, "maya.attr_prefix", "");
     AiMetaDataSetBool(mds, NULL, "display_driver", true);
     AiMetaDataSetBool(mds, NULL, "single_layer_driver", false);
+#endif
+    
 }
 
 node_initialize
 {
     ShaderData* data = (ShaderData*)AiMalloc(sizeof(ShaderData));
-    data->client = NULL,
+    data->client = NULL;
+
+#ifdef ARNOLD_5
+    AiDriverInitialize(node, true);
+#else
     AiDriverInitialize(node, true, data);
+#endif
+    
 }
 
 node_update {}
@@ -79,7 +94,11 @@ driver_open
                         atoi(minor) * 100 +
                         atoi(fix);
     
+#ifdef ARNOLD_5
+    ShaderData* data = (ShaderData*)AiNodeGetLocalData(node);
+#else
     ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
+#endif
     
     // Get Frame number
     AtNode* options = AiUniverseGetOptions();
@@ -91,8 +110,14 @@ driver_open
     
     // Get Camera
     AtNode* camera = (AtNode*)AiNodeGetPtr(options, "camera");
+    
+#ifdef ARNOLD_5
+    AtMatrix cMat = AiNodeGetMatrix(camera, "matrix");
+#else
     AtMatrix cMat;
     AiNodeGetMatrix(camera, "matrix", cMat);
+#endif
+
     
     const float cam_fov = AiNodeGetFlt(camera, "fov");
     const float cam_matrix[16] = {cMat[0][0], cMat[1][0], cMat[2][0], cMat[3][0],
@@ -172,7 +197,12 @@ driver_process_bucket { }
 
 driver_write_bucket
 {
+    
+#ifdef ARNOLD_5
+    ShaderData* data = (ShaderData*)AiNodeGetLocalData(node);
+#else
     ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
+#endif
 
     int pixel_type;
     int spp = 0;
@@ -218,8 +248,13 @@ driver_write_bucket
 driver_close
 {
     AiMsgInfo("[Aton] driver close");
-
+    
+#ifdef ARNOLD_5
+    ShaderData* data = (ShaderData*)AiNodeGetLocalData(node);
+#else
     ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
+#endif
+    
     try
     {
         data->client->closeImage();
@@ -235,10 +270,18 @@ node_finish
     AiMsgInfo("[Aton] driver finish");
    
     // Release the driver
+#ifdef ARNOLD_5
+    ShaderData* data = (ShaderData*)AiNodeGetLocalData(node);
+#else
     ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
+#endif
+
     delete data->client;
     AiFree(data);
+    
+#ifndef ARNOLD_5
     AiDriverDestroy(node);
+#endif
 }
 
 node_loader
