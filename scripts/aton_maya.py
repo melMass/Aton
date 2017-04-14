@@ -17,8 +17,9 @@ try:
 except ImportError:
     cmds.warning("MtoA was not found.")
 
-# Check Maya version
+# Check Maya and Arnold versions
 MAYA_2017 = True if cmds.about(api=True) >= 201700 else False
+ARNOLD_5 = True if AiGetVersion()[0] == '5' else False
 
 if MAYA_2017:
     from PySide2 import QtCore, QtWidgets
@@ -879,7 +880,7 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         # Texture Repeat Udpate
         if attr == None or attr == 5:
             texRepeat = self.textureRepeatSpinbox.value()
-            if AiGetVersion()[0] == '5':
+            if ARNOLD_5:
                 AiNodeSetVec2(self.placeTexture, "repeatUV", texRepeat, texRepeat)
             else:
                 AiNodeSetPnt2(self.placeTexture, "repeatUV", texRepeat, texRepeat)
