@@ -71,6 +71,7 @@ node_initialize
 
 #ifdef ARNOLD_5
     AiDriverInitialize(node, true);
+    AiNodeSetLocalData(node, data);
 #else
     AiDriverInitialize(node, true, data);
 #endif
@@ -108,23 +109,24 @@ driver_open
     const char* host = AiNodeGetStr(node, "host");    
     const int port = AiNodeGetInt(node, "port");
     
-    // Get Camera
+    // Get Camera Matrix
     AtNode* camera = (AtNode*)AiNodeGetPtr(options, "camera");
     
 #ifdef ARNOLD_5
-    AtMatrix cMat = AiNodeGetMatrix(camera, "matrix");
+    const AtMatrix& cMat = AiNodeGetMatrix(camera, "matrix");
 #else
     AtMatrix cMat;
     AiNodeGetMatrix(camera, "matrix", cMat);
 #endif
-
     
-    const float cam_fov = AiNodeGetFlt(camera, "fov");
     const float cam_matrix[16] = {cMat[0][0], cMat[1][0], cMat[2][0], cMat[3][0],
                                   cMat[0][1], cMat[1][1], cMat[2][1], cMat[3][1],
                                   cMat[0][2], cMat[1][2], cMat[2][2], cMat[3][2],
                                   cMat[0][3], cMat[1][3], cMat[2][3], cMat[3][3]};
-    
+
+    // Get Camera Field of view
+    const float cam_fov = AiNodeGetFlt(camera, "fov");
+
     // Get Resolution
     const int xres = AiNodeGetInt(options, "xres");
     const int yres = AiNodeGetInt(options, "yres");
@@ -166,7 +168,7 @@ driver_open
     
     // Make image header & send to server
     Data header(data->xres, data->yres, 0, 0, 0, 0,
-                      rArea, version, currentFrame, cam_fov, cam_matrix);
+                rArea, version, currentFrame, cam_fov, cam_matrix);
 
     try // Now we can connect to the server and start rendering
     {
@@ -237,8 +239,8 @@ driver_write_bucket
         
         // Create our data object
         Data packet(data->xres, data->yres, bucket_xo, bucket_yo,
-                          bucket_size_x, bucket_size_y, 0, 0, 0, 0, 0,
-                          spp, ram, time, aov_name, ptr);
+                    bucket_size_x, bucket_size_y, 0, 0, 0, 0, 0,
+                    spp, ram, time, aov_name, ptr);
 
         // Send it to the server
         data->client->sendPixels(packet);
@@ -275,10 +277,10 @@ node_finish
 #else
     ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
 #endif
-
+    
     delete data->client;
     AiFree(data);
-    
+
 #ifndef ARNOLD_5
     AiDriverDestroy(node);
 #endif

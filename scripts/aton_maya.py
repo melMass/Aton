@@ -1,6 +1,6 @@
 __author__ = "Vahan Sosoyan, Dan Bradham, Bjoern Siegert"
 __copyright__ = "2016 All rights reserved. See Copyright.txt for more details."
-__version__ = "1.2.0"
+__version__ = "1.2.1"
 
 import sys
 from timeit import default_timer
@@ -879,7 +879,7 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         # Texture Repeat Udpate
         if attr == None or attr == 5:
             texRepeat = self.textureRepeatSpinbox.value()
-            AiNodeSetPnt2(self.placeTexture, "repeatUV", texRepeat, texRepeat)
+            AiNodeSetVec2(self.placeTexture, "repeatUV", texRepeat, texRepeat)
 
         try:
             cmds.arnoldIpr(mode='unpause')
