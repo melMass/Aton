@@ -879,8 +879,10 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         # Texture Repeat Udpate
         if attr == None or attr == 5:
             texRepeat = self.textureRepeatSpinbox.value()
-            AiNodeSetVec2(self.placeTexture, "repeatUV", texRepeat, texRepeat)
-
+            if AiGetVersion()[0] == '5':
+                AiNodeSetVec2(self.placeTexture, "repeatUV", texRepeat, texRepeat)
+            else:
+                AiNodeSetPnt2(self.placeTexture, "repeatUV", texRepeat, texRepeat)
         try:
             cmds.arnoldIpr(mode='unpause')
         except RuntimeError:
