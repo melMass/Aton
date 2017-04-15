@@ -6,6 +6,7 @@ All rights reserved. See COPYING.txt for more details.
 
 #include "FrameBuffer.h"
 #include "boost/format.hpp"
+#include <boost/lexical_cast.hpp>
 
 const std::string chStr::RGBA = "RGBA",
                   chStr::rgb = "rgb",
@@ -268,15 +269,14 @@ void FrameBuffer::setAiVersion(const int& version)
 {
     _versionInt = version;
     
-    // Construct a string from the version number passed
-    const int archV = (version % 10000000) / 1000000;
-    const int majorV = (version % 1000000) / 10000;
-    const int minorV = (version % 10000) / 100;
-    const int fixV = version % 100;
+    using namespace boost;
+    using namespace std;
     
-    std::stringstream stream;
-    stream << archV << "." << majorV << "." << minorV << "." << fixV;
-    _versionStr = stream.str();
+    // Construct a string from the passed version number
+    _versionStr = lexical_cast<string>((version % 10000000) / 1000000) + "." +
+                  lexical_cast<string>((version % 1000000) / 10000) + "." +
+                  lexical_cast<string>((version % 10000) / 100) + "." +
+                  lexical_cast<string>(version % 100);
 }
 
 void FrameBuffer::setCamera(const float& fov, const Matrix4& matrix)
