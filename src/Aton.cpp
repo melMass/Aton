@@ -260,8 +260,8 @@ void Aton::_validate(bool for_real)
     }
     
     // Setup format etc
-    info_.format(*m_node->m_fmtp.fullSizeFormat());
-    info_.full_size_format(*m_node->m_fmtp.format());
+    info_.format(*m_node->m_fmtp.format());
+    info_.full_size_format(*m_node->m_fmtp.fullSizeFormat());
     info_.channels(m_node->m_channels);
     info_.set(m_node->info().format());
 }

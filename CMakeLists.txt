@@ -26,6 +26,8 @@ include_directories(
   ${Nuke_INCLUDE_DIR}
   )
 
+target_compile_definitions(arnold_plugin PRIVATE ARNOLD_5=1)
+
 #=====
 # Build the Nuke plugin
 add_library( nuke_plugin 
