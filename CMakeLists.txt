@@ -1,6 +1,6 @@
 #==========
 #
-# Copyright (c) 2016, Dan Bethell, Johannes Saam, Vahan Sosoyan.
+# Copyright (c) 2015, Dan Bethell, Johannes Saam, Vahan Sosoyan.
 # All rights reserved.
 #
 # For license information regarding redistribution and
@@ -24,9 +24,7 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/src
   ${Boost_INCLUDE_DIRS}
   ${Nuke_INCLUDE_DIR}
-  )
-
-target_compile_definitions(arnold_plugin PRIVATE ARNOLD_5=1)
+  ) 
 
 #=====
 # Build the Nuke plugin
@@ -64,6 +62,9 @@ if( ARNOLD_FOUND )
       ${CMAKE_SOURCE_DIR}/src/Client.cpp
       ${CMAKE_SOURCE_DIR}/src/Data.cpp
       )
+    
+    # To compile against Arnold 5
+    add_definitions(-DARNOLD_5)
 
     set_target_properties( arnold_plugin
       PROPERTIES
