@@ -17,7 +17,9 @@ set( CMAKE_BUILD_TYPE Release )
 set( Boost_USE_STATIC_LIBS ON )
 set( CMAKE_CXX_COMPILER g++ )
 set( CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake )
-find_package( Boost 1.54.0 COMPONENTS thread regex filesystem system REQUIRED )
+set( CMAKE_CXX_FLAGS "-std=c++98" )
+
+find_package( Boost 1.54.0 COMPONENTS regex filesystem system REQUIRED )
 find_package( Nuke REQUIRED )
 
 include_directories(
