@@ -41,7 +41,7 @@ class BoxWidget(QtWidgets.QFrame):
 
         self.layout = QtWidgets.QHBoxLayout(self)
         self.layout.setSizeConstraint(QtWidgets.QLayout.SetMaximumSize)
-        self.layout.setMargin(0)
+        self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.addWidget(self.label)
 
 class LineEditBox(BoxWidget):
