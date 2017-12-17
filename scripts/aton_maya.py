@@ -1,6 +1,6 @@
 __author__ = "Vahan Sosoyan, Dan Bradham, Bjoern Siegert"
-__copyright__ = "2016 All rights reserved. See Copyright.txt for more details."
-__version__ = "1.2.1"
+__copyright__ = "2017 All rights reserved. See Copyright.txt for more details."
+__version__ = "1.2.2"
 
 import sys
 from timeit import default_timer
@@ -18,7 +18,7 @@ except ImportError:
     cmds.warning("MtoA was not found.")
 
 # Check Maya and Arnold versions
-MAYA_2017 = True if cmds.about(api=True) >= 201700 else False
+MAYA_2017 = True if (cmds.about(api=True) >= 201700) else False
 ARNOLD_5 = True if AiGetVersion()[0] == '5' else False
 
 if MAYA_2017:
@@ -29,17 +29,203 @@ else:
     from PySide import QtGui as QtWidgets
     from shiboken import wrapInstance
 
-def maya_main_window():
+class BoxWidget(QtWidgets.QFrame):
+    def __init__(self, label, first = True):
+        super(BoxWidget, self).__init__()
+        self.label = QtWidgets.QLabel(label + ":")
+        self.label.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignCenter)
+
+        if first:
+            self.label.setMinimumSize(75, 20)
+            self.label.setMaximumSize(75, 20)
+
+        self.layout = QtWidgets.QHBoxLayout(self)
+        self.layout.setSizeConstraint(QtWidgets.QLayout.SetMaximumSize)
+        self.layout.setMargin(0)
+        self.layout.addWidget(self.label)
+
+class LineEditBox(BoxWidget):
+    def __init__(self, label, text = '', first=True):
+        super(LineEditBox, self).__init__(label, first)
+
+        self.lineEditBox = QtWidgets.QLineEdit()
+        self.lineEditBox.setText(u"%s"%text)
+        self.layout.addWidget(self.lineEditBox)
+
+    def setEnabled(self, value):
+        self.label.setEnabled(value)
+        self.lineEditBox.setEnabled(value)
+
+    def text(self):
+        return self.lineEditBox.text()
+
+    def setText(self, text):
+        self.lineEditBox.setText(text)
+
+class SliderBox(BoxWidget):
+    def __init__(self, label, value = 0, first=True):
+        super(SliderBox, self).__init__(label, first)
+
+        self.spinBox = QtWidgets.QSpinBox()
+        self.spinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
+        self.spinBox.setValue(value)
+
+        self.slider = QtWidgets.QSlider()
+        self.slider.setOrientation(QtCore.Qt.Horizontal)
+        self.slider.setValue(value)
+
+        self.slider.valueChanged.connect(self.spinBox.setValue)
+
+        self.layout.addWidget(self.spinBox)
+        self.layout.addWidget(self.slider)
+
+    def setMinimum(self, spinValue=None, sliderValue=None):
+        if spinValue is not None: self.spinBox.setMinimum(spinValue)
+        if sliderValue is not None: self.slider.setMinimum(sliderValue)
+
+    def setMaximum(self, spinValue=None, sliderValue=None):
+        if spinValue is not None: self.spinBox.setMaximum(spinValue)
+        if sliderValue is not None: self.slider.setMaximum(sliderValue)
+
+    def setValue(self, spinValue=None, sliderValue=None):
+        if sliderValue is not None: self.slider.setValue(sliderValue)
+        if spinValue is not None: self.spinBox.setValue(spinValue)
+
+    def value(self):
+        return self.spinBox.value()
+
+    def connect(self, func):
+        self.slider.valueChanged.connect(func)
+
+    def setEnabled(self, value):
+        self.label.setEnabled(value)
+        self.spinBox.setEnabled(value)
+        self.slider.setEnabled(value)
+
+    @property
+    def valueChanged(self):
+        return self.spinBox.valueChanged
+
+
+class SpinBox(BoxWidget):
+    def __init__(self, label, value=0, first=True):
+        super(SpinBox, self).__init__(label, first)
+        self.spinBox = QtWidgets.QSpinBox()
+        self.spinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
+        self.spinBox.setValue(value)
+        self.spinBox.setMaximumSize(50, 20)
+        self.spinBox.setRange(-99999,99999)
+
+        self.layout.addWidget(self.spinBox)
+
+    def value(self):
+        return self.spinBox.value()
+
+    def setValue(self, value):
+        self.spinBox.setValue(value)
+
+    @property
+    def valueChanged(self):
+        return self.spinBox.valueChanged
+
+class ComboBox(BoxWidget):
+    def __init__(self, label, first=True):
+        super(ComboBox, self).__init__(label, first)
+        self.items = list()
+
+        self.comboBox = QtWidgets.QComboBox()
+        self.comboBox.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
+        self.currentIndexChanged = self.comboBox.currentIndexChanged
+
+        self.layout.addWidget(self.comboBox)
+
+    def setEnabled(self, value):
+        self.label.setEnabled(value)
+        self.comboBox.setEnabled(value)
+
+    def setCurrentIndex(self, value):
+        self.comboBox.setCurrentIndex(value)
+
+    def currentIndex(self):
+        return self.comboBox.currentIndex()
+
+    def currentName(self):
+        index = self.comboBox.currentIndex()
+        return self.items[index]
+
+    def addItems(self, items):
+        for i in items:
+            self.comboBox.addItem(i)
+        self.items += items
+
+def getMayaMainWindow():
     main_window_ptr = OpenMayaUI.MQtUtil.mainWindow()
     return wrapInstance(long(main_window_ptr), QtWidgets.QMainWindow)
+
+def getHost():
+    ''' Returns the host from Aton driver '''
+    host = 0
+    try: # To init Arnold Render settings
+        host = cmds.getAttr("defaultArnoldDisplayDriver.host")
+    except ValueError:
+        mel.eval("unifiedRenderGlobalsWindow;")
+        try: # If aton driver is not loaded
+            host = cmds.getAttr("defaultArnoldDisplayDriver.host")
+        except ValueError:
+            pass
+    return host
+
+def getPort():
+    ''' Returns the port number from Aton driver '''
+    port = 0
+    try: # To init Arnold Render settings
+        port = cmds.getAttr("defaultArnoldDisplayDriver.port")
+    except ValueError:
+        mel.eval("unifiedRenderGlobalsWindow;")
+        try: # If aton driver is not loaded
+            port = cmds.getAttr("defaultArnoldDisplayDriver.port")
+        except ValueError:
+            pass
+    return port
+
+def getActiveCamera():
+    ''' Returns active camera shape name '''
+    cam = cmds.modelEditor(cmds.playblast(ae=1), q=1, cam=1)
+    if cmds.listRelatives(cam) != None:
+        cam = cmds.listRelatives(cam)[0]
+    return cam
+
+def getSceneOption(attr):
+    ''' Returns requested scene options attribute value '''
+    if cmds.getAttr("defaultRenderGlobals.ren") == "arnold":
+        try:
+            return {0 : lambda: getHost(),
+                    1 : lambda: getPort(),
+                    2 : lambda: getActiveCamera(),
+                    3 : lambda: cmds.getAttr("defaultResolution.width"),
+                    4 : lambda: cmds.getAttr("defaultResolution.height"),
+                    5 : lambda: cmds.getAttr("defaultArnoldRenderOptions.AASamples"),
+                    6 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreMotionBlur"),
+                    7 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreSubdivision"),
+                    8 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreDisplacement"),
+                    9 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreBump"),
+                    10 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreSss"),
+                    11 : lambda: cmds.playbackOptions(q=True, minTime=True),
+                    12 : lambda: cmds.playbackOptions(q=True, maxTime=True),
+                    13 : lambda: cmds.getAttr("defaultArnoldRenderOptions.progressive_rendering")}[attr]()
+        except ValueError:
+            pass
+    return 0
 
 class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
     def __init__(self):
         # Attributes
         self.timeChangedCB = None
         self.selectionChangedCB = None
-        self.defaultHost = self.getSceneOption(0)
-        self.defaultPort = self.getSceneOption(1)
+        self.defaultMergeAOVs = None
+        self.defaultAiTranslator = None
+        self.defaultHost = getSceneOption(0)
+        self.defaultPort = getSceneOption(1)
 
         # Sequence mode
         self.frame_sequence = AiFrameSequence()
@@ -49,13 +235,13 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
 
         # UI Names
         self.objName = self.__class__.__name__.lower()
-        self.wsCtrlName = self.__class__.__name__.lower() + 'WorkspaceControl'
+        self.wsCtrlName = self.objName + 'WorkspaceControl'
 
         # Delete already existing UI instances
         self.deleteInstances()
 
         # Init UI
-        super(self.__class__, self).__init__(maya_main_window())
+        super(Aton, self).__init__(getMayaMainWindow())
         self.setObjectName(self.objName)
         self.setWindowTitle(self.__class__.__name__)
         self.setProperty("saveWindowPref", True)
@@ -64,65 +250,42 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
     def setupUI(self):
         ''' Building the GUI '''
         def resUpdateUI(value):
-            self.resolutionSpinBox.setValue(value * 5)
-
-        def resInfoUpdate(value):
-            xres = self.getSceneOption(3) * value / 100
-            yres = self.getSceneOption(4) * value / 100
+            self.resolutionSlider.setValue(value * 5)
+            xres = getSceneOption(3) * value * 5 / 100
+            yres = getSceneOption(4) * value * 5 / 100
             resolutionInfoLabel.setText("%sx%s"%(xres, yres))
 
-        def camUpdateUI(value):
-            self.cameraAaSpinBox.setValue(value)
-
         def portUpdateUI(value):
-            self.portSpinBox.setValue(value + self.defaultPort)
-
-        def host_toggled(value):
-            isChecked = bool(value)
-            hostLabel.setEnabled(isChecked)
-            self.hostLineEdit.setEnabled(isChecked)
-
-        def port_toggled(value):
-            isChecked = bool(value)
-            portLabel.setEnabled(isChecked)
-            self.portSpinBox.setEnabled(isChecked)
-            portSlider.setEnabled(isChecked)
+            self.portSlider.spinBox.setValue(value + self.defaultPort)
 
         def sequence_toggled(value):
-            isChecked = bool(value)
-            self.startLabel.setEnabled(isChecked)
-            self.endLabel.setEnabled(isChecked)
-            self.stepLabel.setEnabled(isChecked)
-            self.startSpinBox.setEnabled(isChecked)
-            self.endSpinBox.setEnabled(isChecked)
-            self.stepSpinBox.setEnabled(isChecked)
+            self.startSpinBox.setEnabled(value)
+            self.endSpinBox.setEnabled(value)
+            self.stepSpinBox.setEnabled(value)
 
         def resetUI(*args):
             self.hostLineEdit.setText(self.defaultHost)
             self.hostCheckBox.setChecked(True)
-            self.portSpinBox.setValue(self.defaultPort)
-            portSlider.setValue(0)
+            self.portSlider.setValue(self.defaultPort, 0)
             self.portCheckBox.setChecked(True)
             self.cameraComboBox.setCurrentIndex(0)
-            self.resolutionSpinBox.setValue(100)
-            resolutionSlider.setValue(20)
-            self.cameraAaSpinBox.setValue(self.getSceneOption(5))
-            cameraAaSlider.setValue(self.getSceneOption(5))
+            self.resolutionSlider.setValue(100, 20)
+            self.cameraAaSlider.setValue(getSceneOption(5))
             self.renderRegionXSpinBox.setValue(0)
             self.renderRegionYSpinBox.setValue(0)
-            self.renderRegionRSpinBox.setValue(self.getSceneOption(3))
-            self.renderRegionTSpinBox.setValue(self.getSceneOption(4))
-            overscanSlider.setValue(0)
-            self.motionBlurCheckBox.setChecked(self.getSceneOption(6))
-            self.subdivsCheckBox.setChecked(self.getSceneOption(7))
-            self.displaceCheckBox.setChecked(self.getSceneOption(8))
-            self.bumpCheckBox.setChecked(self.getSceneOption(9))
-            self.sssCheckBox.setChecked(self.getSceneOption(10))
+            self.renderRegionRSpinBox.setValue(getSceneOption(3))
+            self.renderRegionTSpinBox.setValue(getSceneOption(4))
+            self.overscanSlider.setValue(0, 0)
+            self.motionBlurCheckBox.setChecked(getSceneOption(6))
+            self.subdivsCheckBox.setChecked(getSceneOption(7))
+            self.displaceCheckBox.setChecked(getSceneOption(8))
+            self.bumpCheckBox.setChecked(getSceneOption(9))
+            self.sssCheckBox.setChecked(getSceneOption(10))
             self.shaderComboBox.setCurrentIndex(0)
-            textureRepeatSlider.setValue(4)
+            self.textureRepeatSlider.setValue(1, 1)
             self.selectedShaderCheckbox.setChecked(0)
-            self.startSpinBox.setValue(self.getSceneOption(11))
-            self.endSpinBox.setValue(self.getSceneOption(12))
+            self.startSpinBox.setValue(getSceneOption(11))
+            self.endSpinBox.setValue(getSceneOption(12))
             self.stepSpinBox.setValue(1)
             self.seqCheckBox.setChecked(False)
 
@@ -130,265 +293,153 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         self.setAttribute(QtCore.Qt.WA_DeleteOnClose)
 
         mainLayout = QtWidgets.QVBoxLayout()
-        mainLayout.setContentsMargins(5,5,5,5)
-        mainLayout.setSpacing(2)
 
+        # GENERAL GROUP
         generalGroupBox = QtWidgets.QGroupBox("General")
         generalGroupBox.setMaximumSize(9999, 150)
         generalLayout = QtWidgets.QVBoxLayout(generalGroupBox)
 
         # Host Layout
         hostLayout = QtWidgets.QHBoxLayout()
-        hostLabel = QtWidgets.QLabel("Host:")
-        hostLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
-        hostLabel.setMinimumSize(75, 20)
-        hostLabel.setMaximumSize(75, 20)
-        self.hostLineEdit = QtWidgets.QLineEdit()
-        self.hostLineEdit.setText(u"%s"%self.defaultHost)
+        self.hostLineEdit = LineEditBox("Host", u"%s"%self.defaultHost)
         self.hostCheckBox = QtWidgets.QCheckBox()
         self.hostCheckBox.setChecked(True)
-        self.hostCheckBox.stateChanged.connect(host_toggled)
-        hostLayout.addWidget(hostLabel)
+        self.hostCheckBox.stateChanged.connect(self.hostLineEdit.setEnabled)
         hostLayout.addWidget(self.hostLineEdit)
         hostLayout.addWidget(self.hostCheckBox)
 
-
         # Port Layout
         portLayout = QtWidgets.QHBoxLayout()
-        portLabel = QtWidgets.QLabel("Port:")
-        portLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
-        portLabel.setMinimumSize(75, 20)
-        self.portSpinBox = QtWidgets.QSpinBox()
-        self.portSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
-        self.portSpinBox.setMaximum(1024)
-        self.portSpinBox.setMaximum(9999)
-        self.portSpinBox.setValue(self.defaultPort)
-        portSlider = QtWidgets.QSlider()
-        portSlider.setOrientation(QtCore.Qt.Horizontal)
-        portSlider.setMinimum(0)
-        portSlider.setMaximum(15)
-        portSlider.setValue(0)
+        self.portSlider = SliderBox("Port")
+        self.portSlider.setMinimum(0, 0)
+        self.portSlider.setMaximum(9999, 15)
+        self.portSlider.setValue(self.defaultPort)
+        self.portSlider.connect(portUpdateUI)
         self.portCheckBox = QtWidgets.QCheckBox()
         self.portCheckBox.setChecked(True)
-        self.portCheckBox.stateChanged.connect(port_toggled)
-        portLayout.addWidget(portLabel)
-        portLayout.addWidget(self.portSpinBox)
-        portLayout.addWidget(portSlider)
+        self.portCheckBox.stateChanged.connect(self.portSlider.setEnabled)
+        portLayout.addWidget(self.portSlider)
         portLayout.addWidget(self.portCheckBox)
 
         # Camera Layout
         cameraLayout = QtWidgets.QHBoxLayout()
-        cameraLabel = QtWidgets.QLabel("Camera:")
-        cameraLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
-        cameraLabel.setMaximumSize(75, 20)
-        self.cameraComboBox = QtWidgets.QComboBox()
-        self.cameraComboBoxDict = {}
-        self.cameraComboBox.addItem("Current view")
-        for i in cmds.listCameras():
-            self.cameraComboBox.addItem(i)
-            self.cameraComboBoxDict[cmds.listCameras().index(i)+1] = i
-        cameraLayout.addWidget(cameraLabel)
+        self.cameraComboBox = ComboBox("Camera")
+        self.cameraComboBox.addItems(["Current view"] + cmds.listCameras())
         cameraLayout.addWidget(self.cameraComboBox)
 
+        # OVERRIDES GROUP
         overridesGroupBox = QtWidgets.QGroupBox("Overrides")
-        overridesGroupBox.setMaximumSize(9999, 350)
+        overridesGroupBox.setMaximumSize(9999, 450)
         overridesLayout = QtWidgets.QVBoxLayout(overridesGroupBox)
 
         # Resolution Layout
         resolutionLayout = QtWidgets.QHBoxLayout()
-        resolutionLabel = QtWidgets.QLabel("Resolution %:")
-        resolutionLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
-        resolutionLabel.setMinimumSize(75, 20)
-        self.resolutionSpinBox = QtWidgets.QSpinBox()
-        self.resolutionSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
-        self.resolutionSpinBox.setMinimum(1)
-        self.resolutionSpinBox.setMaximum(999)
-        self.resolutionSpinBox.setValue(100)
-        resolutionSlider = QtWidgets.QSlider()
-        resolutionSlider.setOrientation(QtCore.Qt.Horizontal)
-        resolutionSlider.setValue(20)
-        resolutionSlider.setMaximum(40)
-        xres, yres = self.getSceneOption(3), self.getSceneOption(4)
-        resolutionInfoLabel = QtWidgets.QLabel("%sx%s"%(xres, yres))
+        self.resolutionSlider = SliderBox("Resolution %")
+        self.resolutionSlider.setMinimum(1, 1)
+        self.resolutionSlider.setMaximum(200, 40)
+        self.resolutionSlider.setValue(100, 20)
+        self.resolutionSlider.connect(resUpdateUI)
+        xres, yres = getSceneOption(3), getSceneOption(4)
+        resolutionInfoLabel = QtWidgets.QLabel(str(xres)+'x'+str(yres))
         resolutionInfoLabel.setMaximumSize(100, 20)
         resolutionInfoLabel.setEnabled(False)
-        resolutionLayout.addWidget(resolutionLabel)
-        resolutionLayout.addWidget(self.resolutionSpinBox)
-        resolutionLayout.addWidget(resolutionSlider)
+        resolutionLayout.addWidget(self.resolutionSlider)
         resolutionLayout.addWidget(resolutionInfoLabel)
 
         # Camera AA Layout
         cameraAaLayout = QtWidgets.QHBoxLayout()
-        cameraAaLabel = QtWidgets.QLabel("Camera (AA):")
-        cameraAaLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
-        cameraAaLabel.setMinimumSize(75, 20)
-        self.cameraAaSpinBox = QtWidgets.QSpinBox()
-        self.cameraAaSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
-        self.cameraAaSpinBox.setMaximum(64)
-        self.cameraAaSpinBox.setMinimum(-64)
-        self.cameraAaSpinBox.setValue(self.getSceneOption(5))
-        cameraAaSlider = QtWidgets.QSlider()
-        cameraAaSlider.setOrientation(QtCore.Qt.Horizontal)
-        cameraAaSlider.setValue(self.cameraAaSpinBox.value())
-        cameraAaSlider.setMinimum(-3)
-        cameraAaSlider.setMaximum(16)
-        cameraAaSlider.valueChanged[int].connect(self.cameraAaSpinBox.setValue)
-        cameraAaLayout.addWidget(cameraAaLabel)
-        cameraAaLayout.addWidget(self.cameraAaSpinBox)
-        cameraAaLayout.addWidget(cameraAaSlider)
+        self.cameraAaSlider = SliderBox("Camera (AA)")
+        self.cameraAaSlider.setMinimum(-64, -3)
+        self.cameraAaSlider.setMaximum(64, 16)
+        self.cameraAaSlider.setValue(getSceneOption(5))
+        cameraAaLayout.addWidget(self.cameraAaSlider)
 
         # Render region layout
         renderRegionLayout = QtWidgets.QHBoxLayout()
-        renderRegionLabel = QtWidgets.QLabel("Region X:")
-        renderRegionLabel.setMinimumSize(75, 20)
-        renderRegionLabel.setMaximumSize(75, 99)
-        renderRegionLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
-        self.renderRegionXSpinBox = QtWidgets.QSpinBox()
-        renderRegionYLabel = QtWidgets.QLabel("Y:")
-        self.renderRegionYSpinBox = QtWidgets.QSpinBox()
-        renderRegionRLabel = QtWidgets.QLabel("R:")
-        self.renderRegionRSpinBox = QtWidgets.QSpinBox()
-        renderRegionTLabel = QtWidgets.QLabel("T:")
-        self.renderRegionTSpinBox = QtWidgets.QSpinBox()
+        self.renderRegionXSpinBox = SpinBox("Region X")
+        self.renderRegionYSpinBox = SpinBox("Y", 0, False)
+        self.renderRegionRSpinBox = SpinBox("R", 0, False)
+        self.renderRegionTSpinBox = SpinBox("T", 0, False)
+        self.renderRegionRSpinBox.setValue(getSceneOption(3))
+        self.renderRegionTSpinBox.setValue(getSceneOption(4))
         renderRegionGetNukeButton = QtWidgets.QPushButton("Get")
-        renderRegionGetNukeButton.setMaximumSize(35, 18)
         renderRegionGetNukeButton.clicked.connect(self.getNukeCropNode)
-        renderRegionLayout.addWidget(renderRegionLabel)
         renderRegionLayout.addWidget(self.renderRegionXSpinBox)
-        renderRegionLayout.addWidget(renderRegionYLabel)
         renderRegionLayout.addWidget(self.renderRegionYSpinBox)
-        renderRegionLayout.addWidget(renderRegionRLabel)
         renderRegionLayout.addWidget(self.renderRegionRSpinBox)
-        renderRegionLayout.addWidget(renderRegionTLabel)
         renderRegionLayout.addWidget(self.renderRegionTSpinBox)
         renderRegionLayout.addWidget(renderRegionGetNukeButton)
 
-        for i in [self.renderRegionXSpinBox,
-                  self.renderRegionYSpinBox,
-                  self.renderRegionRSpinBox,
-                  self.renderRegionTSpinBox]:
-            i.setRange(-99999,99999)
-            i.setMaximumSize(50,99)
-            i.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
-
-        self.renderRegionRSpinBox.setValue(self.getSceneOption(3))
-        self.renderRegionTSpinBox.setValue(self.getSceneOption(4))
-
         # Overscan Layout
         overscanLayout = QtWidgets.QHBoxLayout()
-        overscanLabel = QtWidgets.QLabel("Overscan:")
-        overscanLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
-        overscanLabel.setMinimumSize(75, 20)
-        self.overscanSpinBox = QtWidgets.QSpinBox()
-        self.overscanSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
-        self.overscanSpinBox.setMinimum(0)
-        self.overscanSpinBox.setMaximum(9999)
-        self.overscanSpinBox.setValue(0)
-        overscanSlider = QtWidgets.QSlider()
-        overscanSlider.setOrientation(QtCore.Qt.Horizontal)
-        overscanSlider.setValue(0)
-        overscanSlider.setMaximum(250)
-        overscanSlider.valueChanged[int].connect(self.overscanSpinBox.setValue)
+        self.overscanSlider = SliderBox("Overscan")
+        self.overscanSlider.setMinimum(0)
+        self.overscanSlider.setMaximum(9999, 250)
+        self.overscanSlider.setValue(0, 0)
         overscanSetButton = QtWidgets.QPushButton("Set")
-        overscanSetButton.setMaximumSize(35, 18)
-        overscanSetButton.clicked.connect(self.setOverscan)
-        overscanLayout.addWidget(overscanLabel)
-        overscanLayout.addWidget(self.overscanSpinBox)
-        overscanLayout.addWidget(overscanSlider)
+        overscanLayout.addWidget(self.overscanSlider)
         overscanLayout.addWidget(overscanSetButton)
 
         # Shaders layout
         shaderLayout = QtWidgets.QHBoxLayout()
-        shaderLabel = QtWidgets.QLabel("Shader override:")
-        shaderLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
-        shaderLabel.setMaximumSize(90, 20)
-        self.shaderComboBox = QtWidgets.QComboBox()
-        self.shaderComboBox.addItem("Disabled")
-        self.shaderComboBox.addItem("Checker")
-        self.shaderComboBox.addItem("Grey")
-        self.shaderComboBox.addItem("Mirror")
-        self.shaderComboBox.addItem("Normal")
-        self.shaderComboBox.addItem("Occlusion")
-        self.shaderComboBox.addItem("UV")
+        self.shaderComboBox = ComboBox("Shader override", False)
+        self.shaderComboBox.addItems(["Disabled", "Checker", "Grey", "Mirror", "Normal", "Occlusion", "UV"])
         self.selectedShaderCheckbox = QtWidgets.QCheckBox("Selected objects only")
-        shaderLayout.addWidget(shaderLabel)
         shaderLayout.addWidget(self.shaderComboBox)
         shaderLayout.addWidget(self.selectedShaderCheckbox)
 
         textureRepeatLayout = QtWidgets.QHBoxLayout()
-        textureRepeatLabel = QtWidgets.QLabel("Texture repeat:")
-        textureRepeatLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
-        textureRepeatLabel.setMinimumSize(90, 20)
-        self.textureRepeatSpinbox = QtWidgets.QSpinBox()
-        self.textureRepeatSpinbox.setValue(1)
-        self.textureRepeatSpinbox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
-        textureRepeatSlider = QtWidgets.QSlider()
-        textureRepeatSlider.setMinimum(1)
-        textureRepeatSlider.setMaximum(64)
-        textureRepeatSlider.setOrientation(QtCore.Qt.Horizontal)
-        textureRepeatSlider.valueChanged[int].connect(self.textureRepeatSpinbox.setValue)
-        textureRepeatSlider.setValue(4)
-        textureRepeatLayout.addWidget(textureRepeatLabel)
-        textureRepeatLayout.addWidget(self.textureRepeatSpinbox)
-        textureRepeatLayout.addWidget(textureRepeatSlider)
+        self.textureRepeatSlider = SliderBox("Texture repeat", 1, False)
+        self.textureRepeatSlider.setMinimum(None, 1)
+        self.textureRepeatSlider.setMaximum(None, 64)
+        textureRepeatLayout.addWidget(self.textureRepeatSlider)
 
-        # Ignore Layout
+        # IGNORE GROUP
         ignoresGroupBox = QtWidgets.QGroupBox("Ignore")
         ignoresGroupBox.setMaximumSize(9999, 75)
+
+        # Ignore Layout
         ignoresLayout = QtWidgets.QVBoxLayout(ignoresGroupBox)
         ignoreLayout = QtWidgets.QHBoxLayout()
         ignoreLabel = QtWidgets.QLabel("Ignore:")
         ignoreLabel.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignVCenter)
         self.motionBlurCheckBox = QtWidgets.QCheckBox("Motion Blur")
-        self.motionBlurCheckBox.setChecked(self.getSceneOption(6))
+        self.motionBlurCheckBox.setChecked(getSceneOption(6))
         self.subdivsCheckBox = QtWidgets.QCheckBox("Subdivs")
-        self.subdivsCheckBox.setChecked(self.getSceneOption(7))
+        self.subdivsCheckBox.setChecked(getSceneOption(7))
         self.displaceCheckBox = QtWidgets.QCheckBox("Displace")
-        self.displaceCheckBox.setChecked(self.getSceneOption(8))
+        self.displaceCheckBox.setChecked(getSceneOption(8))
         self.bumpCheckBox = QtWidgets.QCheckBox("Bump")
-        self.bumpCheckBox.setChecked(self.getSceneOption(9))
+        self.bumpCheckBox.setChecked(getSceneOption(9))
         self.sssCheckBox = QtWidgets.QCheckBox("SSS")
-        self.sssCheckBox.setChecked(self.getSceneOption(10))
+        self.sssCheckBox.setChecked(getSceneOption(10))
         ignoreLayout.addWidget(self.motionBlurCheckBox)
         ignoreLayout.addWidget(self.subdivsCheckBox)
         ignoreLayout.addWidget(self.displaceCheckBox)
         ignoreLayout.addWidget(self.bumpCheckBox)
         ignoreLayout.addWidget(self.sssCheckBox)
 
-        # Sequence Layout
+        # SEQUENCE GROUP
         sequenceGroupBox = QtWidgets.QGroupBox('Sequence')
         sequenceGroupBox.setMaximumSize(9999, 75)
+
+        # Sequence Layout
         sequenceLayout = QtWidgets.QHBoxLayout(sequenceGroupBox)
         self.seqCheckBox = QtWidgets.QCheckBox()
         self.seqCheckBox.setMaximumSize(15, 25)
         self.seqCheckBox.stateChanged.connect(sequence_toggled)
-        self.startLabel = QtWidgets.QLabel('Start frame:')
-        self.startLabel.setEnabled(False)
-        self.startSpinBox = QtWidgets.QSpinBox()
-        self.startSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
-        self.startSpinBox.setRange(0, 99999)
-        self.startSpinBox.setValue(self.getSceneOption(11))
+        self.startSpinBox = SpinBox('Start frame', False)
+        self.startSpinBox.setValue(getSceneOption(11))
         self.startSpinBox.setEnabled(False)
-        self.endLabel = QtWidgets.QLabel('End frame:')
-        self.endLabel.setEnabled(False)
-        self.endSpinBox = QtWidgets.QSpinBox()
-        self.endSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
-        self.endSpinBox.setRange(0, 99999)
-        self.endSpinBox.setValue(self.getSceneOption(12))
+        self.endSpinBox = SpinBox('End frame', False)
+        self.endSpinBox.setValue(getSceneOption(12))
         self.endSpinBox.setEnabled(False)
-        self.stepLabel = QtWidgets.QLabel('By frame:')
-        self.stepLabel.setEnabled(False)
-        self.stepSpinBox = QtWidgets.QSpinBox()
-        self.stepSpinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
+        self.stepSpinBox = SpinBox('By frame', False)
         self.stepSpinBox.setValue(1)
-        self.stepSpinBox.setRange(1, 100)
         self.stepSpinBox.setEnabled(False)
         sequenceLayout.addWidget(self.seqCheckBox)
-        sequenceLayout.addWidget(self.startLabel)
         sequenceLayout.addWidget(self.startSpinBox)
-        sequenceLayout.addWidget(self.endLabel)
         sequenceLayout.addWidget(self.endSpinBox)
-        sequenceLayout.addWidget(self.stepLabel)
         sequenceLayout.addWidget(self.stepSpinBox)
 
         # Main Buttons Layout
@@ -421,49 +472,32 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         mainLayout.addWidget(sequenceGroupBox)
         mainLayout.addLayout(mainButtonslayout)
 
-        # UI Updates
-        self.connect(portSlider, QtCore.SIGNAL("valueChanged(int)"), portUpdateUI)
-        self.connect(resolutionSlider, QtCore.SIGNAL("valueChanged(int)"), resUpdateUI)
-        self.connect(self.resolutionSpinBox, QtCore.SIGNAL("valueChanged(int)"), resInfoUpdate)
-
         # IPR Updates
-        self.connect(self.cameraComboBox, QtCore.SIGNAL("currentIndexChanged(int)"), lambda: self.IPRUpdate(0))
-        self.connect(self.resolutionSpinBox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(1))
-        self.connect(self.cameraAaSpinBox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(2))
-        self.connect(self.renderRegionXSpinBox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(1))
-        self.connect(self.renderRegionYSpinBox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(1))
-        self.connect(self.renderRegionRSpinBox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(1))
-        self.connect(self.renderRegionTSpinBox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(1))
-        self.connect(self.overscanSpinBox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(1))
-        self.connect(self.motionBlurCheckBox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(3))
-        self.connect(self.subdivsCheckBox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(3))
-        self.connect(self.displaceCheckBox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(3))
-        self.connect(self.bumpCheckBox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(3))
-        self.connect(self.sssCheckBox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(3))
-        self.connect(self.shaderComboBox, QtCore.SIGNAL("currentIndexChanged(int)"), lambda: self.IPRUpdate(4))
-        self.connect(self.textureRepeatSpinbox, QtCore.SIGNAL("valueChanged(int)"), lambda: self.IPRUpdate(5))
-        self.connect(self.selectedShaderCheckbox, QtCore.SIGNAL("toggled(bool)"), lambda: self.IPRUpdate(4))
+        self.cameraComboBox.currentIndexChanged.connect(lambda: self.IPRUpdate(0))
+        self.resolutionSlider.valueChanged.connect(lambda: self.IPRUpdate(1))
+        self.cameraAaSlider.valueChanged.connect(lambda: self.IPRUpdate(2))
+        self.renderRegionXSpinBox.valueChanged.connect(lambda: self.IPRUpdate(1))
+        self.renderRegionYSpinBox.valueChanged.connect(lambda: self.IPRUpdate(1))
+        self.renderRegionRSpinBox.valueChanged.connect(lambda: self.IPRUpdate(1))
+        self.renderRegionTSpinBox.valueChanged.connect(lambda: self.IPRUpdate(1))
+        self.overscanSlider.valueChanged.connect(lambda: self.IPRUpdate(1))
+        self.motionBlurCheckBox.toggled.connect(lambda: self.IPRUpdate(3))
+        self.subdivsCheckBox.toggled.connect(lambda: self.IPRUpdate(3))
+        self.displaceCheckBox.toggled.connect(lambda: self.IPRUpdate(3))
+        self.bumpCheckBox.toggled.connect(lambda: self.IPRUpdate(3))
+        self.sssCheckBox.toggled.connect(lambda: self.IPRUpdate(3))
+        self.shaderComboBox.currentIndexChanged.connect(lambda: self.IPRUpdate(4))
+        self.textureRepeatSlider.valueChanged.connect(lambda: self.IPRUpdate(5))
+        self.selectedShaderCheckbox.toggled.connect(lambda: self.IPRUpdate(4))
 
         self.setLayout(mainLayout)
 
     def deleteInstances(self):
         ''' Delete any instances of this class '''
-        mayaWindow = maya_main_window()
+        mayaWindow = getMayaMainWindow()
         if MAYA_2017:
-            try:
-                cmds.workspaceControl(self.wsCtrlName, e=True, close=True)
-            except RuntimeError:
-                pass
-            try:
-                cmds.workspaceControlState(self.wsCtrlName, remove=True)
-            except RuntimeError:
-                pass
-
-            if cmds.window(self.wsCtrlName, q=True, ex=True):
-                cmds.deleteUI(self.wsCtrlName)
-
-            if cmds.window(self.objName, q=True, ex=True):
-                cmds.deleteUI(self.objName)
+            if cmds.workspaceControl(self.wsCtrlName, q=True, exists=True):
+                cmds.deleteUI(self.wsCtrlName, control=True)
         else:
             for obj in mayaWindow.children():
                 if type(obj) == MayaQDockWidget:
@@ -471,9 +505,6 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
                         mayaWindow.removeDockWidget(obj)
                         obj.setParent(None)
                         obj.deleteLater()
-
-    def dockCloseEventTriggered(self):
-        self.deleteInstances()
 
     def show(self, docked=True):
         if docked:
@@ -484,82 +515,26 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         else:
             super(self.__class__, self).show(dockable=True)
 
-    def getActiveCamera(self):
-        ''' Returns active camera shape name '''
-        cam = cmds.modelEditor(cmds.playblast(ae=1), q=1, cam=1)
-        if cmds.listRelatives(cam) != None:
-            cam = cmds.listRelatives(cam)[0]
-        return cam
-
-    def getHost(self):
-        ''' Returns the host from Aton driver '''
-        host = 0
-        try: # To init Arnold Render settings
-            host = cmds.getAttr("defaultArnoldDisplayDriver.host")
-        except ValueError:
-            mel.eval("unifiedRenderGlobalsWindow;")
-            try: # If aton driver is not loaded
-                host = cmds.getAttr("defaultArnoldDisplayDriver.host")
-            except ValueError:
-                pass
-        return host
-
-    def getPort(self):
-        ''' Returns the port number from Aton driver '''
-        port = 0
-        try: # To init Arnold Render settings
-            port = cmds.getAttr("defaultArnoldDisplayDriver.port")
-        except ValueError:
-            mel.eval("unifiedRenderGlobalsWindow;")
-            try: # If aton driver is not loaded
-                port = cmds.getAttr("defaultArnoldDisplayDriver.port")
-            except ValueError:
-                pass
-        return port
-
-    def getSceneOption(self, attr):
-        ''' Returns requested scene options attribute value '''
-        result = 0
-        if cmds.getAttr("defaultRenderGlobals.ren") == "arnold":
-            try:
-                result = {0 : lambda: self.getHost(),
-                          1 : lambda: self.getPort(),
-                          2 : lambda: self.getActiveCamera(),
-                          3 : lambda: cmds.getAttr("defaultResolution.width"),
-                          4 : lambda: cmds.getAttr("defaultResolution.height"),
-                          5 : lambda: cmds.getAttr("defaultArnoldRenderOptions.AASamples"),
-                          6 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreMotionBlur"),
-                          7 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreSubdivision"),
-                          8 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreDisplacement"),
-                          9 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreBump"),
-                          10 : lambda: cmds.getAttr("defaultArnoldRenderOptions.ignoreSss"),
-                          11 : lambda: cmds.playbackOptions(q=True, minTime=True),
-                          12 : lambda: cmds.playbackOptions(q=True, maxTime=True),
-                          13 : lambda: cmds.getAttr("defaultArnoldRenderOptions.progressive_rendering")}[attr]()
-            except ValueError:
-                return result
-        return result
-
     def getCamera(self):
         ''' Returns current selected camera from GUI '''
         if self.cameraComboBox.currentIndex() == 0:
-            camera = self.getSceneOption(2)
+            camera = getSceneOption(2)
         else:
-            camera = self.cameraComboBoxDict[self.cameraComboBox.currentIndex()]
+            camera = self.cameraComboBox.currentName()
             if cmds.listRelatives(camera, s=1) != None:
                 camera = cmds.listRelatives(camera, s=1)[0]
         return camera
 
     def getRegion(self, attr, resScale = True):
         if resScale:
-            resValue = self.resolutionSpinBox.value()
+            resValue = self.resolutionSlider.value()
         else:
             resValue = 100
 
-        ovrScnValue = self.overscanSpinBox.value() * resValue / 100
+        ovrScnValue = self.overscanSlider.value() * resValue / 100
 
-        xres = self.getSceneOption(3) * resValue / 100
-        yres = self.getSceneOption(4) * resValue / 100
+        xres = getSceneOption(3) * resValue / 100
+        yres = getSceneOption(4) * resValue / 100
 
         result = {0 : lambda: xres,
                   1 : lambda: yres,
@@ -602,7 +577,7 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
                 return cropData
 
     def setOverscan(self):
-        ovrScnValue = bool(self.overscanSpinBox.value())
+        ovrScnValue = bool(self.overscanSlider.value())
         if cmds.getAttr("defaultRenderGlobals.ren") == "arnold":
             message = "Do you want to set the Overscan values in Render Setttings?"
             result = cmds.confirmDialog(title='Overscan',
@@ -626,8 +601,8 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
     def render(self):
         ''' Starts the render '''
         try: # If MtoA was not found
-            defaultMergeAOVs = cmds.getAttr("defaultArnoldDriver.mergeAOVs")
-            defaultAiTranslator = cmds.getAttr("defaultArnoldDisplayDriver.aiTranslator")
+            self.defaultMergeAOVs = cmds.getAttr("defaultArnoldDriver.mergeAOVs")
+            self.defaultAiTranslator = cmds.getAttr("defaultArnoldDisplayDriver.aiTranslator")
         except ValueError:
             cmds.warning("Current renderer is not set to Arnold.")
             return
@@ -642,7 +617,7 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
                 host = self.hostLineEdit.text()
                 cmds.setAttr("defaultArnoldDisplayDriver.host", host, type="string")
             if self.portCheckBox.isChecked():
-                port = self.portSpinBox.value()
+                port = self.portSlider.value()
                 cmds.setAttr("defaultArnoldDisplayDriver.port", port)
         else:
             cmds.warning("Current renderer is not set to Arnold or Aton driver is not loaded.")
@@ -674,7 +649,7 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
 
         # Set Progressive refinement to off
         if self.sequence_enabled:
-            self.defaultRefinement = self.getSceneOption(13)
+            self.defaultRefinement = getSceneOption(13)
             cmds.setAttr("defaultArnoldRenderOptions.progressive_rendering", False)
 
         try: # Start IPR
@@ -691,9 +666,10 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         self.IPRUpdate()
 
         # Setting back to default
-        for i in hCams: cmds.hide(i)
-        cmds.setAttr("defaultArnoldDriver.mergeAOVs",  defaultMergeAOVs)
-        cmds.setAttr("defaultArnoldDisplayDriver.aiTranslator", defaultAiTranslator, type="string")
+        for i in hCams:
+            cmds.hide(i)
+        cmds.setAttr("defaultArnoldDriver.mergeAOVs",  self.defaultMergeAOVs)
+        cmds.setAttr("defaultArnoldDisplayDriver.aiTranslator", self.defaultAiTranslator, type="string")
 
         if self.hostCheckBox.isChecked():
             cmds.setAttr("defaultArnoldDisplayDriver.host", host, type="string")
@@ -816,7 +792,7 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
 
         # Camera AA Update
         if attr == None or attr == 2:
-            cameraAA = self.cameraAaSpinBox.value()
+            cameraAA = self.cameraAaSlider.value()
             options = AiUniverseGetOptions()
             AiNodeSetInt(options, "AA_samples", cameraAA)
 
@@ -879,7 +855,7 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
 
         # Texture Repeat Udpate
         if attr == None or attr == 5:
-            texRepeat = self.textureRepeatSpinbox.value()
+            texRepeat = self.textureRepeatSlider.value()
             if ARNOLD_5:
                 AiNodeSetVec2(self.placeTexture, "repeatUV", texRepeat, texRepeat)
             else:
@@ -925,6 +901,14 @@ class Aton(MayaQWidgetDockableMixin, QtWidgets.QWidget):
         self.stop()
         self.frame_sequence.stop()
         self.deleteInstances()
+
+        if self.defaultMergeAOVs is not None:
+            cmds.setAttr("defaultArnoldDriver.mergeAOVs",  self.defaultMergeAOVs)
+        if self.defaultAiTranslator is not None:
+            cmds.setAttr("defaultArnoldDisplayDriver.aiTranslator", self.defaultAiTranslator, type="string")
+
+    def dockCloseEventTriggered(self):
+        self.closeEvent(None)
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_Escape:
