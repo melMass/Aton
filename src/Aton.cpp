@@ -17,7 +17,7 @@ All rights reserved. See COPYING.txt for more details.
 void Aton::attach()
 {
     m_legit = true;
-    
+
     // Disable caching
     slowness(0);
 
@@ -33,13 +33,6 @@ void Aton::attach()
     {
         std::string knob_name = (boost::format("cM%s")%i).str();
         knob(knob_name.c_str())->hide();
-    }
-    
-    if (!isVersionValid())
-    {
-        knob("stamp_knob")->enable(false);
-        knob("stamp_scale_knob")->enable(false);
-        knob("comment_knob")->enable(false);
     }
     
     // Construct full path for capturing
@@ -419,16 +412,6 @@ void Aton::resetChannels(ChannelSet& channels)
         channels.insert(Chan_Blue);
         channels.insert(Chan_Alpha);
     }
-}
-
-bool Aton::isVersionValid()
-{
-    // Check the Nuke version to be minimum 9.0v7 in order
-    // to status stamp text be consistant with Linux version
-    std::string validVer = "9.0v7";
-    Version recVer(validVer);
-    const Version& curVer = version();
-    return curVer >= recVer;
 }
 
 bool Aton::isPathValid(std::string path)

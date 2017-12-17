@@ -24,7 +24,7 @@ static const char* const CLASS = "Aton";
 
 // Help
 static const char* const HELP =
-    "Aton v1.2.1 \n"
+    "Aton v1.2.2 \n"
     "Listens for renders coming from the Aton display driver. "
     "For more info go to http://sosoyan.github.io/Aton/";
 
@@ -75,7 +75,7 @@ class Aton: public Iop
                           m_enable_aovs(true),
                           m_live_camera(false),
                           m_all_frames(false),
-                          m_stamp(isVersionValid()),
+                          m_stamp(true),
                           m_inError(false),
                           m_formatExists(false),
                           m_capturing(false),
@@ -116,8 +116,6 @@ class Aton: public Iop
         int knob_changed(Knob* _knob);
 
         void resetChannels(ChannelSet& channels);
-    
-        bool isVersionValid();
     
         bool isPathValid(std::string path);
     
