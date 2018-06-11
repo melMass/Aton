@@ -1,6 +1,6 @@
 __author__ = "Vahan Sosoyan, Dan Bradham, Bjoern Siegert"
-__copyright__ = "2017 All rights reserved. See Copyright.txt for more details."
-__version__ = "1.2.2"
+__copyright__ = "2018 All rights reserved. See Copyright.txt for more details."
+__version__ = "1.3.0"
 
 import sys
 from timeit import default_timer

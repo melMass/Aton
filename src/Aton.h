@@ -24,7 +24,7 @@ static const char* const CLASS = "Aton";
 
 // Help
 static const char* const HELP =
-    "Aton v1.2.2 \n"
+    "Aton v1.3.0 \n"
     "Listens for renders coming from the Aton display driver. "
     "For more info go to http://sosoyan.github.io/Aton/";
 
@@ -71,11 +71,11 @@ class Aton: public Iop
                           m_slimit(20),
                           m_cam_fov(0),
                           m_cam_matrix(0),
-                          m_multiframes(true),
-                          m_enable_aovs(true),
+                          m_multiframes(false),
+                          m_enable_aovs(false),
                           m_live_camera(false),
                           m_all_frames(false),
-                          m_stamp(true),
+                          m_stamp(false),
                           m_inError(false),
                           m_formatExists(false),
                           m_capturing(false),
