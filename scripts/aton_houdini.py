@@ -48,132 +48,132 @@ class SceneOptions(object):
 
 class BoxWidget(QtWidgets.QFrame):
         def __init__(self, label, first=True):
-                super(BoxWidget, self).__init__()
-                self.label = QtWidgets.QLabel(label + ":")
-                self.label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignCenter)
+            super(BoxWidget, self).__init__()
+            self.label = QtWidgets.QLabel(label + ":")
+            self.label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignCenter)
 
-                if first:
-                        self.label.setMinimumSize(hou.ui.scaledSize(75), hou.ui.scaledSize(20))
-                        self.label.setMaximumSize(hou.ui.scaledSize(75), hou.ui.scaledSize(20))
+            if first:
+                    self.label.setMinimumSize(hou.ui.scaledSize(75), hou.ui.scaledSize(20))
+                    self.label.setMaximumSize(hou.ui.scaledSize(75), hou.ui.scaledSize(20))
 
-                self.layout = QtWidgets.QHBoxLayout(self)
-                self.layout.setSizeConstraint(QtWidgets.QLayout.SetMaximumSize)
-                self.layout.setContentsMargins(0, 0, 0, 0)
-                self.layout.addWidget(self.label)
+            self.layout = QtWidgets.QHBoxLayout(self)
+            self.layout.setSizeConstraint(QtWidgets.QLayout.SetMaximumSize)
+            self.layout.setContentsMargins(0, 0, 0, 0)
+            self.layout.addWidget(self.label)
 
 class LineEditBox(BoxWidget):
         def __init__(self, label, text='', first=True):
-                super(LineEditBox, self).__init__(label, first)
+            super(LineEditBox, self).__init__(label, first)
 
-                self.lineEditBox = QtWidgets.QLineEdit()
-                self.lineEditBox.setText(u"%s" % text)
-                self.layout.addWidget(self.lineEditBox)
+            self.lineEditBox = QtWidgets.QLineEdit()
+            self.lineEditBox.setText(u"%s" % text)
+            self.layout.addWidget(self.lineEditBox)
 
         def setEnabled(self, value):
-                self.label.setEnabled(value)
-                self.lineEditBox.setEnabled(value)
+            self.label.setEnabled(value)
+            self.lineEditBox.setEnabled(value)
 
         def text(self):
-                return self.lineEditBox.text()
+            return self.lineEditBox.text()
 
         def setText(self, text):
-                self.lineEditBox.setText(text)
+            self.lineEditBox.setText(text)
 
 class SliderBox(BoxWidget):
         def __init__(self, label, value=0, first=True):
-                super(SliderBox, self).__init__(label, first)
+            super(SliderBox, self).__init__(label, first)
 
-                self.spinBox = QtWidgets.QSpinBox()
-                self.spinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
-                self.spinBox.setValue(value)
+            self.spinBox = QtWidgets.QSpinBox()
+            self.spinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
+            self.spinBox.setValue(value)
 
-                self.slider = QtWidgets.QSlider()
-                self.slider.setOrientation(QtCore.Qt.Horizontal)
-                self.slider.setValue(value)
+            self.slider = QtWidgets.QSlider()
+            self.slider.setOrientation(QtCore.Qt.Horizontal)
+            self.slider.setValue(value)
 
-                self.slider.valueChanged.connect(self.spinBox.setValue)
+            self.slider.valueChanged.connect(self.spinBox.setValue)
 
-                self.layout.addWidget(self.spinBox)
-                self.layout.addWidget(self.slider)
+            self.layout.addWidget(self.spinBox)
+            self.layout.addWidget(self.slider)
 
         def setMinimum(self, spinValue=None, sliderValue=None):
-                if spinValue is not None: self.spinBox.setMinimum(spinValue)
-                if sliderValue is not None: self.slider.setMinimum(sliderValue)
+            if spinValue is not None: self.spinBox.setMinimum(spinValue)
+            if sliderValue is not None: self.slider.setMinimum(sliderValue)
 
         def setMaximum(self, spinValue=None, sliderValue=None):
-                if spinValue is not None: self.spinBox.setMaximum(spinValue)
-                if sliderValue is not None: self.slider.setMaximum(sliderValue)
+            if spinValue is not None: self.spinBox.setMaximum(spinValue)
+            if sliderValue is not None: self.slider.setMaximum(sliderValue)
 
         def setValue(self, spinValue=None, sliderValue=None):
-                if sliderValue is not None: self.slider.setValue(sliderValue)
-                if spinValue is not None: self.spinBox.setValue(spinValue)
+            if sliderValue is not None: self.slider.setValue(sliderValue)
+            if spinValue is not None: self.spinBox.setValue(spinValue)
 
         def value(self):
-                return self.spinBox.value()
+            return self.spinBox.value()
 
         def connect(self, func):
-                self.slider.valueChanged.connect(func)
+            self.slider.valueChanged.connect(func)
 
         def setEnabled(self, value):
-                self.label.setEnabled(value)
-                self.spinBox.setEnabled(value)
-                self.slider.setEnabled(value)
+            self.label.setEnabled(value)
+            self.spinBox.setEnabled(value)
+            self.slider.setEnabled(value)
 
         @property
         def valueChanged(self):
-                return self.spinBox.valueChanged
+            return self.spinBox.valueChanged
 
 class SpinBox(BoxWidget):
         def __init__(self, label, value=0, first=True):
-                super(SpinBox, self).__init__(label, first)
-                self.spinBox = QtWidgets.QSpinBox()
-                self.spinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
-                self.spinBox.setValue(value)
-                self.spinBox.setMaximumSize(hou.ui.scaledSize(50), hou.ui.scaledSize(20))
-                self.spinBox.setRange(-99999, 99999)
-
-                self.layout.addWidget(self.spinBox)
+            super(SpinBox, self).__init__(label, first)
+            self.spinBox = QtWidgets.QSpinBox()
+            self.spinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
+            self.spinBox.setValue(value)
+            self.spinBox.setMaximumSize(hou.ui.scaledSize(50), hou.ui.scaledSize(20))
+            self.spinBox.setRange(-99999, 99999)
+        
+            self.layout.addWidget(self.spinBox)
 
         def value(self):
-                return self.spinBox.value()
+            return self.spinBox.value()
 
         def setValue(self, value):
-                self.spinBox.setValue(value)
+            self.spinBox.setValue(value)
 
         @property
         def valueChanged(self):
-                return self.spinBox.valueChanged
+            return self.spinBox.valueChanged
 
 class ComboBox(BoxWidget):
         def __init__(self, label, first=True):
-                super(ComboBox, self).__init__(label, first)
-                self.items = list()
+            super(ComboBox, self).__init__(label, first)
+            self.items = list()
 
-                self.comboBox = QtWidgets.QComboBox()
-                self.comboBox.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
-                                            QtWidgets.QSizePolicy.Fixed)
-                self.currentIndexChanged = self.comboBox.currentIndexChanged
+            self.comboBox = QtWidgets.QComboBox()
+            self.comboBox.setSizePolicy(QtWidgets.QSizePolicy.Expanding,
+                                        QtWidgets.QSizePolicy.Fixed)
+            self.currentIndexChanged = self.comboBox.currentIndexChanged
 
-                self.layout.addWidget(self.comboBox)
+            self.layout.addWidget(self.comboBox)
 
         def setEnabled(self, value):
-                self.label.setEnabled(value)
-                self.comboBox.setEnabled(value)
+            self.label.setEnabled(value)
+            self.comboBox.setEnabled(value)
 
         def setCurrentIndex(self, value):
-                self.comboBox.setCurrentIndex(value)
+            self.comboBox.setCurrentIndex(value)
 
         def currentIndex(self):
-                return self.comboBox.currentIndex()
+            return self.comboBox.currentIndex()
 
         def currentName(self):
-                index = self.comboBox.currentIndex()
-                return self.items[index]
+            index = self.comboBox.currentIndex()
+            return self.items[index]
 
         def addItems(self, items):
-                for i in items:
-                        self.comboBox.addItem(i)
-                self.items += items
+            for i in items:
+                self.comboBox.addItem(i)
+            self.items += items
 
 class Aton(QtWidgets.QWidget):
         
