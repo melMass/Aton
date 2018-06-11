@@ -344,7 +344,7 @@ void Aton::knobs(Knob_Callback f)
     stamp_scale_knob->set_flag(Knob::NO_RERENDER, true);
     comment_knob->set_flag(Knob::NO_RERENDER, true);
     statusKnob->set_flag(Knob::NO_RERENDER, true);
-    statusKnob->set_flag(Knob::DISABLED, true);
+    statusKnob->set_flag(Knob::READ_ONLY, true);
     statusKnob->set_flag(Knob::OUTPUT_ONLY, true);
 }
 
