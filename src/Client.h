@@ -27,14 +27,14 @@ public:
     // Sends a message to the Server to open a new image
     // The header parameter is used to tell the Server the size of image
     // buffer to allocate.
-    void openImage(Data& header);
+    void openImage(DataHeader& header);
     
     // Sends a section of image data to the Server
     // Once an image is open a Client can use this to send a series of
     // pixel blocks to the Server. The Data object passed must correctly
     // specify the block position and dimensions as well as provide a
     // pointer to pixel data.
-    void sendPixels(Data& data);
+    void sendPixels(DataPixels& data);
 
     // Sends a message to the Server that the Clients has finished
     // This tells the Server that a Client has finished sending pixel

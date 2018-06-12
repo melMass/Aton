@@ -33,12 +33,15 @@ public:
     
     // Sets up the server to accept an incoming Client connections.
     void accept();
+    
+    int listenType();
 
     // This function blocks (and so may be require running on a separate thread),
     // returning once a Client has sent a message.
     // The returned Data object is filled with the relevant information and
     // passed back ready for handling by the parent application
-    Data listen();
+    DataHeader listenHeader();
+    DataPixels listenPixels();
     
     // This can be used to exit a listening loop running on a separate thread
     void quit();

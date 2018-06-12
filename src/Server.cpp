@@ -83,89 +83,22 @@ void Server::accept()
 {
     if (mSocket.is_open())
         mSocket.close();
-    mAcceptor.accept(mSocket);
+        mAcceptor.accept(mSocket);
 }
 
-Data Server::listen()
+int Server::listenType()
 {
-    Data d;
-
-    // Read the key from the incoming data
+    int type;
+    
     try
     {
-        read(mSocket, buffer(reinterpret_cast<char*>(&d.mType), sizeof(int)));
-
-        switch(d.mType)
+        read(mSocket, buffer(reinterpret_cast<char*>(&type), sizeof(int)));
+    
+        if (type == 2 || type == 9)
         {
-            case 0: // Open image
-            {
-                // Send back an image id
-                int image_id = 1;
-                write(mSocket, buffer(reinterpret_cast<char*>(&image_id), sizeof(int)));
-                
-                // Read data from the buffer
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mXres), sizeof(int)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mYres), sizeof(int)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mRArea), sizeof(long long)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mVersion), sizeof(int)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mCurrentFrame), sizeof(int)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mCamFov), sizeof(float)));
-                
-                const int camMatrixSize = 16;
-                d.mCamMatrixStore.resize(camMatrixSize);
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mCamMatrixStore[0]), sizeof(float)*camMatrixSize));
-                break;
-            }
-            case 1: // Image data
-            {
-                // Receive image id
-                int image_id;
-                read(mSocket, buffer(reinterpret_cast<char*>(&image_id), sizeof(int)) );
-
-                // Read data from the buffer
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mXres), sizeof(int)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mYres), sizeof(int)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mBucket_xo), sizeof(int)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mBucket_yo), sizeof(int)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mBucket_size_x), sizeof(int)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mBucket_size_y), sizeof(int)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mRArea), sizeof(long long)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mVersion), sizeof(int)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mCurrentFrame), sizeof(float)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mSpp), sizeof(int)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mRam), sizeof(long long)));
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mTime), sizeof(int)));
-
-                // Get aov name's size
-                size_t aov_size;
-                read(mSocket, buffer(reinterpret_cast<char*>(&aov_size), sizeof(size_t)));
-
-                // Get aov name
-                char* aov_name = new char[aov_size];
-                read(mSocket, buffer(aov_name, aov_size));
-                d.mAovName = aov_name;
-
-                // Get pixels
-                const int num_samples = d.bucket_size_x() * d.bucket_size_y() * d.spp();
-                d.mPixelStore.resize(num_samples);
-                read(mSocket, buffer(reinterpret_cast<char*>(&d.mPixelStore[0]), sizeof(float)*num_samples));
-                break;
-            }
-            case 2: // Close image
-            {
-                int image_id;
-                read(mSocket, buffer(reinterpret_cast<char*>(&image_id), sizeof(int)));
-                mSocket.close();
-                break;
-            }
-            case 9: // quit
-            {
-                mSocket.close();
-                
-                // This fixes all nuke destructor issues on windows
+            mSocket.close();
+            if (type == 9)
                 mAcceptor.close();
-                break;
-            }
         }
     }
     catch( ... )
@@ -173,5 +106,65 @@ Data Server::listen()
         mSocket.close();
         throw std::runtime_error("Could not read from socket!");
     }
-    return d;
+    
+    return type;
 }
+
+DataHeader Server::listenHeader()
+{
+    DataHeader dh;
+
+    // Send back an image id
+    int image_id = 1;
+    write(mSocket, buffer(reinterpret_cast<char*>(&image_id), sizeof(int)));
+    
+    // Read data from the buffer
+    read(mSocket, buffer(reinterpret_cast<char*>(&dh.mXres), sizeof(int)));
+    read(mSocket, buffer(reinterpret_cast<char*>(&dh.mYres), sizeof(int)));
+    read(mSocket, buffer(reinterpret_cast<char*>(&dh.mRArea), sizeof(long long)));
+    read(mSocket, buffer(reinterpret_cast<char*>(&dh.mVersion), sizeof(int)));
+    read(mSocket, buffer(reinterpret_cast<char*>(&dh.mCurrentFrame), sizeof(int)));
+    read(mSocket, buffer(reinterpret_cast<char*>(&dh.mCamFov), sizeof(float)));
+    
+    const int camMatrixSize = 16;
+    dh.mCamMatrixStore.resize(camMatrixSize);
+    read(mSocket, buffer(reinterpret_cast<char*>(&dh.mCamMatrixStore[0]), sizeof(float)*camMatrixSize));
+    
+    return dh;
+}
+
+DataPixels Server::listenPixels()
+{
+    DataPixels dp;
+    
+    // Receive image id
+    int image_id;
+    read(mSocket, buffer(reinterpret_cast<char*>(&image_id), sizeof(int)) );
+
+    // Read data from the buffer
+    read(mSocket, buffer(reinterpret_cast<char*>(&dp.mXres), sizeof(int)));
+    read(mSocket, buffer(reinterpret_cast<char*>(&dp.mYres), sizeof(int)));
+    read(mSocket, buffer(reinterpret_cast<char*>(&dp.mBucket_xo), sizeof(int)));
+    read(mSocket, buffer(reinterpret_cast<char*>(&dp.mBucket_yo), sizeof(int)));
+    read(mSocket, buffer(reinterpret_cast<char*>(&dp.mBucket_size_x), sizeof(int)));
+    read(mSocket, buffer(reinterpret_cast<char*>(&dp.mBucket_size_y), sizeof(int)));
+    read(mSocket, buffer(reinterpret_cast<char*>(&dp.mSpp), sizeof(int)));
+    read(mSocket, buffer(reinterpret_cast<char*>(&dp.mRam), sizeof(long long)));
+    read(mSocket, buffer(reinterpret_cast<char*>(&dp.mTime), sizeof(int)));
+
+    // Get aov name's size
+    size_t aov_size;
+    read(mSocket, buffer(reinterpret_cast<char*>(&aov_size), sizeof(size_t)));
+
+    // Get aov name
+    char* aov_name = new char[aov_size];
+    read(mSocket, buffer(aov_name, aov_size));
+    dp.mAovName = aov_name;
+
+    // Get pixels
+    const int num_samples = dp.bucket_size_x() * dp.bucket_size_y() * dp.spp();
+    dp.mPixelStore.resize(num_samples);
+    read(mSocket, buffer(reinterpret_cast<char*>(&dp.mPixelStore[0]), sizeof(float)*num_samples));
+    return dp;
+}
+

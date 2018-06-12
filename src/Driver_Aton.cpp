@@ -14,19 +14,18 @@ AI_DRIVER_NODE_EXPORT_METHODS(AtonDriverMtd);
 
 const char* getHost()
 {
-    const char* aton_host = getenv("ATON_HOST");
+    const char* def_host = getenv("ATON_HOST");
     
-    if (aton_host == NULL)
-        aton_host = "127.0.0.1";
+    if (def_host == NULL)
+        def_host = "127.0.0.1";
 
-    char* host = new char[strlen(aton_host) + 1];
-    strcpy(host, aton_host);
-    aton_host = host;
+    char* aton_host = new char[strlen(def_host) + 1];
+    strcpy(aton_host, def_host);
 
     return aton_host;
 }
 
-int getPort()
+const int getPort()
 {
     const char* def_port = getenv("ATON_PORT");
     int aton_port;
@@ -42,13 +41,21 @@ int getPort()
 struct ShaderData
 {
     Client* client;
-    int xres, yres, min_x, min_y, max_x, max_y;
+    int xres, yres, min_x, min_y, max_x, max_y, index;
 };
 
 node_parameters
 {
-    AiParameterStr("host", getHost());
-    AiParameterInt("port", getPort());
+    const char* host  = getHost();
+    const int port = getPort();
+    
+    AiParameterStr("host", host);
+    AiParameterInt("port", port);
+    AiParameterInt("index", 0);
+    AiParameterStr("output", "");
+    AiParameterStr("comment", "");
+    
+    delete host;
     
 #ifdef ARNOLD_5
     AiMetaDataSetStr(nentry, NULL, "maya.translator", "aton");
@@ -167,8 +174,13 @@ driver_open
     const long long rArea = data->xres * data->yres;
     
     // Make image header & send to server
-    Data header(data->xres, data->yres, 0, 0, 0, 0,
-                rArea, version, currentFrame, cam_fov, cam_matrix);
+    DataHeader dh(data->xres,
+                  data->yres,
+                  rArea,
+                  version,
+                  currentFrame,
+                  cam_fov,
+                  cam_matrix);
 
     try // Now we can connect to the server and start rendering
     {
@@ -179,7 +191,7 @@ driver_open
             if (!ec)
                 data->client = new Client(host, port);
         }
-        data->client->openImage(header);
+        data->client->openImage(dh);
     }
     catch(const std::exception &e)
     {
@@ -233,35 +245,21 @@ driver_write_bucket
                 spp = 3;
         }
         
-        // Create our data object
-        Data packet(data->xres, data->yres, bucket_xo, bucket_yo,
-                    bucket_size_x, bucket_size_y, 0, 0, 0, 0, 0,
-                    spp, ram, time, aov_name, ptr);
+        // Create our DataPixels object
+        DataPixels dp(data->xres,
+                      data->yres,
+                      bucket_xo,
+                      bucket_yo,
+                      bucket_size_x,
+                      bucket_size_y,
+                      spp, ram, time, aov_name, ptr);
 
         // Send it to the server
-        data->client->sendPixels(packet);
+        data->client->sendPixels(dp);
     }
 }
 
-driver_close
-{
-    AiMsgInfo("[Aton] driver close");
-    
-#ifdef ARNOLD_5
-    ShaderData* data = (ShaderData*)AiNodeGetLocalData(node);
-#else
-    ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
-#endif
-    
-    try
-    {
-        data->client->closeImage();
-    }
-    catch (const std::exception& e)
-    {
-        AiMsgError("ATON | Error occured when trying to close connection");
-    }
-}
+driver_close {}
 
 node_finish
 {
@@ -273,7 +271,7 @@ node_finish
 #else
     ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
 #endif
-    
+    data->client->closeImage();
     delete data->client;
     AiFree(data);
 

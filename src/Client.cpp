@@ -43,7 +43,7 @@ Client::~Client()
     disconnect();
 }
 
-void Client::openImage(Data& header)
+void Client::openImage(DataHeader& header)
 {
     // Connect to port!
     connect(mHost, mPort);
@@ -67,7 +67,7 @@ void Client::openImage(Data& header)
     write(mSocket, buffer(reinterpret_cast<char*>(&header.mCamMatrix[0]), sizeof(float)*camMatrixSize));
 }
 
-void Client::sendPixels(Data& data)
+void Client::sendPixels(DataPixels& pixels)
 {
     if (mImageId < 0)
     {
@@ -81,27 +81,24 @@ void Client::sendPixels(Data& data)
     write(mSocket, buffer(reinterpret_cast<char*>(&mImageId), sizeof(int)));
 
     // Get size of aov name
-    size_t aov_size = strlen(data.mAovName) + 1;
+    size_t aov_size = strlen(pixels.mAovName) + 1;
 
     // Get size of overall samples
-    const int num_samples = data.mBucket_size_x * data.mBucket_size_y * data.mSpp;
+    const int num_samples = pixels.mBucket_size_x * pixels.mBucket_size_y * pixels.mSpp;
     
     // Sending data to buffer
-    write(mSocket, buffer(reinterpret_cast<char*>(&data.mXres), sizeof(int)));
-    write(mSocket, buffer(reinterpret_cast<char*>(&data.mYres), sizeof(int)));
-    write(mSocket, buffer(reinterpret_cast<char*>(&data.mBucket_xo), sizeof(int)));
-    write(mSocket, buffer(reinterpret_cast<char*>(&data.mBucket_yo), sizeof(int)));
-    write(mSocket, buffer(reinterpret_cast<char*>(&data.mBucket_size_x), sizeof(int)));
-    write(mSocket, buffer(reinterpret_cast<char*>(&data.mBucket_size_y), sizeof(int)));
-    write(mSocket, buffer(reinterpret_cast<char*>(&data.mRArea), sizeof(long long)));
-    write(mSocket, buffer(reinterpret_cast<char*>(&data.mVersion), sizeof(int)));
-    write(mSocket, buffer(reinterpret_cast<char*>(&data.mCurrentFrame), sizeof(float)));
-    write(mSocket, buffer(reinterpret_cast<char*>(&data.mSpp), sizeof(int)));
-    write(mSocket, buffer(reinterpret_cast<char*>(&data.mRam), sizeof(long long)));
-    write(mSocket, buffer(reinterpret_cast<char*>(&data.mTime), sizeof(int)));
+    write(mSocket, buffer(reinterpret_cast<char*>(&pixels.mXres), sizeof(int)));
+    write(mSocket, buffer(reinterpret_cast<char*>(&pixels.mYres), sizeof(int)));
+    write(mSocket, buffer(reinterpret_cast<char*>(&pixels.mBucket_xo), sizeof(int)));
+    write(mSocket, buffer(reinterpret_cast<char*>(&pixels.mBucket_yo), sizeof(int)));
+    write(mSocket, buffer(reinterpret_cast<char*>(&pixels.mBucket_size_x), sizeof(int)));
+    write(mSocket, buffer(reinterpret_cast<char*>(&pixels.mBucket_size_y), sizeof(int)));
+    write(mSocket, buffer(reinterpret_cast<char*>(&pixels.mSpp), sizeof(int)));
+    write(mSocket, buffer(reinterpret_cast<char*>(&pixels.mRam), sizeof(long long)));
+    write(mSocket, buffer(reinterpret_cast<char*>(&pixels.mTime), sizeof(int)));
     write(mSocket, buffer(reinterpret_cast<char*>(&aov_size), sizeof(size_t)));
-    write(mSocket, buffer(data.mAovName, aov_size));
-    write(mSocket, buffer(reinterpret_cast<char*>(&data.mpData[0]), sizeof(float)*num_samples));
+    write(mSocket, buffer(pixels.mAovName, aov_size));
+    write(mSocket, buffer(reinterpret_cast<char*>(&pixels.mpData[0]), sizeof(float)*num_samples));
 }
 
 void Client::closeImage()

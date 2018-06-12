@@ -23,7 +23,7 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
         node->m_server.accept();
 
         // Our incoming data object
-        Data d;
+        int dataType = 0;
 
         // Frame index in FrameBuffers
         int f_index = 0;
@@ -34,31 +34,33 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
         static int _active_time, delta_time = 0;
         
         // Loop over incoming data
-        while ((d.type() == 2 || d.type() == 9) == false)
+        while (dataType != 2 || dataType != 9)
         {
             // Listen for some data
             try
             {
-                d = node->m_server.listen();
+                dataType = node->m_server.listenType();
             }
             catch( ... )
             {
                 break;
             }
-
+            
             // Handle the data we received
-            switch (d.type())
+            switch (dataType)
             {
                 case 0: // Open a new image
                 {
+                    DataHeader dh = node->m_server.listenHeader();
+                    
                     // Copy data from d
-                    const int& _xres = d.xres();
-                    const int& _yres = d.yres();
-                    const int& _version = d.version();
-                    const float& _fov = d.camFov();
-                    const long long& _area = d.rArea();
-                    const Matrix4& _matrix = Matrix4(&d.camMatrix()[0]);
-                    const double& _frame = static_cast<double>(d.currentFrame());
+                    const int& _xres = dh.xres();
+                    const int& _yres = dh.yres();
+                    const int& _version = dh.version();
+                    const float& _fov = dh.camFov();
+                    const long long& _area = dh.rArea();
+                    const Matrix4& _matrix = Matrix4(&dh.camMatrix()[0]);
+                    const double& _frame = static_cast<double>(dh.currentFrame());
                     
                     // Get image area to calculate the progress
                     regionArea = _area;
@@ -135,17 +137,18 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
                         fB.setAiVersion(_version);
                     
                     // Reset active AOVs
-                    if(!active_aovs.empty())
-                        active_aovs.clear();
+                    if(!active_aovs.empty()) active_aovs.clear();
                     break;
                 }
                 case 1: // Write image data
                 {
+                    DataPixels dp = node->m_server.listenPixels();
+
                     // Get frame buffer
                     FrameBuffer& fB = node->m_framebuffers[f_index];
-                    const char* _aov_name = d.aovName();
-                    const int& _xres = d.xres();
-                    const int& _yres = d.yres();
+                    const char* _aov_name = dp.aovName();
+                    const int& _xres = dp.xres();
+                    const int& _yres = dp.yres();
 
                     if(fB.isResolutionChanged(_xres, _yres))
                     {
@@ -168,13 +171,13 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
                     if (node->m_enable_aovs || active_aovs[0] == _aov_name)
                     {
                         // Get data from d
-                        const int& _x = d.bucket_xo();
-                        const int& _y = d.bucket_yo();
-                        const int& _width = d.bucket_size_x();
-                        const int& _height = d.bucket_size_y();
-                        const int& _spp = d.spp();
-                        const long long& _ram = d.ram();
-                        const int& _time = d.time();
+                        const int& _x = dp.bucket_xo();
+                        const int& _y = dp.bucket_yo();
+                        const int& _width = dp.bucket_size_x();
+                        const int& _height = dp.bucket_size_y();
+                        const int& _spp = dp.spp();
+                        const long long& _ram = dp.ram();
+                        const int& _time = dp.time();
 
                         // Set active time
                         _active_time = _time;
@@ -204,7 +207,7 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
                                 {
                                     xpos = x + _x;
                                     ypos = h - (y + _y + 1);
-                                    const float& _pix = d.pixel(offset + c);
+                                    const float& _pix = dp.pixel(offset + c);
                                     fB.setBufferPix(b, xpos, ypos, _spp, c, _pix);
                                 }
                             }
@@ -231,16 +234,18 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
                             node->flagForUpdate(box);
                         }
                     }
-                    d.dealloc();
+                    dp.free();
                     break;
                 }
                 case 2: // Close image
                 {
+                    std::cout << "Close Image!" << std::endl;
                     break;
                 }
                 case 9: // This is sent when the parent process want to kill
                         // the listening thread
                 {
+                    std::cout << "Quit!" << std::endl;
                     killThread = true;
                     break;
                 }
