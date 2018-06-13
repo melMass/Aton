@@ -12,7 +12,7 @@ AI_DRIVER_NODE_EXPORT_METHODS(AtonDriverMtd);
 struct ShaderData
 {
     Client* client;
-    int xres, yres, min_x, min_y, max_x, max_y, index;
+    int xres, yres, min_x, min_y, max_x, max_y;
 };
 
 node_parameters
@@ -195,7 +195,7 @@ driver_write_bucket
     while (AiOutputIteratorGetNext(iterator, &aov_name, &pixel_type, &bucket_data))
     {
         const float* ptr = reinterpret_cast<const float*>(bucket_data);
-        const long long ram = AiMsgUtilGetUsedMemory();
+        const long long memory = AiMsgUtilGetUsedMemory();
         const unsigned int time = AiMsgUtilGetElapsedTime();
         
         switch (pixel_type)
@@ -219,7 +219,11 @@ driver_write_bucket
                       bucket_yo,
                       bucket_size_x,
                       bucket_size_y,
-                      spp, ram, time, aov_name, ptr);
+                      spp,
+                      memory,
+                      time,
+                      aov_name,
+                      ptr);
 
         // Send it to the server
         data->client->sendPixels(dp);
