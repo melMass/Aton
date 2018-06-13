@@ -67,7 +67,7 @@ driver_open
     ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
 #endif
     
-    // Get Frame number
+    // Get Options Node
     AtNode* options = AiUniverseGetOptions();
     
     // Get Resolution
