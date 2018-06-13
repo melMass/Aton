@@ -32,11 +32,10 @@ include_directories(
 # Build the Nuke plugin
 add_library( nuke_plugin 
   SHARED
-  ${CMAKE_SOURCE_DIR}/src/Aton.cpp 
-  ${CMAKE_SOURCE_DIR}/src/FrameBuffer.cpp
-  ${CMAKE_SOURCE_DIR}/src/Server.cpp
-  ${CMAKE_SOURCE_DIR}/src/Client.cpp
-  ${CMAKE_SOURCE_DIR}/src/Data.cpp
+  ${CMAKE_SOURCE_DIR}/src/aton_node.cpp 
+  ${CMAKE_SOURCE_DIR}/src/aton_framebuffer.cpp
+  ${CMAKE_SOURCE_DIR}/src/aton_server.cpp
+  ${CMAKE_SOURCE_DIR}/src/aton_client.cpp
   )
 
 set_target_properties( nuke_plugin
@@ -60,9 +59,8 @@ if( ARNOLD_FOUND )
     include_directories( ${Arnold_INCLUDE_DIR} )
     add_library( arnold_plugin
       SHARED
-      ${CMAKE_SOURCE_DIR}/src/Driver_Aton.cpp
-      ${CMAKE_SOURCE_DIR}/src/Client.cpp
-      ${CMAKE_SOURCE_DIR}/src/Data.cpp
+      ${CMAKE_SOURCE_DIR}/src/aton_driver_arnold.cpp
+      ${CMAKE_SOURCE_DIR}/src/aton_client.cpp
       )
     
     # To compile against Arnold 5
