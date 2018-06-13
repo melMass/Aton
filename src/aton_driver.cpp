@@ -5,38 +5,9 @@ All rights reserved. See COPYING.txt for more details.
 */
 
 #include <ai.h>
-#include "Data.h"
-#include "Client.h"
-
-using boost::asio::ip::tcp;
+#include "aton_client.h"
 
 AI_DRIVER_NODE_EXPORT_METHODS(AtonDriverMtd);
-
-const char* getHost()
-{
-    const char* def_host = getenv("ATON_HOST");
-    
-    if (def_host == NULL)
-        def_host = "127.0.0.1";
-
-    char* aton_host = new char[strlen(def_host) + 1];
-    strcpy(aton_host, def_host);
-
-    return aton_host;
-}
-
-const int getPort()
-{
-    const char* def_port = getenv("ATON_PORT");
-    int aton_port;
-    
-    if (def_port == NULL)
-        aton_port = 9201;
-    else
-        aton_port = atoi(def_port);
-    
-    return aton_port;
-}
 
 struct ShaderData
 {
@@ -46,16 +17,11 @@ struct ShaderData
 
 node_parameters
 {
-    const char* host  = getHost();
-    const int port = getPort();
-    
-    AiParameterStr("host", host);
-    AiParameterInt("port", port);
+    AiParameterStr("host", get_host().c_str());
+    AiParameterInt("port", get_port());
     AiParameterInt("index", 0);
     AiParameterStr("output", "");
     AiParameterStr("comment", "");
-    
-    delete host;
     
 #ifdef ARNOLD_5
     AiMetaDataSetStr(nentry, NULL, "maya.translator", "aton");
@@ -93,14 +59,7 @@ driver_extension { return NULL; }
 
 driver_open
 {
-    // Construct full version number
-    char arch[3], major[3], minor[3], fix[3];
-    AiGetVersion(arch, major, minor, fix);
-    
-    const int version = atoi(arch) * 1000000 +
-                        atoi(major) * 10000 +
-                        atoi(minor) * 100 +
-                        atoi(fix);
+
     
 #ifdef ARNOLD_5
     ShaderData* data = (ShaderData*)AiNodeGetLocalData(node);
@@ -110,30 +69,7 @@ driver_open
     
     // Get Frame number
     AtNode* options = AiUniverseGetOptions();
-    const float currentFrame = AiNodeGetFlt(options, "frame");
     
-    // Get Host and Port
-    const char* host = AiNodeGetStr(node, "host");    
-    const int port = AiNodeGetInt(node, "port");
-    
-    // Get Camera Matrix
-    AtNode* camera = (AtNode*)AiNodeGetPtr(options, "camera");
-    
-#ifdef ARNOLD_5
-    const AtMatrix& cMat = AiNodeGetMatrix(camera, "matrix");
-#else
-    AtMatrix cMat;
-    AiNodeGetMatrix(camera, "matrix", cMat);
-#endif
-    
-    const float cam_matrix[16] = {cMat[0][0], cMat[1][0], cMat[2][0], cMat[3][0],
-                                  cMat[0][1], cMat[1][1], cMat[2][1], cMat[3][1],
-                                  cMat[0][2], cMat[1][2], cMat[2][2], cMat[3][2],
-                                  cMat[0][3], cMat[1][3], cMat[2][3], cMat[3][3]};
-
-    // Get Camera Field of view
-    const float cam_fov = AiNodeGetFlt(camera, "fov");
-
     // Get Resolution
     const int xres = AiNodeGetInt(options, "xres");
     const int yres = AiNodeGetInt(options, "yres");
@@ -170,8 +106,37 @@ driver_open
     else if(data->min_y >= 0 && data->max_y >= yres)
         data->yres = yres + (max_y - yres + 1);
     
-    // Get area of region
+    // Get Region Area
     const long long rArea = data->xres * data->yres;
+        
+    // Construct full version number
+    char arch[3], major[3], minor[3], fix[3];
+    AiGetVersion(arch, major, minor, fix);
+    
+    const int version = atoi(arch) * 1000000 +
+                        atoi(major) * 10000 +
+                        atoi(minor) * 100 +
+                        atoi(fix);
+        
+    // Get Current Frame
+    const float currentFrame = AiNodeGetFlt(options, "frame");
+        
+    // Get Camera Field of view
+    AtNode* camera = (AtNode*)AiNodeGetPtr(options, "camera");
+    const float cam_fov = AiNodeGetFlt(camera, "fov");
+    
+    // Get Camera Matrix
+#ifdef ARNOLD_5
+    const AtMatrix& cMat = AiNodeGetMatrix(camera, "matrix");
+#else
+    AtMatrix cMat;
+    AiNodeGetMatrix(camera, "matrix", cMat);
+#endif
+    
+    const float cam_matrix[16] = {cMat[0][0], cMat[1][0], cMat[2][0], cMat[3][0],
+                                  cMat[0][1], cMat[1][1], cMat[2][1], cMat[3][1],
+                                  cMat[0][2], cMat[1][2], cMat[2][2], cMat[3][2],
+                                  cMat[0][3], cMat[1][3], cMat[2][3], cMat[3][3]};
     
     // Make image header & send to server
     DataHeader dh(data->xres,
@@ -186,9 +151,11 @@ driver_open
     {
         if (data->client == NULL)
         {
-            boost::system::error_code ec;
-            boost::asio::ip::address::from_string(host, ec);
-            if (!ec)
+            // Get Host and Port
+            const char* host = AiNodeGetStr(node, "host");
+            const int port = AiNodeGetInt(node, "port");
+            
+            if (host_exists(host))
                 data->client = new Client(host, port);
         }
         data->client->openImage(dh);
@@ -230,7 +197,7 @@ driver_write_bucket
         const float* ptr = reinterpret_cast<const float*>(bucket_data);
         const long long ram = AiMsgUtilGetUsedMemory();
         const unsigned int time = AiMsgUtilGetElapsedTime();
-
+        
         switch (pixel_type)
         {
             case(AI_TYPE_INT):
@@ -263,9 +230,7 @@ driver_close {}
 
 node_finish
 {
-    AiMsgInfo("[Aton] driver finish");
-   
-    // Release the driver
+// Release the driver
 #ifdef ARNOLD_5
     ShaderData* data = (ShaderData*)AiNodeGetLocalData(node);
 #else

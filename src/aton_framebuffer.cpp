@@ -4,7 +4,7 @@ Dan Bethell, Johannes Saam, Vahan Sosoyan, Brian Scherbinski.
 All rights reserved. See COPYING.txt for more details.
 */
 
-#include "FrameBuffer.h"
+#include "aton_framebuffer.h"
 #include "boost/format.hpp"
 #include <boost/lexical_cast.hpp>
 

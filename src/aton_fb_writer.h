@@ -7,7 +7,7 @@ All rights reserved. See COPYING.txt for more details.
 #ifndef FBWriter_h
 #define FBWriter_h
 
-#include "Aton.h"
+#include "aton_node.h"
 
 // Our FrameBuffer writer thread
 static void FBWriter(unsigned index, unsigned nthreads, void* data)
@@ -218,7 +218,7 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
                         if(!node->m_capturing && fB.isFirstBufferName(_aov_name))
                         {
                             // Calculate the progress percentage
-                            regionArea -= (_width*_height);
+                            regionArea -= _width * _height;
                             progress = 100 - (regionArea * 100) / (w * h);
 
                             // Set status parameters
@@ -229,7 +229,7 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
                             node->m_mutex.unlock();
                             
                             // Update the image
-                            const Box box = Box(_x, h - _y - _height, _x + _width, h - _y);
+                            const Box box = Box(_x, h - _y - _width, _x + _height, h - _y);
                             node->setCurrentFrame(node->m_current_frame);
                             node->flagForUpdate(box);
                         }

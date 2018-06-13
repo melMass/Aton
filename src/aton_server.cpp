@@ -4,8 +4,8 @@ Dan Bethell, Johannes Saam, Vahan Sosoyan, Brian Scherbinski.
 All rights reserved. See COPYING.txt for more details.
 */
 
-#include "Server.h"
-#include "Client.h"
+#include "aton_server.h"
+#include "aton_client.h"
 #include <boost/lexical_cast.hpp>
 
 using namespace boost::asio;

@@ -7,7 +7,7 @@ All rights reserved. See COPYING.txt for more details.
 #ifndef ATON_SERVER_H_
 #define ATON_SERVER_H_
 
-#include "Data.h"
+#include "aton_client.h"
 #include <boost/asio.hpp>
 
  // Represents a listening Server, ready to accept incoming images

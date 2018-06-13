@@ -4,16 +4,108 @@ Dan Bethell, Johannes Saam, Vahan Sosoyan, Brian Scherbinski.
 All rights reserved. See COPYING.txt for more details.
 */
 
-#include "Client.h"
+#include "aton_client.h"
 #include <boost/lexical_cast.hpp>
+
+const int get_port()
+{
+    const char* def_port = getenv("ATON_PORT");
+    int aton_port;
+    
+    if (def_port == NULL)
+        aton_port = 9201;
+    else
+        aton_port = atoi(def_port);
+    
+    return aton_port;
+}
+
+const std::string get_host()
+{
+    const char* def_host = getenv("ATON_HOST");
+    
+    if (def_host == NULL)
+        def_host = "127.0.0.1";
+
+    std::string aton_host = def_host;
+    return aton_host;
+}
+
+const bool host_exists(const char* host)
+{
+    boost::system::error_code ec;
+    boost::asio::ip::address::from_string(host, ec);
+    return !ec;
+}
+
+DataHeader::DataHeader(const int& xres,
+                       const int& yres,
+                       const long long& rArea,
+                       const int& version,
+                       const float& currentFrame,
+                       const float& cam_fov,
+                       const float* cam_matrix): mXres(xres),
+                                                 mYres(yres),
+                                                 mRArea(rArea),
+                                                 mVersion(version),
+                                                 mCurrentFrame(currentFrame),
+                                                 mCamFov(cam_fov)
+{
+    if (cam_matrix != NULL)
+        mCamMatrix = const_cast<float*>(cam_matrix);
+}
+
+DataHeader::~DataHeader() {}
+
+
+
+DataPixels::DataPixels(const int& xres,
+                       const int& yres,
+                       const int& bucket_xo,
+                       const int& bucket_yo,
+                       const int& bucket_size_x,
+                       const int& bucket_size_y,
+                       const int& spp,
+                       const long long& ram,
+                       const int& time,
+                       const char* aovName,
+                       const float* data) : mXres(xres),
+                                            mYres(yres),
+                                            mBucket_xo(bucket_xo),
+                                            mBucket_yo(bucket_yo),
+                                            mBucket_size_x(bucket_size_x),
+                                            mBucket_size_y(bucket_size_y),
+                                            mSpp(spp),
+                                            mRam(ram),
+                                            mTime(time),
+                                            mAovName(aovName)
+
+{
+    if (data != NULL)
+        mpData = const_cast<float*>(data);
+}
+
+DataPixels::~DataPixels() {}
+
+void DataPixels::free()
+{
+    delete[] mAovName;
+    mAovName = NULL;
+}
+
+
 
 using namespace boost::asio;
 
 Client::Client(std::string hostname, int port): mHost(hostname),
                                                 mPort(port),
                                                 mImageId(-1),
-                                                mSocket(mIoService)
+                                                mSocket(mIoService) {}
+
+
+Client::~Client()
 {
+    disconnect();
 }
 
 void Client::connect(std::string hostname, int port)
@@ -36,11 +128,6 @@ void Client::connect(std::string hostname, int port)
 void Client::disconnect()
 {
     mSocket.close();
-}
-
-Client::~Client()
-{
-    disconnect();
 }
 
 void Client::openImage(DataHeader& header)

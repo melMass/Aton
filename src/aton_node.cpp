@@ -4,9 +4,9 @@ Dan Bethell, Johannes Saam, Vahan Sosoyan, Brian Scherbinski.
 All rights reserved. See COPYING.txt for more details.
 */
 
-#include "Aton.h"
-#include "FBWriter.h"
-#include "FBUpdater.h"
+#include "aton_node.h"
+#include "aton_fb_writer.h"
+#include "aton_fb_updater.h"
 
 #include "boost/format.hpp"
 #include "boost/foreach.hpp"
@@ -61,8 +61,7 @@ void Aton::attach()
 void Aton::detach()
 {
     // Even though a node still exists once removed from a scene (in the
-    // undo stack) we should close the port and reopen if attach() gets
-    // called.
+    // undo stack) we should close the port and reopen if attach() gets called.
     m_legit = false;
     disconnect();
     m_node->m_frames = std::vector<double>();

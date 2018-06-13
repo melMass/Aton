@@ -7,7 +7,7 @@ All rights reserved. See COPYING.txt for more details.
 #ifndef FBUpdater_h
 #define FBUpdater_h
 
-#include "Aton.h"
+#include "aton_node.h"
 
 // Our FrameBuffer updater thread
 static void FBUpdater(unsigned index, unsigned nthreads, void* data)

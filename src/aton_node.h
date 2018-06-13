@@ -15,9 +15,9 @@ All rights reserved. See COPYING.txt for more details.
 
 using namespace DD::Image;
 
-#include "Data.h"
-#include "Server.h"
-#include "FrameBuffer.h"
+#include "aton_client.h"
+#include "aton_server.h"
+#include "aton_framebuffer.h"
 
 // Class name
 static const char* const CLASS = "Aton";
