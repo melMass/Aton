@@ -53,8 +53,8 @@ class BoxWidget(QtWidgets.QFrame):
             self.label.setAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignCenter)
 
             if first:
-                    self.label.setMinimumSize(hou.ui.scaledSize(75), hou.ui.scaledSize(20))
-                    self.label.setMaximumSize(hou.ui.scaledSize(75), hou.ui.scaledSize(20))
+                    self.label.setMinimumSize(75, 20)
+                    self.label.setMaximumSize(75, 20)
 
             self.layout = QtWidgets.QHBoxLayout(self)
             self.layout.setSizeConstraint(QtWidgets.QLayout.SetMaximumSize)
@@ -129,7 +129,7 @@ class SpinBox(BoxWidget):
             self.spinBox = QtWidgets.QSpinBox()
             self.spinBox.setButtonSymbols(QtWidgets.QAbstractSpinBox.NoButtons)
             self.spinBox.setValue(value)
-            self.spinBox.setMaximumSize(hou.ui.scaledSize(50), hou.ui.scaledSize(20))
+            self.spinBox.setMaximumSize(50, 20)
             self.spinBox.setRange(-99999, 99999)
         
             self.layout.addWidget(self.spinBox)
@@ -309,7 +309,7 @@ class Aton(QtWidgets.QWidget):
         self.resolutionSlider.connect(resUpdateUI)
         xres, yres = getSceneOption(Aton.resX), getSceneOption(Aton.resY)
         resolutionInfoLabel = QtWidgets.QLabel(str(xres)+'x'+str(yres))
-        resolutionInfoLabel.setMaximumSize(hou.ui.scaledSize(100), hou.ui.scaledSize(20))
+        resolutionInfoLabel.setMaximumSize(100, 20)
         resolutionInfoLabel.setEnabled(False)
         resolutionLayout.addWidget(self.resolutionSlider)
         resolutionLayout.addWidget(resolutionInfoLabel)
@@ -364,7 +364,7 @@ class Aton(QtWidgets.QWidget):
 
         # Ignore Group
         ignoresGroupBox = QtWidgets.QGroupBox("Ignore")
-        ignoresGroupBox.setMaximumSize(hou.ui.scaledSize(9999), hou.ui.scaledSize(75))
+        ignoresGroupBox.setMaximumSize(9999, 75)
 
         # Ignore Layout
         ignoresLayout = QtWidgets.QVBoxLayout(ignoresGroupBox)
@@ -389,12 +389,12 @@ class Aton(QtWidgets.QWidget):
 
         # Sequence Group
         sequenceGroupBox = QtWidgets.QGroupBox('Sequence')
-        sequenceGroupBox.setMaximumSize(hou.ui.scaledSize(9999), hou.ui.scaledSize(75))
+        sequenceGroupBox.setMaximumSize(9999, 75)
 
         # Sequence Layout
         sequenceLayout = QtWidgets.QHBoxLayout(sequenceGroupBox)
         self.seqCheckBox = QtWidgets.QCheckBox()
-        self.seqCheckBox.setMaximumSize(hou.ui.scaledSize(15), hou.ui.scaledSize(25))
+        self.seqCheckBox.setMaximumSize(15, 25)
         self.seqCheckBox.stateChanged.connect(sequence_toggled)
         self.startSpinBox = SpinBox('Start frame', False)
         self.startSpinBox.setValue(getSceneOption(Aton.startFrame))
