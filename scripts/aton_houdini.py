@@ -480,7 +480,5 @@ class Aton(QtWidgets.QWidget):
                 self.renderRegionTSpinBox.setValue(nkT)
 
                 return cropData
-                
 
-if __name__ == '__builtin__':
-    Aton().show()
+Aton().show()
