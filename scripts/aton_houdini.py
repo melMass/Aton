@@ -208,8 +208,17 @@ class Aton(QtWidgets.QWidget):
         self.setStyleSheet(hou.qt.styleSheet())
         
         # Setup UI
+        self.deleteInstances()
         self.setupUI()
-
+    
+    def deleteInstances(self):
+        for w in QtWidgets.QApplication.instance().topLevelWidgets():
+            if w.objectName() == self.objName:
+                try:
+                    w.close()
+                except:
+                    pass
+                
     def setupUI(self):
 
         def portUpdateUI(value):
