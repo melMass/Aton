@@ -18,9 +18,6 @@ void Aton::attach()
 {
     m_legit = true;
 
-    // Disable caching
-    slowness(0);
-
     // Default status bar
     setStatus();
 
@@ -65,7 +62,7 @@ void Aton::detach()
     m_legit = false;
     disconnect();
     m_node->m_frames = std::vector<double>();
-    m_node->m_framebuffers = std::vector<FrameBuffer>();
+    m_node->m_framebuffers = std::vector<RenderBuffer>();
 }
 
 void Aton::flagForUpdate(const Box& box)
@@ -151,7 +148,7 @@ void Aton::_validate(bool for_real)
     if (!m_node->m_framebuffers.empty())
     {
         const int f_index = getFrameIndex(m_node->m_frames, uiContext().frame());
-        FrameBuffer& fB = m_node->m_framebuffers[f_index];
+        RenderBuffer& fB = m_node->m_framebuffers[f_index];
         
         if (!fB.empty())
         {
@@ -161,7 +158,8 @@ void Aton::_validate(bool for_real)
                       fB.getPRAM(),
                       fB.getTime(),
                       fB.getFrame(),
-                      fB.getAiVersionStr());
+                      fB.getVersion(),
+                      fB.getSamples());
             
             // Set the format
             const int width = fB.getWidth();
@@ -261,7 +259,7 @@ void Aton::_validate(bool for_real)
 void Aton::engine(int y, int x, int r, ChannelMask channels, Row& out)
 {
     const int f = getFrameIndex(m_node->m_frames, uiContext().frame());
-    std::vector<FrameBuffer>& fBs = m_node->m_framebuffers;
+    std::vector<RenderBuffer>& fBs = m_node->m_framebuffers;
     
     foreach(z, channels)
     {
@@ -298,30 +296,34 @@ void Aton::knobs(Knob_Callback f)
     Bool_knob(f, &m_capturing, "capturing_knob");
     Float_knob(f, &m_cam_fov, "cam_fov_knob", " cFov");
     
+    int enumKnob = 3;
+    static const char* names[]  = { "masterLayer", "Layer 1", "Layer 2" };
+    
+    Divider(f, "Snapshots");
+    Enumeration_knob(f, &enumKnob, names, "Output");
+    
     // Main knobs
-    Int_knob(f, &m_port, "port_number", "Port");
+    Button(f, "clear_knob", "Clear");
     Button(f, "clear_all_knob", "Clear All");
+    
+    Divider(f, "Render Region");
+    Knob* region_knob = BBox_knob(f, m_cropBox, "Area");
+    Button(f, "copy_clipboard", "Copy");
 
-    Divider(f, "General");
-    Bool_knob(f, &m_enable_aovs, "enable_aovs_knob", "Enable AOVs");
-    Newline(f);
-    Bool_knob(f, &m_multiframes, "multi_frame_knob", "Enable Multiple Frames");
-    Newline(f);
-    Knob* live_cam_knob = Bool_knob(f, &m_live_camera, "live_camera_knob", "Enable Live Camera");
 
-    Divider(f, "Capture");
-    Knob* limit_knob = Int_knob(f, &m_slimit, "limit_knob", "Limit");
-    Knob* all_frames_knob = Bool_knob(f, &m_all_frames, "all_frames_knob", "Capture All Frames");
+    Divider(f, "Write to Files");
+    Knob* write_aovs_knob = Bool_knob(f, &m_all_frames, "write_aovs_knob", "Write AOVs");
+    Knob* write_multi_frame_knob = Bool_knob(f, &m_all_frames, "write_multi_frame_knob", "Write Multiple Frames");
     Knob* path_knob = File_knob(f, &m_path, "path_knob", "Path");
 
+//    Divider(f);
+//    Knob* stamp_knob = Bool_knob(f, &m_stamp, "stamp_knob", "Add Stamp");
+//    Knob* stamp_scale_knob = Float_knob(f, &m_stamp_scale, "stamp_scale_knob", "Scale");
+//    Knob* comment_knob = String_knob(f, &m_comment, "comment_knob", "Comment");
     Newline(f);
-    Knob* stamp_knob = Bool_knob(f, &m_stamp, "stamp_knob", "Frame Stamp");
-    Knob* stamp_scale_knob = Float_knob(f, &m_stamp_scale, "stamp_scale_knob", "Scale");
-    Knob* comment_knob = String_knob(f, &m_comment, "comment_knob", "Comment");
-    Newline(f);
-    Button(f, "capture_knob", "Capture");
-    Button(f, "import_latest_knob", "Import latest");
-    Button(f, "import_all_knob", "Import all");
+    Button(f, "capture_knob", "Render");
+    Button(f, "import_latest_knob", "Read Latest");
+    Button(f, "import_all_knob", "Read All");
     
     for (int i=0; i<16; i++)
     {
@@ -330,20 +332,29 @@ void Aton::knobs(Knob_Callback f)
     }
 
     // Status Bar knobs
+    BeginToolbar(f, "toolbar");
+    Int_knob(f, &m_port, "port_number", "Port");
+    Bool_knob(f, &m_enable_aovs, "enable_aovs_knob", "Read AOVs");
+    Bool_knob(f, &m_multiframes, "multi_frame_knob", "Read Multiple Frames");
+    Knob* live_cam_knob = Bool_knob(f, &m_live_camera, "live_camera_knob", "Read Camera");
+    EndToolbar(f);
+
+
+    
+    // Status Bar
     BeginToolbar(f, "status_bar");
     Knob* statusKnob = String_knob(f, &m_status, "status_knob", "");
     EndToolbar(f);
 
     // Set Flags
-    limit_knob->set_flag(Knob::NO_RERENDER, true);
     path_knob->set_flag(Knob::NO_RERENDER, true);
     live_cam_knob->set_flag(Knob::NO_RERENDER, true);
-    all_frames_knob->set_flag(Knob::NO_RERENDER, true);
-    stamp_knob->set_flag(Knob::NO_RERENDER, true);
-    stamp_scale_knob->set_flag(Knob::NO_RERENDER, true);
-    comment_knob->set_flag(Knob::NO_RERENDER, true);
+    write_multi_frame_knob->set_flag(Knob::NO_RERENDER, true);
+//    stamp_knob->set_flag(Knob::NO_RERENDER, true);
+//    stamp_scale_knob->set_flag(Knob::NO_RERENDER, true);
+//    comment_knob->set_flag(Knob::NO_RERENDER, true);
     statusKnob->set_flag(Knob::NO_RERENDER, true);
-    statusKnob->set_flag(Knob::READ_ONLY, true);
+    statusKnob->set_flag(Knob::DISABLED, true);
     statusKnob->set_flag(Knob::OUTPUT_ONLY, true);
 }
 
@@ -538,68 +549,21 @@ std::vector<std::string> Aton::getCaptures()
     return results;
 }
 
-void Aton::cleanByLimit()
-{
-    if (!m_garbageList.empty())
-    {
-        // In windows sometimes files can't be deleted due to lack of
-        // access so we collecting a garbage list and trying to remove
-        // them next time when user make a capture
-        std::vector<std::string>::iterator it;
-        for(it = m_garbageList.begin(); it != m_garbageList.end(); ++it)
-            std::remove(it->c_str());
-    }
-
-    std::vector<std::string> captures = getCaptures();
-    
-    using namespace boost::filesystem;
-    path filepath(m_path);
-    path dir = filepath.parent_path();
-
-    // Reverse iterating through file list
-    if (!captures.empty())
-    {
-        std::vector<std::string>::reverse_iterator it;
-        for(it = captures.rbegin(); it != captures.rend(); ++it)
-        {
-            path file = *it;
-            path path = dir / file;
-            std::string str_path = path.string();
-            boost::replace_all(str_path, "\\", "/");
-
-            // Remove the file if it's out of limit
-            if ((it - captures.rbegin()) >= m_slimit)
-            {
-                if (std::remove(str_path.c_str()) != 0)
-                    m_garbageList.push_back(str_path);
-
-                std::string cmd; // Our python command buffer
-                // Remove appropriate Read nodes as well
-                cmd = ( boost::format("exec('''for i in nuke.allNodes('Read'):\n\t"
-                                                  "if '%s' == i['file'].value():\n\t\t"
-                                                      "nuke.delete(i)''')")%str_path ).str();
-                script_command(cmd.c_str(), true, false);
-                script_unlock();
-            }
-        }
-    }
-}
-
 void Aton::clearAllCmd()
 {
-    std::vector<FrameBuffer>& fBs  = m_node->m_framebuffers;
+    std::vector<RenderBuffer>& fBs  = m_node->m_framebuffers;
     std::vector<double>& frames  = m_node->m_frames;
 
     if (!fBs.empty() && !frames.empty())
     {
-        std::vector<FrameBuffer>::iterator it;
+        std::vector<RenderBuffer>::iterator it;
         for(it = fBs.begin(); it != fBs.end(); ++it)
             it->ready(false);
         
         m_node->m_legit = false;
         m_node->disconnect();
         
-        fBs =  std::vector<FrameBuffer>();
+        fBs =  std::vector<RenderBuffer>();
         frames = std::vector<double>();
         
         resetChannels(m_node->m_channels);
@@ -671,6 +635,7 @@ void Aton::captureCmd()
         script_command(cmd.c_str(), true, false);
         script_unlock();
         
+        // Adding Stamp
         if (m_stamp)
         {
             double fontSize = m_stamp_scale * 0.12;
@@ -716,7 +681,6 @@ void Aton::captureCmd()
         script_command(cmd.c_str(), true, false);
         script_unlock();
     }
-    cleanByLimit();
 }
 
 void Aton::importCmd(bool all)
@@ -789,20 +753,22 @@ void Aton::setStatus(const long long& progress,
                      const long long& p_ram,
                      const int& time,
                      const double& frame,
-                     const char* version)
+                     const char* version,
+                     const char* samples)
 {
     const int hour = time / 3600000;
     const int minute = (time % 3600000) / 60000;
     const int second = ((time % 3600000) % 60000) / 1000;
     const size_t f_count = m_node->m_framebuffers.size();
 
-    std::string str_status = (boost::format("Arnold: %s | "
+    std::string str_status = (boost::format("Arnold %s | "
                                             "Memory: %sMB / %sMB | "
                                             "Time: %02ih:%02im:%02is | "
-                                            "Frame: %04i (%s) | "
+                                            "Frame: %s of %s | "
+                                            "Samples: %s | "
                                             "Progress: %s%%")%version%ram%p_ram
                                                              %hour%minute%second
-                                                             %frame%f_count%progress).str();
+                                                             %frame%f_count%samples%progress).str();
     knob("status_knob")->set_text(str_status.c_str());
 }
 

@@ -9,6 +9,17 @@ All rights reserved. See COPYING.txt for more details.
 
 AI_DRIVER_NODE_EXPORT_METHODS(AtonDriverMtd);
 
+inline const int calc_res(int res, int min, int max)
+{
+    if (min < 0 && max >= res)
+        res = max - min + 1;
+    else if (min > 0 && max >= res)
+        res += max - res + 1;
+    else if (min < 0 && max < res)
+        res -= min;
+    return res;
+}
+
 struct ShaderData
 {
     Client* client;
@@ -19,9 +30,9 @@ node_parameters
 {
     AiParameterStr("host", get_host().c_str());
     AiParameterInt("port", get_port());
-    AiParameterInt("index", 0);
+    AiParameterInt("index", 9);
+    AiParameterStr("intput", "");
     AiParameterStr("output", "");
-    AiParameterStr("comment", "");
     
 #ifdef ARNOLD_5
     AiMetaDataSetStr(nentry, NULL, "maya.translator", "aton");
@@ -59,13 +70,14 @@ driver_extension { return NULL; }
 
 driver_open
 {
-
-    
 #ifdef ARNOLD_5
     ShaderData* data = (ShaderData*)AiNodeGetLocalData(node);
 #else
     ShaderData* data = (ShaderData*)AiDriverGetLocalData(node);
 #endif
+    
+    // Get Session index
+    const int index = AiNodeGetInt(node, "index");
     
     // Get Options Node
     AtNode* options = AiUniverseGetOptions();
@@ -79,48 +91,27 @@ driver_open
     const int min_y = AiNodeGetInt(options, "region_min_y");
     const int max_x = AiNodeGetInt(options, "region_max_x");
     const int max_y = AiNodeGetInt(options, "region_max_y");
-    
-    // Setting Origin
+
+    // Set Resolution
     data->min_x = (min_x == INT_MIN) ? 0 : min_x;
     data->min_y = (min_y == INT_MIN) ? 0 : min_y;
     data->max_x = (max_x == INT_MIN) ? 0 : max_x;
     data->max_y = (max_y == INT_MIN) ? 0 : max_y;
-   
-    // Setting X Resolution
-    if (data->min_x < 0 && data->max_x >= xres)
-        data->xres = data->max_x - data->min_x + 1;
-    else if (data->min_x >= 0 && data->max_x < xres)
-        data->xres = xres;
-    else if (data->min_x < 0 && data->max_x < xres)
-        data->xres = xres - min_x;
-    else if(data->min_x >= 0 && data->max_x >= xres)
-        data->xres = xres + (max_x - xres + 1);
-    
-    // Setting Y Resolution
-    if (data->min_y < 0 && data->max_y >= yres)
-        data->yres = data->max_y - data->min_y + 1;
-    else if (data->min_y >= 0 && data->max_y < yres)
-        data->yres = yres;
-    else if (data->min_y < 0 && data->max_y < yres)
-        data->yres = yres - min_y;
-    else if(data->min_y >= 0 && data->max_y >= yres)
-        data->yres = yres + (max_y - yres + 1);
+
+    data->xres = calc_res(xres, data->min_x, data->max_x);
+    data->yres = calc_res(yres, data->min_y, data->max_y);
     
     // Get Region Area
-    const long long rArea = data->xres * data->yres;
-        
-    // Construct full version number
+    const long long region_area = data->xres * data->yres;
+    
+    // Get Arnold version
     char arch[3], major[3], minor[3], fix[3];
     AiGetVersion(arch, major, minor, fix);
+    const int version = pack_4_int(atoi(arch), atoi(major), atoi(minor), atoi(fix));
+        
+    // Get  Frame
+    const float frame = AiNodeGetFlt(options, "frame");
     
-    const int version = atoi(arch) * 1000000 +
-                        atoi(major) * 10000 +
-                        atoi(minor) * 100 +
-                        atoi(fix);
-        
-    // Get Current Frame
-    const float currentFrame = AiNodeGetFlt(options, "frame");
-        
     // Get Camera Field of view
     AtNode* camera = (AtNode*)AiNodeGetPtr(options, "camera");
     const float cam_fov = AiNodeGetFlt(camera, "fov");
@@ -138,14 +129,31 @@ driver_open
                                   cMat[0][2], cMat[1][2], cMat[2][2], cMat[3][2],
                                   cMat[0][3], cMat[1][3], cMat[2][3], cMat[3][3]};
     
+    // Get Samples
+    const int& aa_samples = AiNodeGetInt(options, "AA_samples");
+    const int& diffuse_samples = AiNodeGetInt(options, "GI_diffuse_samples");
+    const int& spec_samples = AiNodeGetInt(options, "GI_specular_samples");
+    const int& trans_samples = AiNodeGetInt(options, "GI_transmission_samples");
+    const int& sss_samples = AiNodeGetInt(options, "GI_sss_samples");
+    const int& volume_samples = AiNodeGetInt(options, "GI_volume_samples");
+    
+    const int samples[6]  = {aa_samples,
+                             diffuse_samples,
+                             spec_samples,
+                             trans_samples,
+                             sss_samples,
+                             volume_samples};
+    
     // Make image header & send to server
-    DataHeader dh(data->xres,
+    DataHeader dh(index,
+                  data->xres,
                   data->yres,
-                  rArea,
+                  region_area,
                   version,
-                  currentFrame,
+                  frame,
                   cam_fov,
-                  cam_matrix);
+                  cam_matrix,
+                  samples);
 
     try // Now we can connect to the server and start rendering
     {

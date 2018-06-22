@@ -119,6 +119,7 @@ DataHeader Server::listenHeader()
     write(mSocket, buffer(reinterpret_cast<char*>(&image_id), sizeof(int)));
     
     // Read data from the buffer
+    read(mSocket, buffer(reinterpret_cast<char*>(&dh.mIndex), sizeof(int)));
     read(mSocket, buffer(reinterpret_cast<char*>(&dh.mXres), sizeof(int)));
     read(mSocket, buffer(reinterpret_cast<char*>(&dh.mYres), sizeof(int)));
     read(mSocket, buffer(reinterpret_cast<char*>(&dh.mRArea), sizeof(long long)));
@@ -129,7 +130,11 @@ DataHeader Server::listenHeader()
     const int camMatrixSize = 16;
     dh.mCamMatrixStore.resize(camMatrixSize);
     read(mSocket, buffer(reinterpret_cast<char*>(&dh.mCamMatrixStore[0]), sizeof(float)*camMatrixSize));
-    
+
+    const int samplesSize = 6;
+    dh.mSamplesStore.resize(samplesSize);
+    read(mSocket, buffer(reinterpret_cast<char*>(&dh.mSamplesStore[0]), sizeof(int)*samplesSize));
+
     return dh;
 }
 

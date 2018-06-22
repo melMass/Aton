@@ -9,7 +9,7 @@ All rights reserved. See COPYING.txt for more details.
 
 #include "aton_node.h"
 
-// Our FrameBuffer writer thread
+// Our RenderBuffer writer thread
 static void FBWriter(unsigned index, unsigned nthreads, void* data)
 {
     bool killThread = false;
@@ -25,7 +25,7 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
         // Our incoming data object
         int dataType = 0;
 
-        // Frame index in FrameBuffers
+        // Frame index in RenderBuffers
         int f_index = 0;
         // For progress percentage
         long long progress, regionArea = 0;
@@ -54,13 +54,15 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
                     DataHeader dh = node->m_server.listenHeader();
                     
                     // Copy data from d
+                    const int& _index = dh.index();
                     const int& _xres = dh.xres();
                     const int& _yres = dh.yres();
-                    const int& _version = dh.version();
-                    const float& _fov = dh.camFov();
                     const long long& _area = dh.rArea();
-                    const Matrix4& _matrix = Matrix4(&dh.camMatrix()[0]);
+                    const int& _version = dh.version();
                     const double& _frame = static_cast<double>(dh.currentFrame());
+                    const float& _fov = dh.camFov();
+                    const Matrix4& _matrix = Matrix4(&dh.camMatrix()[0]);
+                    const std::vector<int> _samples = dh.samples();
                     
                     // Get image area to calculate the progress
                     regionArea = _area;
@@ -72,24 +74,31 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
                     node->m_current_frame = _frame;
                     
                     std::vector<double>& m_frs = node->m_frames;
-                    std::vector<FrameBuffer>& m_fbs = node->m_framebuffers;
+                    std::vector<RenderBuffer>& m_fbs = node->m_framebuffers;
 
-                    // Create FrameBuffer
+                    // Create RenderBuffer
                     if (node->m_multiframes)
                     {
+                        // If the Frame not exists
                         if (std::find(m_frs.begin(), m_frs.end(), _frame) == m_frs.end())
                         {
-                            FrameBuffer fB(_frame, _xres, _yres);
+                            RenderBuffer fB(_frame, _xres, _yres);
                             if (!m_frs.empty())
                                 fB = m_fbs.back();
                             WriteGuard lock(node->m_mutex);
                             m_frs.push_back(_frame);
                             m_fbs.push_back(fB);
                         }
+                        
+                        if (node->M_FRAMEBUFFERS.empty())
+                        {
+                            FrameBuffer fb(_frame, _xres, _yres);
+                            node->M_FRAMEBUFFERS.push_back(fb);
+                        }
                     }
                     else
                     {
-                        FrameBuffer fB(_frame, _xres, _yres);
+                        RenderBuffer fB(_frame, _xres, _yres);
                         if (!node->m_frames.empty())
                         {
                             f_index = node->getFrameIndex(node->m_frames, node->m_current_frame);
@@ -97,14 +106,14 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
                         }
                         WriteGuard lock(node->m_mutex);
                         m_frs = std::vector<double>();
-                        m_fbs = std::vector<FrameBuffer>();
+                        m_fbs = std::vector<RenderBuffer>();
                         m_frs.push_back(_frame);
                         m_fbs.push_back(fB);
                     }
                     
-                    // Get current FrameBuffer
+                    // Get current RenderBuffer
                     f_index = node->getFrameIndex(node->m_frames, _frame);
-                    FrameBuffer& fB = m_fbs[f_index];
+                    RenderBuffer& fB = m_fbs[f_index];
                     
                     // Reset Frame and Buffers if changed
                     if (!fB.empty() && !active_aovs.empty())
@@ -132,9 +141,13 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
                                              fB.getCameraMatrix());
                     }
 
-                    // Set Arnold Core version
-                    if (fB.getAiVersionInt() != _version)
-                        fB.setAiVersion(_version);
+                    // Set Version
+                    if (fB.getVersionInt() != _version)
+                        fB.setVersion(_version);
+                    
+                    // Set Samples
+                    if (fB.getSamplesInt() != _samples)
+                        fB.setSamples(_samples);
                     
                     // Reset active AOVs
                     if(!active_aovs.empty()) active_aovs.clear();
@@ -145,7 +158,7 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
                     DataPixels dp = node->m_server.listenPixels();
 
                     // Get frame buffer
-                    FrameBuffer& fB = node->m_framebuffers[f_index];
+                    RenderBuffer& fB = node->m_framebuffers[f_index];
                     const char* _aov_name = dp.aovName();
                     const int& _xres = dp.xres();
                     const int& _yres = dp.yres();

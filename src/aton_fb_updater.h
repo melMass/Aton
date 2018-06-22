@@ -9,7 +9,7 @@ All rights reserved. See COPYING.txt for more details.
 
 #include "aton_node.h"
 
-// Our FrameBuffer updater thread
+// Our RenderBuffer updater thread
 static void FBUpdater(unsigned index, unsigned nthreads, void* data)
 {
     Aton* node = reinterpret_cast<Aton*>(data);
@@ -26,7 +26,7 @@ static void FBUpdater(unsigned index, unsigned nthreads, void* data)
                                                  uiFrame != opFrame)
         {
             const int f_index = node->getFrameIndex(node->m_frames, uiFrame);
-            FrameBuffer& fB = node->m_framebuffers[f_index];
+            RenderBuffer& fB = node->m_framebuffers[f_index];
             if (node->m_live_camera)
             {
                 node->setCameraKnobs(fB.getCameraFov(),

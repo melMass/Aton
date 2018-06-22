@@ -56,11 +56,14 @@ class Aton: public Iop
         unsigned int              m_hash_count;       // Refresh hash counter
         const char*               m_path;             // Default path for Write node
         const char*               m_comment;          // Comment for the frame stamp
+        double*                   m_cropBox;
         std::string               m_node_name;        // Node name
         std::string               m_status;           // Status bar text
+        std::string               m_details;          // Render layer details
         std::string               m_connectionError;  // Connection error report
         std::vector<double>       m_frames;           // Frames holder
-        std::vector<FrameBuffer>  m_framebuffers;     // Framebuffers holder
+        std::vector<RenderBuffer> m_framebuffers;     // Framebuffers holder
+        std::vector<FrameBuffer>  M_FRAMEBUFFERS;     // Framebuffers holder
         std::vector<std::string>  m_garbageList;      // List of captured files to be deleted
 
         Aton(Node* node): Iop(node),
@@ -71,8 +74,8 @@ class Aton: public Iop
                           m_slimit(20),
                           m_cam_fov(0),
                           m_cam_matrix(0),
-                          m_multiframes(false),
-                          m_enable_aovs(false),
+                          m_multiframes(true),
+                          m_enable_aovs(true),
                           m_live_camera(false),
                           m_all_frames(false),
                           m_stamp(false),
@@ -80,6 +83,7 @@ class Aton: public Iop
                           m_formatExists(false),
                           m_capturing(false),
                           m_legit(false),
+                          m_cropBox(NULL),
                           m_current_frame(0),
                           m_stamp_scale(1.0),
                           m_path(""),
@@ -94,7 +98,7 @@ class Aton: public Iop
         ~Aton() { disconnect(); }
         
         Aton* firstNode() { return dynamic_cast<Aton*>(firstOp()); }
-
+    
         void attach();
         
         void detach();
@@ -128,8 +132,6 @@ class Aton: public Iop
         std::string getDateTime();
 
         std::vector<std::string> getCaptures();
-
-        void cleanByLimit();
     
         void clearAllCmd();
 
@@ -144,7 +146,8 @@ class Aton: public Iop
                        const long long& p_ram = 0,
                        const int& time = 0,
                        const double& frame = 0,
-                       const char* version = "");
+                       const char* version = "",
+                       const char* samples = "");
     
         void setCameraKnobs(const float& fov, const Matrix4& matrix);
     

@@ -7,6 +7,8 @@ All rights reserved. See COPYING.txt for more details.
 #include "aton_client.h"
 #include <boost/lexical_cast.hpp>
 
+using namespace boost::asio;
+
 const int get_port()
 {
     const char* def_port = getenv("ATON_PORT");
@@ -34,29 +36,40 @@ const std::string get_host()
 const bool host_exists(const char* host)
 {
     boost::system::error_code ec;
-    boost::asio::ip::address::from_string(host, ec);
+    ip::address::from_string(host, ec);
     return !ec;
 }
 
-DataHeader::DataHeader(const int& xres,
+const int pack_4_int(int a, int b, int c, int d)
+{
+    return a * 1000000 + b * 10000 + c * 100 + d;
+}
+
+// Data Class
+DataHeader::DataHeader(const int& index,
+                       const int& xres,
                        const int& yres,
                        const long long& rArea,
                        const int& version,
                        const float& currentFrame,
                        const float& cam_fov,
-                       const float* cam_matrix): mXres(xres),
-                                                 mYres(yres),
-                                                 mRArea(rArea),
-                                                 mVersion(version),
-                                                 mCurrentFrame(currentFrame),
-                                                 mCamFov(cam_fov)
+                       const float* cam_matrix,
+                       const int* samples): mIndex(index),
+                                            mXres(xres),
+                                            mYres(yres),
+                                            mRArea(rArea),
+                                            mVersion(version),
+                                            mCurrentFrame(currentFrame),
+                                            mCamFov(cam_fov)
 {
     if (cam_matrix != NULL)
         mCamMatrix = const_cast<float*>(cam_matrix);
+    
+    if (samples != NULL)
+        mSamples = const_cast<int*>(samples);
 }
 
 DataHeader::~DataHeader() {}
-
 
 
 DataPixels::DataPixels(const int& xres,
@@ -95,8 +108,7 @@ void DataPixels::free()
 
 
 
-using namespace boost::asio;
-
+// Client Class
 Client::Client(std::string hostname, int port): mHost(hostname),
                                                 mPort(port),
                                                 mImageId(-1),
@@ -143,6 +155,7 @@ void Client::openImage(DataHeader& header)
     read(mSocket, buffer(reinterpret_cast<char*>(&mImageId), sizeof(int)));
     
     // Send our width & height
+    write(mSocket, buffer(reinterpret_cast<char*>(&header.mIndex), sizeof(int)));
     write(mSocket, buffer(reinterpret_cast<char*>(&header.mXres), sizeof(int)));
     write(mSocket, buffer(reinterpret_cast<char*>(&header.mYres), sizeof(int)));
     write(mSocket, buffer(reinterpret_cast<char*>(&header.mRArea), sizeof(long long)));
@@ -152,6 +165,10 @@ void Client::openImage(DataHeader& header)
     
     const int camMatrixSize = 16;
     write(mSocket, buffer(reinterpret_cast<char*>(&header.mCamMatrix[0]), sizeof(float)*camMatrixSize));
+    
+    const int samplesSize = 6;
+    write(mSocket, buffer(reinterpret_cast<char*>(&header.mSamples[0]), sizeof(int)*samplesSize));
+
 }
 
 void Client::sendPixels(DataPixels& pixels)
