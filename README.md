@@ -1,20 +1,27 @@
-#Aton
+- [Aton](#aton)
+  - [How to install](#how-to-install)
+  - [How to Use](#how-to-use)
+  - [How to Build](#how-to-build)
+  - [Contributers](#contributers)
+
+
+Aton
 ===
 The Aton project is a Arnold Interface-compatible display driver
 and Nuke plugin for direct rendering into the Nuke interface.
 
-##How to install
+## How to install
 -
 1. Copy **aton.dll**(.dylib, .so) from ~/Bin to your **$NUKE_PATH**
   * In your init.py add the following
-  
-     ```
+
+     ```python
      nuke.load("aton")
      ```
 
   * In your menu.py add the following
 
-     ```
+     ```python
      import nuke
      toolbar = nuke.menu("Nodes")
      mainToolBar=nuke.toolbar("Nodes")
@@ -25,22 +32,21 @@ and Nuke plugin for direct rendering into the Nuke interface.
 2. Copy **driver_aton.dll**(.dylib, .so) from ~/Bin to your **$ARNOLD_PLUGIN_PATH**
 
 3. Copy **aton_maya.py** from ~/Scripts to your Maya's scripts folder
- 
-##How to Use
 
-1. Open Nuke and create an Aton node  
+## How to Use
+
+1. Open Nuke and create an Aton node
 2. Open Maya, make sure Arnold is set as default renderer
 3. Run this line bellow in script editor to open Aton UI or put it on the shelf
 
-     ```
+     ```python
     from aton_maya import *
     aton = Aton()
     aton.show()
     ```
+---
 
-
-===
-##How to Build
+## How to Build
 
 To build it yourself you will need to have
 
@@ -48,14 +54,14 @@ To build it yourself you will need to have
 * Arnold 4.2+ SDK
 * Boost 1.54+
 
-##Contributers
+## Contributers
 
 * An Nguyen
 * Brian Scherbinski
 * Cameron Smither
 * Dan Bradham
 
-It's based on: 
+It's based on:
 
 *Dan Bethelli's Rmanconnect which is freely available at.*
 http://github.com/danbethell/rmanconnect
