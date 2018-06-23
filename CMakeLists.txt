@@ -8,7 +8,7 @@
 #
 #==========
 
-cmake_minimum_required( VERSION 2.6 )
+cmake_minimum_required( VERSION 3.0 )
 project( aton )
 
 #=====
@@ -26,13 +26,13 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/src
   ${Boost_INCLUDE_DIRS}
   ${Nuke_INCLUDE_DIR}
-  ) 
+  )
 
 #=====
 # Build the Nuke plugin
-add_library( nuke_plugin 
+add_library( nuke_plugin
   SHARED
-  ${CMAKE_SOURCE_DIR}/src/aton_node.cpp 
+  ${CMAKE_SOURCE_DIR}/src/aton_node.cpp
   ${CMAKE_SOURCE_DIR}/src/aton_framebuffer.cpp
   ${CMAKE_SOURCE_DIR}/src/aton_server.cpp
   ${CMAKE_SOURCE_DIR}/src/aton_client.cpp
@@ -46,7 +46,7 @@ set_target_properties( nuke_plugin
   LINK_FLAGS "${Nuke_LINK_FLAGS}"
   )
 
-target_link_libraries( nuke_plugin 
+target_link_libraries( nuke_plugin
   ${Boost_LIBRARIES}
   ${Nuke_LIBRARIES}
   )
@@ -62,7 +62,7 @@ if( ARNOLD_FOUND )
       ${CMAKE_SOURCE_DIR}/src/aton_driver_arnold.cpp
       ${CMAKE_SOURCE_DIR}/src/aton_client.cpp
       )
-    
+
     # To compile against Arnold 5
     add_definitions(-DARNOLD_5)
 
