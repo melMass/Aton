@@ -34,14 +34,14 @@
 #==========
 #
 # Variables defined by this module:
-#   Nuke_FOUND    
+#   Nuke_FOUND
 #   Nuke_INCLUDE_DIR
 #   Nuke_COMPILE_FLAGS
 #   Nuke_LINK_FLAGS
 #   Nuke_LIBRARIES
 #   Nuke_LIBRARY_DIR
 #
-# Usage: 
+# Usage:
 #   FIND_PACKAGE( Nuke )
 #   FIND_PACKAGE( Nuke REQUIRED )
 #
@@ -49,8 +49,8 @@
 # You can tell the module where Nuke is installed by setting
 # the Nuke_INSTALL_PATH (or setting the NDK_PATH environment
 # variable before calling FIND_PACKAGE.
-# 
-# E.g. 
+#
+# E.g.
 #   SET( Nuke_INSTALL_PATH "/usr/local/Nuke5.2v3" )
 #   FIND_PACKAGE( Nuke REQUIRED )
 #
@@ -71,8 +71,8 @@ FIND_LIBRARY( Nuke_LIBRARIES DDImage
 SET( Nuke_COMPILE_FLAGS "" )
 SET( Nuke_LINK_FLAGS "" )
 IF( ${CMAKE_SYSTEM_NAME} MATCHES "Darwin" )
-    SET( Nuke_COMPILE_FLAGS "-arch i386" )
-    SET( Nuke_LINK_FLAGS "-arch i386" )
+    SET( Nuke_COMPILE_FLAGS "-arch x86_64" )
+    SET( Nuke_LINK_FLAGS "-arch x86_64" )
 ENDIF( ${CMAKE_SYSTEM_NAME} MATCHES "Darwin" )
 
 # our library path
