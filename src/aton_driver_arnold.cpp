@@ -23,14 +23,13 @@ inline const int calc_res(int res, int min, int max)
 struct ShaderData
 {
     Client* client;
-    int xres, yres, min_x, min_y, max_x, max_y;
+    int index, xres, yres, min_x, min_y, max_x, max_y;
 };
 
 node_parameters
 {
     AiParameterStr("host", get_host().c_str());
     AiParameterInt("port", get_port());
-    AiParameterInt("index", 9);
     AiParameterStr("intput", "");
     AiParameterStr("output", "");
     
@@ -52,6 +51,7 @@ node_initialize
 {
     ShaderData* data = (ShaderData*)AiMalloc(sizeof(ShaderData));
     data->client = NULL;
+    data->index = gen_unique_id();
 
 #ifdef ARNOLD_5
     AiDriverInitialize(node, true);
@@ -60,6 +60,7 @@ node_initialize
     AiDriverInitialize(node, true, data);
 #endif
     
+
 }
 
 node_update {}

@@ -21,12 +21,16 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
     {
         // Accept incoming connections!
         node->m_server.accept();
+        
+        // Session Index
+        int s_index = 0;
 
         // Our incoming data object
         int dataType = 0;
 
         // Frame index in RenderBuffers
         int f_index = 0;
+        
         // For progress percentage
         long long progress, regionArea = 0;
         
@@ -76,6 +80,17 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
                     std::vector<double>& m_frs = node->m_frames;
                     std::vector<RenderBuffer>& m_fbs = node->m_framebuffers;
 
+                    // Adding new session
+                    if (node->M_FRAMEBUFFERS.empty() || s_index != _index)
+                    {
+                        FrameBuffer fb(_frame, _xres, _yres);
+                        WriteGuard lock(node->m_mutex);
+                        node->M_FRAMEBUFFERS.push_back(fb);
+                        s_index = _index;
+                    }
+                    
+                    FrameBuffer& fb = node->M_FRAMEBUFFERS.back();
+                    
                     // Create RenderBuffer
                     if (node->m_multiframes)
                     {
@@ -88,12 +103,6 @@ static void FBWriter(unsigned index, unsigned nthreads, void* data)
                             WriteGuard lock(node->m_mutex);
                             m_frs.push_back(_frame);
                             m_fbs.push_back(fB);
-                        }
-                        
-                        if (node->M_FRAMEBUFFERS.empty())
-                        {
-                            FrameBuffer fb(_frame, _xres, _yres);
-                            node->M_FRAMEBUFFERS.push_back(fb);
                         }
                     }
                     else
